@@ -68,6 +68,7 @@ export default function Feed() {
   const formattedPosts: PostData[] = posts.map((post) => ({
     id: post.id,
     author: {
+      id: post.user.id,
       name: post.user.displayName || post.user.username,
       username: post.user.username,
       avatar: post.user.avatar,

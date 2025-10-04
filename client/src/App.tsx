@@ -14,7 +14,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Feed} />
-      <Route path="/profile" component={Profile} />
+      <Route path="/profile/:userId" component={Profile} />
       <Route path="/messages" component={Messages} />
       <Route component={NotFound} />
     </Switch>

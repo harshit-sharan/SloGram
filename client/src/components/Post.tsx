@@ -2,10 +2,12 @@ import { useState } from "react";
 import { Heart, MessageCircle, Share2, Bookmark } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Link } from "wouter";
 
 export interface PostData {
   id: string;
   author: {
+    id: string;
     name: string;
     username: string;
     avatar?: string;
@@ -40,14 +42,18 @@ export function Post({ post }: { post: PostData }) {
   return (
     <article className="pb-6 border-b last:border-0" data-testid={`post-${post.id}`}>
       <div className="flex items-center gap-3 px-4 py-3">
-        <Avatar className="h-10 w-10">
-          <AvatarImage src={post.author.avatar} />
-          <AvatarFallback>{post.author.name.charAt(0)}</AvatarFallback>
-        </Avatar>
+        <Link href={`/profile/${post.author.id}`} data-testid={`link-author-avatar-${post.id}`}>
+          <Avatar className="h-10 w-10 cursor-pointer hover-elevate">
+            <AvatarImage src={post.author.avatar} />
+            <AvatarFallback>{post.author.name.charAt(0)}</AvatarFallback>
+          </Avatar>
+        </Link>
         <div className="flex-1">
-          <p className="font-serif font-semibold text-foreground" data-testid={`text-author-${post.id}`}>
-            {post.author.name}
-          </p>
+          <Link href={`/profile/${post.author.id}`} data-testid={`link-author-name-${post.id}`}>
+            <p className="font-serif font-semibold text-foreground cursor-pointer hover-elevate inline-block rounded px-1">
+              {post.author.name}
+            </p>
+          </Link>
           <p className="text-xs text-muted-foreground" data-testid={`text-timestamp-${post.id}`}>
             {post.timestamp}
           </p>
