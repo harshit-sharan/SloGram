@@ -32,6 +32,7 @@ function useDebounce<T>(value: T, delay: number): T {
 }
 
 export function Navigation() {
+  const currentUserId = "ca1a588a-2f07-4b75-ad8a-2ac21444840e";
   const { theme, toggleTheme } = useTheme();
   const [location] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
@@ -43,6 +44,11 @@ export function Navigation() {
   const { data: searchResults = [] } = useQuery<SearchUser[]>({
     queryKey: ["/api/users/search?q=" + encodeURIComponent(debouncedSearchQuery)],
     enabled: debouncedSearchQuery.trim().length > 0,
+  });
+
+  const { data: unreadCountData } = useQuery<{ count: number }>({
+    queryKey: ["/api/notifications", currentUserId, "unread-count"],
+    refetchInterval: 10000, // Refetch every 10 seconds
   });
 
   useEffect(() => {
@@ -165,10 +171,17 @@ export function Navigation() {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => console.log("Notifications clicked")}
+            asChild
             data-testid="button-notifications"
           >
-            <Heart />
+            <Link href="/notifications" className="relative">
+              <Heart className={location === "/notifications" ? "fill-current" : ""} />
+              {unreadCountData && unreadCountData.count > 0 && (
+                <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center font-semibold">
+                  {unreadCountData.count > 9 ? "9+" : unreadCountData.count}
+                </span>
+              )}
+            </Link>
           </Button>
 
           <Button
