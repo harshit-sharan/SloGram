@@ -1,4 +1,4 @@
-import { Heart, Home, PlusSquare, Search, Moon, Sun } from "lucide-react";
+import { Heart, Home, PlusSquare, Search, Moon, Sun, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -49,6 +49,17 @@ export function Navigation() {
             data-testid="button-create"
           >
             <PlusSquare />
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="icon"
+            asChild
+            data-testid="button-messages"
+          >
+            <Link href="/messages">
+              <MessageCircle className={location === "/messages" ? "fill-current" : ""} />
+            </Link>
           </Button>
 
           <Button

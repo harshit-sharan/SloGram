@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { X, Image as ImageIcon } from "lucide-react";
+import { X, Image as ImageIcon, Video } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -18,17 +18,28 @@ export function CreatePostModal({
   onOpenChange: (open: boolean) => void;
 }) {
   const [caption, setCaption] = useState("");
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [selectedMedia, setSelectedMedia] = useState<{ url: string; type: "image" | "video" } | null>(null);
 
   const handleImageSelect = () => {
     console.log("Image upload clicked");
-    setSelectedImage("https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=800");
+    setSelectedMedia({ 
+      url: "https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=800",
+      type: "image"
+    });
+  };
+
+  const handleVideoSelect = () => {
+    console.log("Video upload clicked");
+    setSelectedMedia({ 
+      url: "https://www.w3schools.com/html/mov_bbb.mp4",
+      type: "video"
+    });
   };
 
   const handlePost = () => {
-    console.log("Post created:", { caption, image: selectedImage });
+    console.log("Post created:", { caption, media: selectedMedia });
     setCaption("");
-    setSelectedImage(null);
+    setSelectedMedia(null);
     onOpenChange(false);
   };
 
@@ -54,33 +65,52 @@ export function CreatePostModal({
             />
           </div>
 
-          {selectedImage ? (
+          {selectedMedia ? (
             <div className="relative rounded-md overflow-hidden bg-muted">
-              <img
-                src={selectedImage}
-                alt="Selected"
-                className="w-full object-cover max-h-96"
-                data-testid="img-preview"
-              />
+              {selectedMedia.type === "image" ? (
+                <img
+                  src={selectedMedia.url}
+                  alt="Selected"
+                  className="w-full object-cover max-h-96"
+                  data-testid="img-preview"
+                />
+              ) : (
+                <video
+                  src={selectedMedia.url}
+                  className="w-full object-cover max-h-96"
+                  controls
+                  data-testid="video-preview"
+                />
+              )}
               <Button
                 variant="ghost"
                 size="icon"
                 className="absolute top-2 right-2 bg-background/80 backdrop-blur"
-                onClick={() => setSelectedImage(null)}
-                data-testid="button-remove-image"
+                onClick={() => setSelectedMedia(null)}
+                data-testid="button-remove-media"
               >
                 <X className="h-4 w-4" />
               </Button>
             </div>
           ) : (
-            <button
-              onClick={handleImageSelect}
-              className="w-full p-8 border-2 border-dashed rounded-md hover-elevate flex flex-col items-center gap-2 text-muted-foreground"
-              data-testid="button-select-image"
-            >
-              <ImageIcon className="h-8 w-8" />
-              <span>Add photo</span>
-            </button>
+            <div className="grid grid-cols-2 gap-4">
+              <button
+                onClick={handleImageSelect}
+                className="p-8 border-2 border-dashed rounded-md hover-elevate flex flex-col items-center gap-2 text-muted-foreground"
+                data-testid="button-select-image"
+              >
+                <ImageIcon className="h-8 w-8" />
+                <span>Add photo</span>
+              </button>
+              <button
+                onClick={handleVideoSelect}
+                className="p-8 border-2 border-dashed rounded-md hover-elevate flex flex-col items-center gap-2 text-muted-foreground"
+                data-testid="button-select-video"
+              >
+                <Video className="h-8 w-8" />
+                <span>Add video</span>
+              </button>
+            </div>
           )}
 
           <div className="flex justify-end gap-2">
@@ -93,7 +123,7 @@ export function CreatePostModal({
             </Button>
             <Button
               onClick={handlePost}
-              disabled={!caption.trim() || !selectedImage}
+              disabled={!caption.trim() || !selectedMedia}
               data-testid="button-share"
             >
               Share
