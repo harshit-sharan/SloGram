@@ -1,6 +1,6 @@
-import { type User, type InsertUser, type Post, type InsertPost, type Message, type InsertMessage, type Conversation, type Comment } from "@shared/schema";
+import { type User, type InsertUser, type Post, type InsertPost, type Message, type InsertMessage, type Conversation, type Comment, type Notification } from "@shared/schema";
 import { db } from "./db";
-import { users, posts, messages, conversations, comments, likes, saves } from "@shared/schema";
+import { users, posts, messages, conversations, comments, likes, saves, notifications } from "@shared/schema";
 import { eq, and, or, desc, ilike } from "drizzle-orm";
 
 export interface IStorage {
@@ -36,6 +36,13 @@ export interface IStorage {
   // Saves
   toggleSave(userId: string, postId: string): Promise<boolean>;
   isPostSavedByUser(userId: string, postId: string): Promise<boolean>;
+  
+  // Notifications
+  createNotification(notification: { userId: string; type: "like" | "comment"; actorId: string; postId: string }): Promise<Notification>;
+  getNotificationsByUserId(userId: string): Promise<Array<Notification & { actor: User; post: Post }>>;
+  markNotificationAsRead(notificationId: string): Promise<void>;
+  markAllNotificationsAsRead(userId: string): Promise<void>;
+  getUnreadNotificationCount(userId: string): Promise<number>;
 }
 
 export class DbStorage implements IStorage {
@@ -198,6 +205,60 @@ export class DbStorage implements IStorage {
       and(eq(saves.userId, userId), eq(saves.postId, postId))
     );
     return !!existing;
+  }
+
+  async createNotification(notification: { userId: string; type: "like" | "comment"; actorId: string; postId: string }): Promise<Notification> {
+    const [newNotification] = await db.insert(notifications).values(notification).returning();
+    return newNotification;
+  }
+
+  async getNotificationsByUserId(userId: string): Promise<Array<Notification & { actor: User; post: Post }>> {
+    const result = await db
+      .select({
+        id: notifications.id,
+        userId: notifications.userId,
+        type: notifications.type,
+        actorId: notifications.actorId,
+        postId: notifications.postId,
+        read: notifications.read,
+        createdAt: notifications.createdAt,
+        actor: {
+          id: users.id,
+          username: users.username,
+          displayName: users.displayName,
+          avatar: users.avatar,
+        },
+        post: {
+          id: posts.id,
+          userId: posts.userId,
+          type: posts.type,
+          mediaUrl: posts.mediaUrl,
+          caption: posts.caption,
+          createdAt: posts.createdAt,
+        },
+      })
+      .from(notifications)
+      .innerJoin(users, eq(notifications.actorId, users.id))
+      .innerJoin(posts, eq(notifications.postId, posts.id))
+      .where(eq(notifications.userId, userId))
+      .orderBy(desc(notifications.createdAt));
+    
+    return result as Array<Notification & { actor: User; post: Post }>;
+  }
+
+  async markNotificationAsRead(notificationId: string): Promise<void> {
+    await db.update(notifications).set({ read: true }).where(eq(notifications.id, notificationId));
+  }
+
+  async markAllNotificationsAsRead(userId: string): Promise<void> {
+    await db.update(notifications).set({ read: true }).where(eq(notifications.userId, userId));
+  }
+
+  async getUnreadNotificationCount(userId: string): Promise<number> {
+    const result = await db.select().from(notifications).where(
+      and(eq(notifications.userId, userId), eq(notifications.read, false))
+    );
+    return result.length;
   }
 }
 
