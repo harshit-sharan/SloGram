@@ -86,10 +86,9 @@ export default function Messages() {
       </div>
 
       <div className="flex-1 hidden md:flex flex-col">
-        {selected && user ? (
+        {selected ? (
           <MessageThread
             conversationId={selected.conversation.id}
-            currentUserId={user.id}
             otherUser={{
               id: selected.otherUser.id,
               name: selected.otherUser.displayName || selected.otherUser.username,

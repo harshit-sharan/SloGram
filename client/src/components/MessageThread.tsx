@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { useQuery } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
+import { useAuth } from "@/hooks/useAuth";
 
 interface Message {
   id: string;
@@ -17,7 +18,6 @@ interface Message {
 
 interface MessageThreadProps {
   conversationId: string;
-  currentUserId: string;
   otherUser: {
     id: string;
     name: string;
@@ -26,10 +26,11 @@ interface MessageThreadProps {
   };
 }
 
-export function MessageThread({ conversationId, currentUserId, otherUser }: MessageThreadProps) {
+export function MessageThread({ conversationId, otherUser }: MessageThreadProps) {
+  const { user } = useAuth();
   const [newMessage, setNewMessage] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const { isConnected, lastMessage, sendMessage } = useWebSocket(currentUserId);
+  const { isConnected, lastMessage, sendMessage } = useWebSocket();
 
   // Fetch messages from database - this is the single source of truth
   const { data: messages = [], refetch } = useQuery<Message[]>({
@@ -57,10 +58,10 @@ export function MessageThread({ conversationId, currentUserId, otherUser }: Mess
       
       // Update conversations list to show last message preview
       queryClient.invalidateQueries({
-        queryKey: ["/api/conversations-with-details", currentUserId],
+        queryKey: ["/api/conversations-with-details", user?.id],
       });
     }
-  }, [lastMessage, conversationId, currentUserId, refetch]);
+  }, [lastMessage, conversationId, user?.id, refetch]);
 
   const handleSend = () => {
     if (!newMessage.trim()) return;
@@ -103,12 +104,12 @@ export function MessageThread({ conversationId, currentUserId, otherUser }: Mess
         {messages.map((msg) => (
           <div
             key={msg.id}
-            className={`flex ${msg.senderId === currentUserId ? "justify-end" : "justify-start"}`}
+            className={`flex ${msg.senderId === user?.id ? "justify-end" : "justify-start"}`}
             data-testid={`message-${msg.id}`}
           >
             <div
               className={`max-w-xs md:max-w-md px-4 py-2 rounded-lg ${
-                msg.senderId === currentUserId
+                msg.senderId === user?.id
                   ? "bg-primary text-primary-foreground"
                   : "bg-muted"
               }`}

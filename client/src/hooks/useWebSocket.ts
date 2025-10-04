@@ -1,17 +1,19 @@
 import { useEffect, useRef, useState } from "react";
+import { useAuth } from "./useAuth";
 
 interface WebSocketMessage {
   type: string;
   [key: string]: any;
 }
 
-export function useWebSocket(userId: string | null) {
+export function useWebSocket() {
+  const { user } = useAuth();
   const [isConnected, setIsConnected] = useState(false);
   const [lastMessage, setLastMessage] = useState<WebSocketMessage | null>(null);
   const ws = useRef<WebSocket | null>(null);
 
   useEffect(() => {
-    if (!userId) return;
+    if (!user) return;
 
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const wsUrl = `${protocol}//${window.location.host}/ws`;
@@ -20,8 +22,6 @@ export function useWebSocket(userId: string | null) {
 
     ws.current.onopen = () => {
       setIsConnected(true);
-      // Authenticate with user ID
-      ws.current?.send(JSON.stringify({ type: "auth", userId }));
     };
 
     ws.current.onmessage = (event) => {
@@ -40,7 +40,7 @@ export function useWebSocket(userId: string | null) {
     return () => {
       ws.current?.close();
     };
-  }, [userId]);
+  }, [user]);
 
   const sendMessage = (message: any) => {
     if (ws.current?.readyState === WebSocket.OPEN) {
