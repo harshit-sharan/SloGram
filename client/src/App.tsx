@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -5,6 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { Navigation } from "@/components/Navigation";
+import { CreatePostModal } from "@/components/CreatePostModal";
 import Feed from "@/pages/Feed";
 import Profile from "@/pages/Profile";
 import Messages from "@/pages/Messages";
@@ -22,6 +24,19 @@ function Router() {
 }
 
 function App() {
+  const [createPostOpen, setCreatePostOpen] = useState(false);
+
+  useEffect(() => {
+    const handleCreatePost = () => {
+      setCreatePostOpen(true);
+    };
+
+    window.addEventListener('open-create-post', handleCreatePost);
+    return () => {
+      window.removeEventListener('open-create-post', handleCreatePost);
+    };
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
@@ -30,6 +45,7 @@ function App() {
             <Navigation />
             <Router />
           </div>
+          <CreatePostModal open={createPostOpen} onOpenChange={setCreatePostOpen} />
           <Toaster />
         </ThemeProvider>
       </TooltipProvider>

@@ -1,6 +1,4 @@
-import { useState, useEffect } from "react";
 import { Post, type PostData } from "@/components/Post";
-import { CreatePostModal } from "@/components/CreatePostModal";
 import { PlusSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
@@ -38,22 +36,9 @@ function formatTimestamp(dateString: string): string {
 }
 
 export default function Feed() {
-  const [createPostOpen, setCreatePostOpen] = useState(false);
-
   const { data: posts = [], isLoading } = useQuery<PostWithAuthor[]>({
     queryKey: ["/api/posts-with-authors"],
   });
-
-  useEffect(() => {
-    const handleCreatePost = () => {
-      setCreatePostOpen(true);
-    };
-
-    window.addEventListener('open-create-post', handleCreatePost);
-    return () => {
-      window.removeEventListener('open-create-post', handleCreatePost);
-    };
-  }, []);
 
   if (isLoading) {
     return (
@@ -94,13 +79,11 @@ export default function Feed() {
       <Button
         size="icon"
         className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg md:hidden"
-        onClick={() => setCreatePostOpen(true)}
+        onClick={() => window.dispatchEvent(new Event('open-create-post'))}
         data-testid="button-create-mobile"
       >
         <PlusSquare className="h-6 w-6" />
       </Button>
-
-      <CreatePostModal open={createPostOpen} onOpenChange={setCreatePostOpen} />
     </div>
   );
 }
