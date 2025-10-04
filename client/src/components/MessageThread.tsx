@@ -36,18 +36,21 @@ export function MessageThread({ conversationId, currentUserId, otherUser }: Mess
     queryKey: ["/api/conversations", conversationId, "messages"],
   });
 
-  // Initialize with historical messages
+  // Initialize with historical messages only once when conversation changes
   useEffect(() => {
     setMessages(historicalMessages);
-  }, [historicalMessages]);
+  }, [conversationId]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
+  // Scroll when messages change, but only if there are messages
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+    if (messages.length > 0) {
+      scrollToBottom();
+    }
+  }, [messages.length]);
 
   useEffect(() => {
     if (lastMessage?.type === "message") {

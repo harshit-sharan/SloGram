@@ -12,6 +12,34 @@ interface MulterRequest extends Request {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Posts API with author details and counts
+  app.get("/api/posts-with-authors", async (req, res) => {
+    try {
+      const posts = await storage.getPosts();
+      
+      const postsWithAuthors = await Promise.all(
+        posts.map(async (post) => {
+          const user = await storage.getUser(post.userId);
+          const likes = await storage.getLikesByPostId(post.id);
+          const comments = await storage.getCommentsByPostId(post.id);
+          
+          return {
+            ...post,
+            user,
+            _count: {
+              likes: likes.length,
+              comments: comments.length,
+            },
+          };
+        })
+      );
+      
+      res.json(postsWithAuthors);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch posts" });
+    }
+  });
+
   // Posts API
   app.get("/api/posts", async (req, res) => {
     try {

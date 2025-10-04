@@ -9,6 +9,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useMutation } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 export function CreatePostModal({
   open,
@@ -19,6 +22,36 @@ export function CreatePostModal({
 }) {
   const [caption, setCaption] = useState("");
   const [selectedMedia, setSelectedMedia] = useState<{ url: string; type: "image" | "video" } | null>(null);
+  const { toast } = useToast();
+
+  const createPostMutation = useMutation({
+    mutationFn: async (postData: { userId: string; type: "image" | "video"; mediaUrl: string; caption: string }) => {
+      const response = await fetch("/api/posts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(postData),
+      });
+      if (!response.ok) throw new Error("Failed to create post");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/posts-with-authors"] });
+      toast({
+        title: "Post shared!",
+        description: "Your slow living moment has been shared.",
+      });
+      setCaption("");
+      setSelectedMedia(null);
+      onOpenChange(false);
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to create post. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
 
   const handleImageSelect = () => {
     console.log("Image upload clicked");
@@ -37,10 +70,16 @@ export function CreatePostModal({
   };
 
   const handlePost = () => {
-    console.log("Post created:", { caption, media: selectedMedia });
-    setCaption("");
-    setSelectedMedia(null);
-    onOpenChange(false);
+    if (!selectedMedia) return;
+    
+    const currentUserId = "ca1a588a-2f07-4b75-ad8a-2ac21444840e";
+    
+    createPostMutation.mutate({
+      userId: currentUserId,
+      type: selectedMedia.type,
+      mediaUrl: selectedMedia.url,
+      caption: caption.trim(),
+    });
   };
 
   return (
@@ -123,10 +162,10 @@ export function CreatePostModal({
             </Button>
             <Button
               onClick={handlePost}
-              disabled={!caption.trim() || !selectedMedia}
+              disabled={!caption.trim() || !selectedMedia || createPostMutation.isPending}
               data-testid="button-share"
             >
-              Share
+              {createPostMutation.isPending ? "Sharing..." : "Share"}
             </Button>
           </div>
         </div>

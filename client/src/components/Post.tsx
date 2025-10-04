@@ -10,7 +10,8 @@ export interface PostData {
     username: string;
     avatar?: string;
   };
-  image: string;
+  image?: string;
+  video?: string;
   caption: string;
   likes: number;
   comments: number;
@@ -54,12 +55,21 @@ export function Post({ post }: { post: PostData }) {
       </div>
 
       <div className="relative w-full bg-muted">
-        <img
-          src={post.image}
-          alt="Post content"
-          className="w-full object-cover"
-          data-testid={`img-post-${post.id}`}
-        />
+        {post.video ? (
+          <video
+            src={post.video}
+            controls
+            className="w-full object-cover"
+            data-testid={`video-post-${post.id}`}
+          />
+        ) : (
+          <img
+            src={post.image}
+            alt="Post content"
+            className="w-full object-cover"
+            data-testid={`img-post-${post.id}`}
+          />
+        )}
       </div>
 
       <div className="px-4">
