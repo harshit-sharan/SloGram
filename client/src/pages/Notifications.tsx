@@ -1,0 +1,162 @@
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Heart, MessageCircle } from "lucide-react";
+import { Link } from "wouter";
+import { formatDistanceToNow } from "date-fns";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+
+interface NotificationData {
+  id: string;
+  userId: string;
+  type: "like" | "comment";
+  actorId: string;
+  postId: string;
+  read: boolean;
+  createdAt: string;
+  actor: {
+    id: string;
+    username: string;
+    displayName: string | null;
+    avatar: string | null;
+  };
+  post: {
+    id: string;
+    userId: string;
+    type: "image" | "video";
+    mediaUrl: string;
+    caption: string | null;
+    createdAt: string;
+  };
+}
+
+export default function Notifications() {
+  const currentUserId = "ca1a588a-2f07-4b75-ad8a-2ac21444840e";
+
+  const { data: notifications = [], isLoading } = useQuery<NotificationData[]>({
+    queryKey: ["/api/notifications", currentUserId],
+  });
+
+  const markAsReadMutation = useMutation({
+    mutationFn: async (notificationId: string) => {
+      return apiRequest("POST", `/api/notifications/${notificationId}/read`, {});
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["/api/notifications", currentUserId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/notifications", currentUserId, "unread-count"],
+      });
+    },
+  });
+
+  const markAllAsReadMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest("POST", `/api/notifications/${currentUserId}/read-all`, {});
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["/api/notifications", currentUserId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/notifications", currentUserId, "unread-count"],
+      });
+    },
+  });
+
+  const handleNotificationClick = (notificationId: string, postId: string) => {
+    if (!notifications.find(n => n.id === notificationId)?.read) {
+      markAsReadMutation.mutate(notificationId);
+    }
+  };
+
+  const unreadCount = notifications.filter(n => !n.read).length;
+
+  return (
+    <div className="max-w-2xl mx-auto">
+      <div className="sticky top-16 z-40 bg-background border-b">
+        <div className="px-4 py-4 flex items-center justify-between">
+          <h1 className="font-serif text-2xl text-foreground">Notifications</h1>
+          {unreadCount > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => markAllAsReadMutation.mutate()}
+              data-testid="button-mark-all-read"
+            >
+              Mark all as read
+            </Button>
+          )}
+        </div>
+      </div>
+
+      <div className="divide-y">
+        {isLoading ? (
+          <div className="p-8 text-center text-muted-foreground">
+            Loading notifications...
+          </div>
+        ) : notifications.length === 0 ? (
+          <div className="p-8 text-center text-muted-foreground">
+            No notifications yet
+          </div>
+        ) : (
+          notifications.map((notification) => (
+            <Link
+              key={notification.id}
+              href={`/post/${notification.postId}`}
+              onClick={() => handleNotificationClick(notification.id, notification.postId)}
+            >
+              <div
+                className={`px-4 py-4 flex items-start gap-3 hover-elevate cursor-pointer ${
+                  !notification.read ? "bg-accent/20" : ""
+                }`}
+                data-testid={`notification-${notification.id}`}
+              >
+                <Avatar className="h-10 w-10">
+                  <AvatarImage src={notification.actor.avatar || undefined} />
+                  <AvatarFallback>
+                    {(notification.actor.displayName || notification.actor.username).charAt(0)}
+                  </AvatarFallback>
+                </Avatar>
+
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm">
+                    <span className="font-semibold">
+                      {notification.actor.displayName || notification.actor.username}
+                    </span>
+                    {notification.type === "like" ? " liked your post" : " commented on your post"}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  {notification.type === "like" ? (
+                    <Heart className="h-5 w-5 fill-current text-destructive" />
+                  ) : (
+                    <MessageCircle className="h-5 w-5 text-primary" />
+                  )}
+                  {notification.post.type === "image" ? (
+                    <img
+                      src={notification.post.mediaUrl}
+                      alt="Post"
+                      className="h-12 w-12 object-cover rounded"
+                    />
+                  ) : (
+                    <video
+                      src={notification.post.mediaUrl}
+                      className="h-12 w-12 object-cover rounded"
+                      muted
+                    />
+                  )}
+                </div>
+              </div>
+            </Link>
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
