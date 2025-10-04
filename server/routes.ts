@@ -134,6 +134,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/posts/:postId/like", async (req, res) => {
     try {
       const liked = await storage.toggleLike(req.body.userId, req.params.postId);
+      
+      // Create notification if liked (not if unliked)
+      if (liked) {
+        const posts = await storage.getPosts();
+        const post = posts.find(p => p.id === req.params.postId);
+        
+        // Only create notification if it's not the post owner liking their own post
+        if (post && post.userId !== req.body.userId) {
+          await storage.createNotification({
+            userId: post.userId,
+            type: "like",
+            actorId: req.body.userId,
+            postId: req.params.postId,
+          });
+        }
+      }
+      
       res.json({ liked });
     } catch (error) {
       res.status(500).json({ error: "Failed to toggle like" });
@@ -201,6 +218,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         postId: req.params.postId,
         text: req.body.text,
       });
+      
+      // Create notification for comment
+      const posts = await storage.getPosts();
+      const post = posts.find(p => p.id === req.params.postId);
+      
+      // Only create notification if it's not the post owner commenting on their own post
+      if (post && post.userId !== req.body.userId) {
+        await storage.createNotification({
+          userId: post.userId,
+          type: "comment",
+          actorId: req.body.userId,
+          postId: req.params.postId,
+        });
+      }
+      
       res.json(comment);
     } catch (error) {
       res.status(400).json({ error: "Failed to create comment" });
@@ -213,6 +245,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(comments);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch comments" });
+    }
+  });
+
+  // Notifications API
+  app.get("/api/notifications/:userId", async (req, res) => {
+    try {
+      const notifications = await storage.getNotificationsByUserId(req.params.userId);
+      res.json(notifications);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch notifications" });
+    }
+  });
+
+  app.get("/api/notifications/:userId/unread-count", async (req, res) => {
+    try {
+      const count = await storage.getUnreadNotificationCount(req.params.userId);
+      res.json({ count });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch unread count" });
+    }
+  });
+
+  app.post("/api/notifications/:notificationId/read", async (req, res) => {
+    try {
+      await storage.markNotificationAsRead(req.params.notificationId);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to mark notification as read" });
+    }
+  });
+
+  app.post("/api/notifications/:userId/read-all", async (req, res) => {
+    try {
+      await storage.markAllNotificationsAsRead(req.params.userId);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to mark all notifications as read" });
     }
   });
 
