@@ -137,8 +137,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Create notification if liked (not if unliked)
       if (liked) {
-        const posts = await storage.getPosts();
-        const post = posts.find(p => p.id === req.params.postId);
+        const post = await storage.getPost(req.params.postId);
         
         // Only create notification if it's not the post owner liking their own post
         if (post && post.userId !== req.body.userId) {
@@ -220,8 +219,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       // Create notification for comment
-      const posts = await storage.getPosts();
-      const post = posts.find(p => p.id === req.params.postId);
+      const post = await storage.getPost(req.params.postId);
       
       // Only create notification if it's not the post owner commenting on their own post
       if (post && post.userId !== req.body.userId) {

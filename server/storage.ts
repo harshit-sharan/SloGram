@@ -13,6 +13,7 @@ export interface IStorage {
   // Posts
   createPost(post: InsertPost): Promise<Post>;
   getPosts(): Promise<Post[]>;
+  getPost(postId: string): Promise<Post | undefined>;
   getPostsByUserId(userId: string): Promise<Post[]>;
   
   // Messages
@@ -81,6 +82,11 @@ export class DbStorage implements IStorage {
 
   async getPosts(): Promise<Post[]> {
     return db.select().from(posts).orderBy(desc(posts.createdAt));
+  }
+
+  async getPost(postId: string): Promise<Post | undefined> {
+    const [post] = await db.select().from(posts).where(eq(posts.id, postId));
+    return post;
   }
 
   async getPostsByUserId(userId: string): Promise<Post[]> {

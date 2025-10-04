@@ -40,14 +40,14 @@ Preferred communication style: Simple, everyday language.
 - Session-based architecture (connect-pg-simple for session storage)
 
 **API Structure:**
-- RESTful endpoints for posts, users, likes, and comments
+- RESTful endpoints for posts, users, likes, comments, saves, and notifications
 - File upload handling via Multer (stored in `/uploads` directory)
 - WebSocket connections for live messaging between users
 
 **Data Layer:**
 - Drizzle ORM for type-safe database operations
 - Schema-first approach with Zod validation
-- Database models: users, posts, likes, comments, conversations, messages
+- Database models: users, posts, likes, comments, saves, notifications, conversations, messages
 
 ### Database Design
 
@@ -61,6 +61,8 @@ Preferred communication style: Simple, everyday language.
 - `posts`: Content with media URLs, captions, timestamps, and user references
 - `likes`: Many-to-many relationship between users and posts
 - `comments`: Threaded discussion on posts with user attribution
+- `saves`: Posts saved by users for later viewing
+- `notifications`: User activity alerts (likes, comments) with read status
 - `conversations`: Direct messaging channels between two users
 - `messages`: Message content with read status and timestamps
 - Cascading deletes for data integrity (ON DELETE CASCADE)
