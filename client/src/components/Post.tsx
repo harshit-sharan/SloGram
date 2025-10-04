@@ -61,23 +61,25 @@ export function Post({ post }: { post: PostData }) {
       </div>
 
       {(post.video || post.image) && (
-        <div className="relative w-full bg-muted">
-          {post.video ? (
-            <video
-              src={post.video}
-              controls
-              className="w-full object-cover"
-              data-testid={`video-post-${post.id}`}
-            />
-          ) : post.image ? (
-            <img
-              src={post.image}
-              alt="Post content"
-              className="w-full object-cover"
-              data-testid={`img-post-${post.id}`}
-            />
-          ) : null}
-        </div>
+        <Link href={`/post/${post.id}`} data-testid={`link-post-media-${post.id}`}>
+          <div className="relative w-full bg-muted cursor-pointer">
+            {post.video ? (
+              <video
+                src={post.video}
+                controls
+                className="w-full object-cover"
+                data-testid={`video-post-${post.id}`}
+              />
+            ) : post.image ? (
+              <img
+                src={post.image}
+                alt="Post content"
+                className="w-full object-cover"
+                data-testid={`img-post-${post.id}`}
+              />
+            ) : null}
+          </div>
+        </Link>
       )}
 
       <div className="px-4">

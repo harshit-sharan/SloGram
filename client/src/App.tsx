@@ -10,12 +10,14 @@ import { CreatePostModal } from "@/components/CreatePostModal";
 import Feed from "@/pages/Feed";
 import Profile from "@/pages/Profile";
 import Messages from "@/pages/Messages";
+import PostDetail from "@/pages/PostDetail";
 import NotFound from "@/pages/not-found";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Feed} />
+      <Route path="/post/:id" component={PostDetail} />
       <Route path="/profile/:userId" component={Profile} />
       <Route path="/messages" component={Messages} />
       <Route component={NotFound} />
