@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Link } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 interface CommentWithUser {
   id: string;
@@ -43,6 +44,7 @@ export function Post({ post }: { post: PostData }) {
   const [showFullCaption, setShowFullCaption] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState("");
+  const { toast } = useToast();
 
   // Fetch initial like status
   const { data: likeData } = useQuery<{ liked: boolean }>({
@@ -139,6 +141,23 @@ export function Post({ post }: { post: PostData }) {
     }
   };
 
+  const handleShare = async () => {
+    const postUrl = `${window.location.origin}/post/${post.id}`;
+    try {
+      await navigator.clipboard.writeText(postUrl);
+      toast({
+        title: "Link copied!",
+        description: "Post link has been copied to your clipboard",
+      });
+    } catch (error) {
+      toast({
+        title: "Failed to copy",
+        description: "Could not copy link to clipboard",
+        variant: "destructive",
+      });
+    }
+  };
+
   const captionPreview = post.caption.length > 120 
     ? post.caption.substring(0, 120) + "..."
     : post.caption;
@@ -208,7 +227,7 @@ export function Post({ post }: { post: PostData }) {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => console.log(`Share post ${post.id}`)}
+              onClick={handleShare}
               data-testid={`button-share-${post.id}`}
             >
               <Share2 />

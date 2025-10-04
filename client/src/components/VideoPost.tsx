@@ -2,6 +2,7 @@ import { useState, useRef } from "react";
 import { Heart, MessageCircle, Share2, Bookmark, Volume2, VolumeX } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 
 export interface VideoPostData {
   id: string;
@@ -23,6 +24,7 @@ export function VideoPost({ post }: { post: VideoPostData }) {
   const [muted, setMuted] = useState(true);
   const [showFullCaption, setShowFullCaption] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const { toast } = useToast();
 
   const handleLike = () => {
     setLiked(!liked);
@@ -38,6 +40,23 @@ export function VideoPost({ post }: { post: VideoPostData }) {
     if (videoRef.current) {
       videoRef.current.muted = !muted;
       setMuted(!muted);
+    }
+  };
+
+  const handleShare = async () => {
+    const postUrl = `${window.location.origin}/post/${post.id}`;
+    try {
+      await navigator.clipboard.writeText(postUrl);
+      toast({
+        title: "Link copied!",
+        description: "Post link has been copied to your clipboard",
+      });
+    } catch (error) {
+      toast({
+        title: "Failed to copy",
+        description: "Could not copy link to clipboard",
+        variant: "destructive",
+      });
     }
   };
 
@@ -106,7 +125,7 @@ export function VideoPost({ post }: { post: VideoPostData }) {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => console.log(`Share post ${post.id}`)}
+              onClick={handleShare}
               data-testid={`button-share-${post.id}`}
             >
               <Share2 />
