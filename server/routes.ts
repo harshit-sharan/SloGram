@@ -24,14 +24,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const postsWithAuthors = await Promise.all(
         otherUsersPosts.map(async (post) => {
           const user = await storage.getUser(post.userId);
-          const likes = await storage.getLikesByPostId(post.id);
+          const likesCount = await storage.getLikesByPostId(post.id);
           const comments = await storage.getCommentsByPostId(post.id);
           
           return {
             ...post,
             user,
             _count: {
-              likes: likes.length,
+              likes: likesCount,
               comments: comments.length,
             },
           };
@@ -67,6 +67,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(post);
     } catch (error) {
       res.status(400).json({ error: "Invalid post data" });
+    }
+  });
+
+  app.get("/api/users/search", async (req, res) => {
+    try {
+      const query = req.query.q as string;
+      if (!query || query.trim().length === 0) {
+        return res.json([]);
+      }
+      const users = await storage.searchUsers(query.trim());
+      res.json(users);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to search users" });
     }
   });
 

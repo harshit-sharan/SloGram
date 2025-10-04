@@ -1,12 +1,13 @@
 import { type User, type InsertUser, type Post, type InsertPost, type Message, type InsertMessage, type Conversation, type Comment } from "@shared/schema";
 import { db } from "./db";
 import { users, posts, messages, conversations, comments, likes } from "@shared/schema";
-import { eq, and, or, desc } from "drizzle-orm";
+import { eq, and, or, desc, ilike } from "drizzle-orm";
 
 export interface IStorage {
   // Users
   getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
+  searchUsers(query: string): Promise<User[]>;
   createUser(user: InsertUser): Promise<User>;
   
   // Posts
@@ -41,6 +42,16 @@ export class DbStorage implements IStorage {
   async getUserByUsername(username: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.username, username));
     return user;
+  }
+
+  async searchUsers(query: string): Promise<User[]> {
+    const searchPattern = `%${query}%`;
+    return db.select().from(users).where(
+      or(
+        ilike(users.username, searchPattern),
+        ilike(users.displayName, searchPattern)
+      )
+    ).limit(10);
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
