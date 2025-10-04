@@ -59,6 +59,16 @@ export const messages = pgTable("messages", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+export const notifications = pgTable("notifications", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  type: text("type").notNull().$type<"like" | "comment">(),
+  actorId: varchar("actor_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  postId: varchar("post_id").notNull().references(() => posts.id, { onDelete: "cascade" }),
+  read: boolean("read").notNull().default(false),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
@@ -90,3 +100,4 @@ export type Conversation = typeof conversations.$inferSelect;
 export type Comment = typeof comments.$inferSelect;
 export type Like = typeof likes.$inferSelect;
 export type Save = typeof saves.$inferSelect;
+export type Notification = typeof notifications.$inferSelect;
