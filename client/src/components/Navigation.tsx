@@ -89,7 +89,7 @@ export function Navigation() {
             asChild
             data-testid="button-profile"
           >
-            <Link href="/profile">
+            <Link href="/profile/ca1a588a-2f07-4b75-ad8a-2ac21444840e">
               <Avatar className="h-8 w-8">
                 <AvatarImage src="" />
                 <AvatarFallback>ME</AvatarFallback>
