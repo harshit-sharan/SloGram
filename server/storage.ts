@@ -134,14 +134,19 @@ export class DbStorage implements IStorage {
         postId: comments.postId,
         text: comments.text,
         createdAt: comments.createdAt,
-        user: users,
+        user: {
+          id: users.id,
+          username: users.username,
+          displayName: users.displayName,
+          avatar: users.avatar,
+        },
       })
       .from(comments)
       .innerJoin(users, eq(comments.userId, users.id))
       .where(eq(comments.postId, postId))
       .orderBy(comments.createdAt);
     
-    return result;
+    return result as Array<Comment & { user: User }>;
   }
 
   async toggleLike(userId: string, postId: string): Promise<boolean> {
