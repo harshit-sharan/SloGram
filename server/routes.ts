@@ -15,10 +15,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Posts API with author details and counts
   app.get("/api/posts-with-authors", async (req, res) => {
     try {
+      const currentUserId = "ca1a588a-2f07-4b75-ad8a-2ac21444840e";
       const posts = await storage.getPosts();
       
+      // Filter out current user's posts
+      const otherUsersPosts = posts.filter(post => post.userId !== currentUserId);
+      
       const postsWithAuthors = await Promise.all(
-        posts.map(async (post) => {
+        otherUsersPosts.map(async (post) => {
           const user = await storage.getUser(post.userId);
           const likes = await storage.getLikesByPostId(post.id);
           const comments = await storage.getCommentsByPostId(post.id);
