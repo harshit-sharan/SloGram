@@ -26,10 +26,15 @@ export function CreatePostModal({
 
   const createPostMutation = useMutation({
     mutationFn: async (postData: { userId: string; type: "image" | "video"; mediaUrl: string; caption: string }) => {
+      const formData = new FormData();
+      formData.append("userId", postData.userId);
+      formData.append("type", postData.type);
+      formData.append("mediaUrl", postData.mediaUrl);
+      formData.append("caption", postData.caption);
+      
       const response = await fetch("/api/posts", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(postData),
+        body: formData,
       });
       if (!response.ok) throw new Error("Failed to create post");
       return response.json();

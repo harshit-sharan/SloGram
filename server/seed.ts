@@ -9,7 +9,7 @@ export async function seedDatabase() {
     username: "emma_mindful",
     password: "password123",
     displayName: "Emma Chen",
-    bio: "Living slowly, loving deeply 🌿\nFinding beauty in everyday moments\nMindful living & slow living advocate",
+    bio: "Living slowly, loving deeply\nFinding beauty in everyday moments\nMindful living & slow living advocate",
     avatar: "/assets/generated_images/Peaceful_woman_profile_photo_8348405c.png",
   }).returning();
 
@@ -60,25 +60,25 @@ export async function seedDatabase() {
       userId: user1.id,
       type: "image",
       mediaUrl: "/assets/generated_images/Morning_coffee_slow_living_2c7c7488.png",
-      caption: "Morning rituals set the tone for the whole day. Taking time to brew the perfect cup and watch the sunrise reminds me that not everything needs to be rushed. ☕✨ #slowmorning #mindfulmoments",
+      caption: "Morning rituals set the tone for the whole day. Taking time to brew the perfect cup and watch the sunrise reminds me that not everything needs to be rushed.",
     },
     {
       userId: user2.id,
       type: "image",
       mediaUrl: "/assets/generated_images/Cozy_reading_corner_moment_85d546e5.png",
-      caption: "Found my perfect reading corner. Sometimes the best moments are the quiet ones with a good book and natural light. 📚🌿",
+      caption: "Found my perfect reading corner. Sometimes the best moments are the quiet ones with a good book and natural light.",
     },
     {
       userId: user1.id,
       type: "image",
       mediaUrl: "/assets/generated_images/Bread_making_slow_living_949d5b0e.png",
-      caption: "There's something deeply satisfying about making bread from scratch. The kneading, the waiting, the aroma filling the kitchen - it's meditation in motion. 🍞",
+      caption: "There's something deeply satisfying about making bread from scratch. The kneading, the waiting, the aroma filling the kitchen - it's meditation in motion.",
     },
     {
       userId: user2.id,
       type: "image",
       mediaUrl: "/assets/generated_images/Sunset_nature_walk_c18a36cc.png",
-      caption: "Golden hour walks remind me to appreciate the simple beauty around us. Nature has its own perfect timing. 🌅",
+      caption: "Golden hour walks remind me to appreciate the simple beauty around us. Nature has its own perfect timing.",
     },
   ]);
 

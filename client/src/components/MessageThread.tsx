@@ -36,10 +36,11 @@ export function MessageThread({ conversationId, currentUserId, otherUser }: Mess
     queryKey: ["/api/conversations", conversationId, "messages"],
   });
 
-  // Initialize with historical messages only once when conversation changes
+  // Initialize with historical messages when conversation changes or data updates
+  // Using JSON stringify to detect any changes in message content, not just IDs
   useEffect(() => {
     setMessages(historicalMessages);
-  }, [conversationId]);
+  }, [conversationId, JSON.stringify(historicalMessages)]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });

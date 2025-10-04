@@ -54,23 +54,25 @@ export function Post({ post }: { post: PostData }) {
         </div>
       </div>
 
-      <div className="relative w-full bg-muted">
-        {post.video ? (
-          <video
-            src={post.video}
-            controls
-            className="w-full object-cover"
-            data-testid={`video-post-${post.id}`}
-          />
-        ) : (
-          <img
-            src={post.image}
-            alt="Post content"
-            className="w-full object-cover"
-            data-testid={`img-post-${post.id}`}
-          />
-        )}
-      </div>
+      {(post.video || post.image) && (
+        <div className="relative w-full bg-muted">
+          {post.video ? (
+            <video
+              src={post.video}
+              controls
+              className="w-full object-cover"
+              data-testid={`video-post-${post.id}`}
+            />
+          ) : post.image ? (
+            <img
+              src={post.image}
+              alt="Post content"
+              className="w-full object-cover"
+              data-testid={`img-post-${post.id}`}
+            />
+          ) : null}
+        </div>
+      )}
 
       <div className="px-4">
         <div className="flex items-center justify-between py-3">
