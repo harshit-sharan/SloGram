@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { useQuery } from "@tanstack/react-query";
+import { queryClient } from "@/lib/queryClient";
 
 interface Message {
   id: string;
@@ -26,38 +27,40 @@ interface MessageThreadProps {
 }
 
 export function MessageThread({ conversationId, currentUserId, otherUser }: MessageThreadProps) {
-  const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { isConnected, lastMessage, sendMessage } = useWebSocket(currentUserId);
 
-  // Fetch historical messages
-  const { data: historicalMessages = [] } = useQuery<Message[]>({
+  // Fetch messages from database - this is the single source of truth
+  const { data: messages = [], refetch } = useQuery<Message[]>({
     queryKey: ["/api/conversations", conversationId, "messages"],
+    staleTime: 0, // Always fetch fresh data
+    refetchOnMount: true, // Ensure fetch on mount
   });
-
-  // Initialize with historical messages when conversation changes or data updates
-  // Using JSON stringify to detect any changes in message content, not just IDs
-  useEffect(() => {
-    setMessages(historicalMessages);
-  }, [conversationId, JSON.stringify(historicalMessages)]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  // Scroll when messages change, but only if there are messages
+  // Scroll when messages change
   useEffect(() => {
     if (messages.length > 0) {
       scrollToBottom();
     }
   }, [messages.length]);
 
+  // Refetch messages when receiving WebSocket messages for this conversation
   useEffect(() => {
-    if (lastMessage?.type === "message") {
-      setMessages((prev) => [...prev, lastMessage.message]);
+    if (lastMessage?.type === "message" && lastMessage.message?.conversationId === conversationId) {
+      // Refetch this conversation's messages
+      refetch();
+      
+      // Update conversations list to show last message preview
+      queryClient.invalidateQueries({
+        queryKey: ["/api/conversations-with-details", currentUserId],
+      });
     }
-  }, [lastMessage]);
+  }, [lastMessage, conversationId, currentUserId, refetch]);
 
   const handleSend = () => {
     if (!newMessage.trim()) return;
