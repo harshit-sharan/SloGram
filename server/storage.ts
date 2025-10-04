@@ -1,6 +1,6 @@
 import { type User, type InsertUser, type Post, type InsertPost, type Message, type InsertMessage, type Conversation, type Comment } from "@shared/schema";
 import { db } from "./db";
-import { users, posts, messages, conversations, comments, likes } from "@shared/schema";
+import { users, posts, messages, conversations, comments, likes, saves } from "@shared/schema";
 import { eq, and, or, desc, ilike } from "drizzle-orm";
 
 export interface IStorage {
@@ -32,6 +32,10 @@ export interface IStorage {
   toggleLike(userId: string, postId: string): Promise<boolean>;
   getLikesByPostId(postId: string): Promise<number>;
   isPostLikedByUser(userId: string, postId: string): Promise<boolean>;
+  
+  // Saves
+  toggleSave(userId: string, postId: string): Promise<boolean>;
+  isPostSavedByUser(userId: string, postId: string): Promise<boolean>;
 }
 
 export class DbStorage implements IStorage {
@@ -171,6 +175,27 @@ export class DbStorage implements IStorage {
   async isPostLikedByUser(userId: string, postId: string): Promise<boolean> {
     const [existing] = await db.select().from(likes).where(
       and(eq(likes.userId, userId), eq(likes.postId, postId))
+    );
+    return !!existing;
+  }
+
+  async toggleSave(userId: string, postId: string): Promise<boolean> {
+    const [existing] = await db.select().from(saves).where(
+      and(eq(saves.userId, userId), eq(saves.postId, postId))
+    );
+
+    if (existing) {
+      await db.delete(saves).where(eq(saves.id, existing.id));
+      return false;
+    } else {
+      await db.insert(saves).values({ userId, postId });
+      return true;
+    }
+  }
+
+  async isPostSavedByUser(userId: string, postId: string): Promise<boolean> {
+    const [existing] = await db.select().from(saves).where(
+      and(eq(saves.userId, userId), eq(saves.postId, postId))
     );
     return !!existing;
   }

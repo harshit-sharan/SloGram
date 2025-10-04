@@ -166,6 +166,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Saves API
+  app.post("/api/posts/:postId/save", async (req, res) => {
+    try {
+      const saved = await storage.toggleSave(req.body.userId, req.params.postId);
+      res.json({ saved });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to toggle save" });
+    }
+  });
+
+  app.get("/api/posts/:postId/saved", async (req, res) => {
+    try {
+      const userId = req.query.userId as string;
+      if (!userId) {
+        return res.status(400).json({ error: "userId is required" });
+      }
+      const saved = await storage.isPostSavedByUser(userId, req.params.postId);
+      // Disable HTTP caching for save status
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+      res.json({ saved });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to check save status" });
+    }
+  });
+
   // Comments API
   app.post("/api/posts/:postId/comments", async (req, res) => {
     try {
