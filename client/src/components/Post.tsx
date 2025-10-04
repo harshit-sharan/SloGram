@@ -67,6 +67,25 @@ export function Post({ post }: { post: PostData }) {
     }
   }, [likeData]);
 
+  // Fetch initial save status
+  const { data: saveData } = useQuery<{ saved: boolean }>({
+    queryKey: ["/api/posts", post.id, "saved", currentUserId],
+    queryFn: async () => {
+      const response = await fetch(`/api/posts/${post.id}/saved?userId=${currentUserId}`);
+      if (!response.ok) throw new Error("Failed to fetch save status");
+      return response.json();
+    },
+    staleTime: 0, // Always fetch fresh save status
+    refetchOnMount: true,
+  });
+
+  // Update local state when save query data is available
+  useEffect(() => {
+    if (saveData !== undefined) {
+      setSaved(saveData.saved);
+    }
+  }, [saveData]);
+
   // Fetch comments
   const { data: comments = [] } = useQuery<CommentWithUser[]>({
     queryKey: ["/api/posts", post.id, "comments"],
@@ -110,9 +129,29 @@ export function Post({ post }: { post: PostData }) {
     likeMutation.mutate();
   };
 
+  // Mutation to toggle save
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest("POST", `/api/posts/${post.id}/save`, { userId: currentUserId });
+    },
+    onMutate: async () => {
+      // Optimistically update the UI
+      setSaved(!saved);
+    },
+    onSuccess: () => {
+      // Invalidate and refetch save status
+      queryClient.invalidateQueries({
+        queryKey: ["/api/posts", post.id, "saved", currentUserId],
+      });
+    },
+    onError: () => {
+      // Revert on error
+      setSaved(saved);
+    },
+  });
+
   const handleSave = () => {
-    setSaved(!saved);
-    console.log(`Post ${post.id} ${saved ? "unsaved" : "saved"}`);
+    saveMutation.mutate();
   };
 
   // Mutation to submit comment
