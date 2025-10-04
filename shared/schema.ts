@@ -28,6 +28,13 @@ export const likes = pgTable("likes", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+export const saves = pgTable("saves", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  postId: varchar("post_id").notNull().references(() => posts.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
 export const comments = pgTable("comments", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
@@ -82,3 +89,4 @@ export type Message = typeof messages.$inferSelect;
 export type Conversation = typeof conversations.$inferSelect;
 export type Comment = typeof comments.$inferSelect;
 export type Like = typeof likes.$inferSelect;
+export type Save = typeof saves.$inferSelect;
