@@ -1,4 +1,4 @@
-import { type User, type InsertUser, type Post, type InsertPost, type Message, type InsertMessage, type Conversation, type Comment, type Notification } from "@shared/schema";
+import { type User, type InsertUser, type UpsertUser, type Post, type InsertPost, type Message, type InsertMessage, type Conversation, type Comment, type Notification } from "@shared/schema";
 import { db } from "./db";
 import { users, posts, messages, conversations, comments, likes, saves, notifications } from "@shared/schema";
 import { eq, and, or, desc, ilike } from "drizzle-orm";
@@ -9,6 +9,7 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   searchUsers(query: string): Promise<User[]>;
   createUser(user: InsertUser): Promise<User>;
+  upsertUser(user: UpsertUser): Promise<User>;
   
   // Posts
   createPost(post: InsertPost): Promise<Post>;
@@ -69,6 +70,21 @@ export class DbStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const [user] = await db.insert(users).values(insertUser).returning();
+    return user;
+  }
+
+  async upsertUser(userData: UpsertUser): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values(userData)
+      .onConflictDoUpdate({
+        target: users.id,
+        set: {
+          ...userData,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
     return user;
   }
 
