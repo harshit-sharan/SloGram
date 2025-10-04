@@ -26,7 +26,7 @@ export interface IStorage {
   
   // Comments
   createComment(comment: { userId: string; postId: string; text: string }): Promise<Comment>;
-  getCommentsByPostId(postId: string): Promise<Comment[]>;
+  getCommentsByPostId(postId: string): Promise<Array<Comment & { user: User }>>;
   
   // Likes
   toggleLike(userId: string, postId: string): Promise<boolean>;
@@ -126,8 +126,22 @@ export class DbStorage implements IStorage {
     return newComment;
   }
 
-  async getCommentsByPostId(postId: string): Promise<Comment[]> {
-    return db.select().from(comments).where(eq(comments.postId, postId)).orderBy(comments.createdAt);
+  async getCommentsByPostId(postId: string): Promise<Array<Comment & { user: User }>> {
+    const result = await db
+      .select({
+        id: comments.id,
+        userId: comments.userId,
+        postId: comments.postId,
+        text: comments.text,
+        createdAt: comments.createdAt,
+        user: users,
+      })
+      .from(comments)
+      .innerJoin(users, eq(comments.userId, users.id))
+      .where(eq(comments.postId, postId))
+      .orderBy(comments.createdAt);
+    
+    return result;
   }
 
   async toggleLike(userId: string, postId: string): Promise<boolean> {

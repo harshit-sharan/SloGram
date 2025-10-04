@@ -2,9 +2,24 @@ import { useState, useEffect } from "react";
 import { Heart, MessageCircle, Share2, Bookmark } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Link } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+
+interface CommentWithUser {
+  id: string;
+  userId: string;
+  postId: string;
+  text: string;
+  createdAt: string;
+  user: {
+    id: string;
+    username: string;
+    displayName: string | null;
+    avatar: string | null;
+  };
+}
 
 export interface PostData {
   id: string;
@@ -26,6 +41,8 @@ export function Post({ post }: { post: PostData }) {
   const currentUserId = "ca1a588a-2f07-4b75-ad8a-2ac21444840e"; // Hardcoded user ID
   const [saved, setSaved] = useState(false);
   const [showFullCaption, setShowFullCaption] = useState(false);
+  const [showComments, setShowComments] = useState(false);
+  const [commentText, setCommentText] = useState("");
 
   // Fetch initial like status
   const { data: likeData } = useQuery<{ liked: boolean }>({
@@ -47,6 +64,17 @@ export function Post({ post }: { post: PostData }) {
       setLiked(likeData.liked);
     }
   }, [likeData]);
+
+  // Fetch comments
+  const { data: comments = [] } = useQuery<CommentWithUser[]>({
+    queryKey: ["/api/posts", post.id, "comments"],
+    queryFn: async () => {
+      const response = await fetch(`/api/posts/${post.id}/comments`);
+      if (!response.ok) throw new Error("Failed to fetch comments");
+      return response.json();
+    },
+    enabled: showComments,
+  });
 
   // Mutation to toggle like
   const likeMutation = useMutation({
@@ -83,6 +111,32 @@ export function Post({ post }: { post: PostData }) {
   const handleSave = () => {
     setSaved(!saved);
     console.log(`Post ${post.id} ${saved ? "unsaved" : "saved"}`);
+  };
+
+  // Mutation to submit comment
+  const commentMutation = useMutation({
+    mutationFn: async (text: string) => {
+      return apiRequest("POST", `/api/posts/${post.id}/comments`, {
+        userId: currentUserId,
+        text,
+      });
+    },
+    onSuccess: () => {
+      setCommentText("");
+      queryClient.invalidateQueries({
+        queryKey: ["/api/posts", post.id, "comments"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/posts-with-authors"],
+      });
+    },
+  });
+
+  const handleCommentSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (commentText.trim()) {
+      commentMutation.mutate(commentText);
+    }
   };
 
   const captionPreview = post.caption.length > 120 
@@ -146,7 +200,7 @@ export function Post({ post }: { post: PostData }) {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => console.log(`Comment on post ${post.id}`)}
+              onClick={() => setShowComments(!showComments)}
               data-testid={`button-comment-${post.id}`}
             >
               <MessageCircle />
@@ -190,14 +244,57 @@ export function Post({ post }: { post: PostData }) {
           )}
         </div>
 
-        {post.comments > 0 && (
+        {post.comments > 0 && !showComments && (
           <button
             className="text-sm text-muted-foreground mt-2 hover-elevate rounded px-1"
-            onClick={() => console.log(`View comments for post ${post.id}`)}
+            onClick={() => setShowComments(true)}
             data-testid={`button-view-comments-${post.id}`}
           >
             View all {post.comments} comments
           </button>
+        )}
+
+        {showComments && (
+          <div className="mt-4 space-y-3" data-testid={`comments-section-${post.id}`}>
+            {comments.map((comment) => (
+              <div key={comment.id} className="flex gap-2" data-testid={`comment-${comment.id}`}>
+                <Avatar className="h-6 w-6 flex-shrink-0">
+                  <AvatarImage src={comment.user.avatar || undefined} />
+                  <AvatarFallback>
+                    {(comment.user.displayName || comment.user.username).charAt(0)}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 text-sm">
+                  <span className="font-serif font-semibold mr-2" data-testid={`comment-author-${comment.id}`}>
+                    {comment.user.username}
+                  </span>
+                  <span className="text-foreground" data-testid={`comment-text-${comment.id}`}>
+                    {comment.text}
+                  </span>
+                </div>
+              </div>
+            ))}
+
+            <form onSubmit={handleCommentSubmit} className="flex gap-2 mt-3">
+              <Input
+                type="text"
+                placeholder="Add a comment..."
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+                disabled={commentMutation.isPending}
+                className="flex-1 text-sm"
+                data-testid={`input-comment-${post.id}`}
+              />
+              <Button
+                type="submit"
+                size="sm"
+                disabled={!commentText.trim() || commentMutation.isPending}
+                data-testid={`button-submit-comment-${post.id}`}
+              >
+                Post
+              </Button>
+            </form>
+          </div>
         )}
       </div>
     </article>
