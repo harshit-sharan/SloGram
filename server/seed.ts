@@ -10,7 +10,7 @@ export async function seedDatabase() {
     password: "password123",
     displayName: "Emma Chen",
     bio: "Living slowly, loving deeply\nFinding beauty in everyday moments\nMindful living & slow living advocate",
-    avatar: "/assets/generated_images/Peaceful_woman_profile_photo_8348405c.png",
+    avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop",
   }).returning();
 
   const [user2] = await db.insert(users).values({
@@ -18,7 +18,7 @@ export async function seedDatabase() {
     password: "password123",
     displayName: "James River",
     bio: "Embracing the slow life\nNature lover & minimalist",
-    avatar: "/assets/generated_images/Peaceful_man_profile_photo_581f44a8.png",
+    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop",
   }).returning();
 
   const [user3] = await db.insert(users).values({
@@ -54,30 +54,30 @@ export async function seedDatabase() {
     },
   ]);
 
-  // Create some posts
+  // Create some posts with real, accessible images
   await db.insert(posts).values([
     {
       userId: user1.id,
       type: "image",
-      mediaUrl: "/assets/generated_images/Morning_coffee_slow_living_2c7c7488.png",
+      mediaUrl: "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=800&h=800&fit=crop",
       caption: "Morning rituals set the tone for the whole day. Taking time to brew the perfect cup and watch the sunrise reminds me that not everything needs to be rushed.",
     },
     {
       userId: user2.id,
       type: "image",
-      mediaUrl: "/assets/generated_images/Cozy_reading_corner_moment_85d546e5.png",
+      mediaUrl: "https://images.unsplash.com/photo-1512820790803-83ca734da794?w=800&h=800&fit=crop",
       caption: "Found my perfect reading corner. Sometimes the best moments are the quiet ones with a good book and natural light.",
     },
     {
       userId: user1.id,
       type: "image",
-      mediaUrl: "/assets/generated_images/Bread_making_slow_living_949d5b0e.png",
+      mediaUrl: "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=800&h=800&fit=crop",
       caption: "There's something deeply satisfying about making bread from scratch. The kneading, the waiting, the aroma filling the kitchen - it's meditation in motion.",
     },
     {
       userId: user2.id,
       type: "image",
-      mediaUrl: "/assets/generated_images/Sunset_nature_walk_c18a36cc.png",
+      mediaUrl: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=800&fit=crop",
       caption: "Golden hour walks remind me to appreciate the simple beauty around us. Nature has its own perfect timing.",
     },
   ]);
