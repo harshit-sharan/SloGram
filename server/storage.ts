@@ -31,6 +31,7 @@ export interface IStorage {
   // Likes
   toggleLike(userId: string, postId: string): Promise<boolean>;
   getLikesByPostId(postId: string): Promise<number>;
+  isPostLikedByUser(userId: string, postId: string): Promise<boolean>;
 }
 
 export class DbStorage implements IStorage {
@@ -146,6 +147,13 @@ export class DbStorage implements IStorage {
   async getLikesByPostId(postId: string): Promise<number> {
     const result = await db.select().from(likes).where(eq(likes.postId, postId));
     return result.length;
+  }
+
+  async isPostLikedByUser(userId: string, postId: string): Promise<boolean> {
+    const [existing] = await db.select().from(likes).where(
+      and(eq(likes.userId, userId), eq(likes.postId, postId))
+    );
+    return !!existing;
   }
 }
 

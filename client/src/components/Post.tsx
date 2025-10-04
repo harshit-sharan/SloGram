@@ -1,8 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Heart, MessageCircle, Share2, Bookmark } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 
 export interface PostData {
   id: string;
@@ -21,13 +23,52 @@ export interface PostData {
 }
 
 export function Post({ post }: { post: PostData }) {
-  const [liked, setLiked] = useState(false);
+  const currentUserId = "ca1a588a-2f07-4b75-ad8a-2ac21444840e"; // Hardcoded user ID
   const [saved, setSaved] = useState(false);
   const [showFullCaption, setShowFullCaption] = useState(false);
 
+  // Fetch initial like status
+  const { data: likeData } = useQuery<{ liked: boolean }>({
+    queryKey: ["/api/posts", post.id, "liked", currentUserId],
+    queryFn: async () => {
+      const response = await fetch(`/api/posts/${post.id}/liked?userId=${currentUserId}`);
+      if (!response.ok) throw new Error("Failed to fetch like status");
+      return response.json();
+    },
+  });
+
+  const [liked, setLiked] = useState(false);
+
+  // Update local state when query data is available
+  useEffect(() => {
+    if (likeData !== undefined) {
+      setLiked(likeData.liked);
+    }
+  }, [likeData]);
+
+  // Mutation to toggle like
+  const likeMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest("POST", `/api/posts/${post.id}/like`, { userId: currentUserId });
+    },
+    onMutate: async () => {
+      // Optimistically update the UI
+      setLiked(!liked);
+    },
+    onSuccess: () => {
+      // Invalidate and refetch like status
+      queryClient.invalidateQueries({
+        queryKey: ["/api/posts", post.id, "liked", currentUserId],
+      });
+    },
+    onError: () => {
+      // Revert on error
+      setLiked(liked);
+    },
+  });
+
   const handleLike = () => {
-    setLiked(!liked);
-    console.log(`Post ${post.id} ${liked ? "unliked" : "liked"}`);
+    likeMutation.mutate();
   };
 
   const handleSave = () => {

@@ -149,6 +149,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/posts/:postId/liked", async (req, res) => {
+    try {
+      const userId = req.query.userId as string;
+      if (!userId) {
+        return res.status(400).json({ error: "userId is required" });
+      }
+      const liked = await storage.isPostLikedByUser(userId, req.params.postId);
+      res.json({ liked });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to check like status" });
+    }
+  });
+
   // Comments API
   app.post("/api/posts/:postId/comments", async (req, res) => {
     try {
