@@ -2,6 +2,7 @@ import type { Express, Request } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
+import { setupAuth, isAuthenticated } from "./replitAuth";
 import multer from "multer";
 import { insertPostSchema, insertMessageSchema } from "@shared/schema";
 
@@ -12,10 +13,25 @@ interface MulterRequest extends Request {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Posts API with author details and counts
-  app.get("/api/posts-with-authors", async (req, res) => {
+  // Setup authentication
+  await setupAuth(app);
+
+  // Auth endpoint
+  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
-      const currentUserId = "ca1a588a-2f07-4b75-ad8a-2ac21444840e";
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      res.json(user);
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      res.status(500).json({ message: "Failed to fetch user" });
+    }
+  });
+
+  // Posts API with author details and counts
+  app.get("/api/posts-with-authors", isAuthenticated, async (req: any, res) => {
+    try {
+      const currentUserId = req.user.claims.sub;
       const posts = await storage.getPosts();
       
       // Filter out current user's posts
@@ -54,11 +70,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/posts", upload.single("media"), async (req: MulterRequest, res) => {
+  app.post("/api/posts", isAuthenticated, upload.single("media"), async (req: any, res) => {
     try {
+      const userId = req.user.claims.sub;
       const mediaUrl = req.file ? `/uploads/${req.file.filename}` : req.body.mediaUrl;
       const postData = insertPostSchema.parse({
-        userId: req.body.userId,
+        userId,
         type: req.body.type,
         mediaUrl,
         caption: req.body.caption,
@@ -131,20 +148,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Likes API
-  app.post("/api/posts/:postId/like", async (req, res) => {
+  app.post("/api/posts/:postId/like", isAuthenticated, async (req: any, res) => {
     try {
-      const liked = await storage.toggleLike(req.body.userId, req.params.postId);
+      const userId = req.user.claims.sub;
+      const liked = await storage.toggleLike(userId, req.params.postId);
       
       // Create notification if liked (not if unliked)
       if (liked) {
         const post = await storage.getPost(req.params.postId);
         
         // Only create notification if it's not the post owner liking their own post
-        if (post && post.userId !== req.body.userId) {
+        if (post && post.userId !== userId) {
           await storage.createNotification({
             userId: post.userId,
             type: "like",
-            actorId: req.body.userId,
+            actorId: userId,
             postId: req.params.postId,
           });
         }
@@ -165,12 +183,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/posts/:postId/liked", async (req, res) => {
+  app.get("/api/posts/:postId/liked", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.query.userId as string;
-      if (!userId) {
-        return res.status(400).json({ error: "userId is required" });
-      }
+      const userId = req.user.claims.sub;
       const liked = await storage.isPostLikedByUser(userId, req.params.postId);
       // Disable HTTP caching for like status
       res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
@@ -183,21 +198,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Saves API
-  app.post("/api/posts/:postId/save", async (req, res) => {
+  app.post("/api/posts/:postId/save", isAuthenticated, async (req: any, res) => {
     try {
-      const saved = await storage.toggleSave(req.body.userId, req.params.postId);
+      const userId = req.user.claims.sub;
+      const saved = await storage.toggleSave(userId, req.params.postId);
       res.json({ saved });
     } catch (error) {
       res.status(500).json({ error: "Failed to toggle save" });
     }
   });
 
-  app.get("/api/posts/:postId/saved", async (req, res) => {
+  app.get("/api/posts/:postId/saved", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.query.userId as string;
-      if (!userId) {
-        return res.status(400).json({ error: "userId is required" });
-      }
+      const userId = req.user.claims.sub;
       const saved = await storage.isPostSavedByUser(userId, req.params.postId);
       // Disable HTTP caching for save status
       res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
@@ -210,10 +223,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Comments API
-  app.post("/api/posts/:postId/comments", async (req, res) => {
+  app.post("/api/posts/:postId/comments", isAuthenticated, async (req: any, res) => {
     try {
+      const userId = req.user.claims.sub;
       const comment = await storage.createComment({
-        userId: req.body.userId,
+        userId,
         postId: req.params.postId,
         text: req.body.text,
       });
@@ -222,11 +236,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const post = await storage.getPost(req.params.postId);
       
       // Only create notification if it's not the post owner commenting on their own post
-      if (post && post.userId !== req.body.userId) {
+      if (post && post.userId !== userId) {
         await storage.createNotification({
           userId: post.userId,
           type: "comment",
-          actorId: req.body.userId,
+          actorId: userId,
           postId: req.params.postId,
         });
       }
@@ -247,18 +261,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Notifications API
-  app.get("/api/notifications/:userId", async (req, res) => {
+  app.get("/api/notifications/:userId", isAuthenticated, async (req: any, res) => {
     try {
-      const notifications = await storage.getNotificationsByUserId(req.params.userId);
+      const userId = req.user.claims.sub;
+      const notifications = await storage.getNotificationsByUserId(userId);
       res.json(notifications);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch notifications" });
     }
   });
 
-  app.get("/api/notifications/:userId/unread-count", async (req, res) => {
+  app.get("/api/notifications/:userId/unread-count", isAuthenticated, async (req: any, res) => {
     try {
-      const count = await storage.getUnreadNotificationCount(req.params.userId);
+      const userId = req.user.claims.sub;
+      const count = await storage.getUnreadNotificationCount(userId);
       res.json({ count });
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch unread count" });
@@ -274,9 +290,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/notifications/:userId/read-all", async (req, res) => {
+  app.post("/api/notifications/:userId/read-all", isAuthenticated, async (req: any, res) => {
     try {
-      await storage.markAllNotificationsAsRead(req.params.userId);
+      const userId = req.user.claims.sub;
+      await storage.markAllNotificationsAsRead(userId);
       res.json({ success: true });
     } catch (error) {
       res.status(500).json({ error: "Failed to mark all notifications as read" });
@@ -284,13 +301,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Conversations API with user details and last message
-  app.get("/api/conversations-with-details/:userId", async (req, res) => {
+  app.get("/api/conversations-with-details/:userId", isAuthenticated, async (req: any, res) => {
     try {
-      const conversations = await storage.getConversationsByUserId(req.params.userId);
+      const userId = req.user.claims.sub;
+      const conversations = await storage.getConversationsByUserId(userId);
       
       const conversationsWithDetails = await Promise.all(
         conversations.map(async (conv) => {
-          const otherUserId = conv.user1Id === req.params.userId ? conv.user2Id : conv.user1Id;
+          const otherUserId = conv.user1Id === userId ? conv.user2Id : conv.user1Id;
           const otherUser = await storage.getUser(otherUserId);
           const messages = await storage.getMessagesByConversationId(conv.id);
           const lastMessage = messages[messages.length - 1];
