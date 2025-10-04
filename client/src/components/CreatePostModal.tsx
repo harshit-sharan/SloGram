@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { X, Image as ImageIcon, Video } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -10,7 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useMutation } from "@tanstack/react-query";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
 export function CreatePostModal({
@@ -21,15 +21,17 @@ export function CreatePostModal({
   onOpenChange: (open: boolean) => void;
 }) {
   const [caption, setCaption] = useState("");
-  const [selectedMedia, setSelectedMedia] = useState<{ url: string; type: "image" | "video" } | null>(null);
+  const [selectedMedia, setSelectedMedia] = useState<{ file: File; url: string; type: "image" | "video" } | null>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const videoInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   const createPostMutation = useMutation({
-    mutationFn: async (postData: { userId: string; type: "image" | "video"; mediaUrl: string; caption: string }) => {
+    mutationFn: async (postData: { userId: string; type: "image" | "video"; file: File; caption: string }) => {
       const formData = new FormData();
       formData.append("userId", postData.userId);
       formData.append("type", postData.type);
-      formData.append("mediaUrl", postData.mediaUrl);
+      formData.append("media", postData.file);
       formData.append("caption", postData.caption);
       
       const response = await fetch("/api/posts", {
@@ -45,6 +47,9 @@ export function CreatePostModal({
         title: "Post shared!",
         description: "Your slow living moment has been shared.",
       });
+      if (selectedMedia) {
+        URL.revokeObjectURL(selectedMedia.url);
+      }
       setCaption("");
       setSelectedMedia(null);
       onOpenChange(false);
@@ -59,19 +64,46 @@ export function CreatePostModal({
   });
 
   const handleImageSelect = () => {
-    console.log("Image upload clicked");
-    setSelectedMedia({ 
-      url: "https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=800",
-      type: "image"
-    });
+    imageInputRef.current?.click();
   };
 
   const handleVideoSelect = () => {
-    console.log("Video upload clicked");
-    setSelectedMedia({ 
-      url: "https://www.w3schools.com/html/mov_bbb.mp4",
-      type: "video"
-    });
+    videoInputRef.current?.click();
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && file.type.startsWith("image/")) {
+      if (selectedMedia) {
+        URL.revokeObjectURL(selectedMedia.url);
+      }
+      const url = URL.createObjectURL(file);
+      setSelectedMedia({ file, url, type: "image" });
+    }
+    if (imageInputRef.current) {
+      imageInputRef.current.value = "";
+    }
+  };
+
+  const handleVideoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && file.type.startsWith("video/")) {
+      if (selectedMedia) {
+        URL.revokeObjectURL(selectedMedia.url);
+      }
+      const url = URL.createObjectURL(file);
+      setSelectedMedia({ file, url, type: "video" });
+    }
+    if (videoInputRef.current) {
+      videoInputRef.current.value = "";
+    }
+  };
+
+  const handleRemoveMedia = () => {
+    if (selectedMedia) {
+      URL.revokeObjectURL(selectedMedia.url);
+      setSelectedMedia(null);
+    }
   };
 
   const handlePost = () => {
@@ -82,13 +114,22 @@ export function CreatePostModal({
     createPostMutation.mutate({
       userId: currentUserId,
       type: selectedMedia.type,
-      mediaUrl: selectedMedia.url,
+      file: selectedMedia.file,
       caption: caption.trim(),
     });
   };
 
+  const handleOpenChange = (newOpen: boolean) => {
+    if (!newOpen && selectedMedia) {
+      URL.revokeObjectURL(selectedMedia.url);
+      setSelectedMedia(null);
+      setCaption("");
+    }
+    onOpenChange(newOpen);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-2xl" data-testid="modal-create-post">
         <DialogHeader>
           <DialogTitle className="font-serif text-xl">Create new post</DialogTitle>
@@ -108,6 +149,23 @@ export function CreatePostModal({
               data-testid="input-caption"
             />
           </div>
+
+          <input
+            ref={imageInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleImageChange}
+            data-testid="input-image-file"
+          />
+          <input
+            ref={videoInputRef}
+            type="file"
+            accept="video/*"
+            className="hidden"
+            onChange={handleVideoChange}
+            data-testid="input-video-file"
+          />
 
           {selectedMedia ? (
             <div className="relative rounded-md overflow-hidden bg-muted">
@@ -130,7 +188,7 @@ export function CreatePostModal({
                 variant="ghost"
                 size="icon"
                 className="absolute top-2 right-2 bg-background/80 backdrop-blur"
-                onClick={() => setSelectedMedia(null)}
+                onClick={handleRemoveMedia}
                 data-testid="button-remove-media"
               >
                 <X className="h-4 w-4" />
@@ -160,7 +218,7 @@ export function CreatePostModal({
           <div className="flex justify-end gap-2">
             <Button
               variant="outline"
-              onClick={() => onOpenChange(false)}
+              onClick={() => handleOpenChange(false)}
               data-testid="button-cancel"
             >
               Cancel
