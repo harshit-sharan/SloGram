@@ -2,6 +2,14 @@ import { Post, type PostData } from "@/components/Post";
 import { PlusSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/useAuth";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface PostWithAuthor {
   id: string;
@@ -36,11 +44,49 @@ function formatTimestamp(dateString: string): string {
 }
 
 export default function Feed() {
+  const { user, isLoading: isAuthLoading } = useAuth();
   const { data: posts = [], isLoading } = useQuery<PostWithAuthor[]>({
     queryKey: ["/api/posts-with-authors"],
+    enabled: !!user,
   });
 
-  if (isLoading) {
+  // Show login dialog when not authenticated
+  if (!user && !isAuthLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Dialog open={true}>
+          <DialogContent 
+            className="sm:max-w-md" 
+            data-testid="dialog-login-required"
+            onInteractOutside={(e) => e.preventDefault()}
+            onEscapeKeyDown={(e) => e.preventDefault()}
+          >
+            <DialogHeader>
+              <DialogTitle className="font-serif text-2xl text-center">Welcome to Slogram</DialogTitle>
+              <DialogDescription className="text-center pt-2">
+                A mindful space for slow living and intentional sharing.
+                Please log in to continue.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex flex-col gap-4 pt-4">
+              <Button
+                onClick={() => window.location.href = '/api/login'}
+                className="w-full"
+                data-testid="button-login-dialog"
+              >
+                Log in with Replit
+              </Button>
+              <p className="text-xs text-muted-foreground text-center">
+                By logging in, you agree to our terms of service and privacy policy.
+              </p>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+    );
+  }
+
+  if (isLoading || isAuthLoading) {
     return (
       <div className="min-h-screen bg-background pb-20 md:pb-0">
         <div className="max-w-2xl mx-auto pt-6">
