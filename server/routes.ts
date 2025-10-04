@@ -156,6 +156,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "userId is required" });
       }
       const liked = await storage.isPostLikedByUser(userId, req.params.postId);
+      // Disable HTTP caching for like status
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
       res.json({ liked });
     } catch (error) {
       res.status(500).json({ error: "Failed to check like status" });

@@ -35,6 +35,8 @@ export function Post({ post }: { post: PostData }) {
       if (!response.ok) throw new Error("Failed to fetch like status");
       return response.json();
     },
+    staleTime: 0, // Always fetch fresh like status
+    refetchOnMount: true,
   });
 
   const [liked, setLiked] = useState(false);
@@ -59,6 +61,13 @@ export function Post({ post }: { post: PostData }) {
       // Invalidate and refetch like status
       queryClient.invalidateQueries({
         queryKey: ["/api/posts", post.id, "liked", currentUserId],
+      });
+      // Invalidate posts queries to update like count
+      queryClient.invalidateQueries({
+        queryKey: ["/api/posts-with-authors"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/posts"],
       });
     },
     onError: () => {
@@ -162,7 +171,7 @@ export function Post({ post }: { post: PostData }) {
         </div>
 
         <p className="font-semibold text-sm mb-2" data-testid={`text-likes-${post.id}`}>
-          {post.likes + (liked ? 1 : 0)} likes
+          {post.likes} likes
         </p>
 
         <div className="text-sm">
