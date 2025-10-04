@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Post, type PostData } from "@/components/Post";
 import { CreatePostModal } from "@/components/CreatePostModal";
 import { PlusSquare } from "lucide-react";
@@ -68,6 +68,18 @@ const mockPosts: PostData[] = [
 
 export default function Feed() {
   const [createPostOpen, setCreatePostOpen] = useState(false);
+
+  // Listen for create post trigger from navigation
+  useEffect(() => {
+    const handleCreatePost = () => {
+      setCreatePostOpen(true);
+    };
+
+    window.addEventListener('open-create-post', handleCreatePost);
+    return () => {
+      window.removeEventListener('open-create-post', handleCreatePost);
+    };
+  }, []);
 
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">

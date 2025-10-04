@@ -45,7 +45,10 @@ export function Navigation() {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => console.log("Create post clicked")}
+            onClick={() => {
+              console.log("Create post clicked");
+              window.dispatchEvent(new Event('open-create-post'));
+            }}
             data-testid="button-create"
           >
             <PlusSquare />

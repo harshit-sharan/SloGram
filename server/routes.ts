@@ -89,7 +89,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Conversations API
+  // Conversations API with user details and last message
+  app.get("/api/conversations-with-details/:userId", async (req, res) => {
+    try {
+      const conversations = await storage.getConversationsByUserId(req.params.userId);
+      
+      const conversationsWithDetails = await Promise.all(
+        conversations.map(async (conv) => {
+          const otherUserId = conv.user1Id === req.params.userId ? conv.user2Id : conv.user1Id;
+          const otherUser = await storage.getUser(otherUserId);
+          const messages = await storage.getMessagesByConversationId(conv.id);
+          const lastMessage = messages[messages.length - 1];
+          
+          return {
+            conversation: conv,
+            otherUser,
+            lastMessage,
+          };
+        })
+      );
+      
+      res.json(conversationsWithDetails);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch conversations" });
+    }
+  });
+
   app.get("/api/conversations/:userId", async (req, res) => {
     try {
       const conversations = await storage.getConversationsByUserId(req.params.userId);

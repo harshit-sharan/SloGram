@@ -4,6 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useWebSocket } from "@/hooks/useWebSocket";
+import { useQuery } from "@tanstack/react-query";
 
 interface Message {
   id: string;
@@ -29,6 +30,16 @@ export function MessageThread({ conversationId, currentUserId, otherUser }: Mess
   const [newMessage, setNewMessage] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { isConnected, lastMessage, sendMessage } = useWebSocket(currentUserId);
+
+  // Fetch historical messages
+  const { data: historicalMessages = [] } = useQuery<Message[]>({
+    queryKey: ["/api/conversations", conversationId, "messages"],
+  });
+
+  // Initialize with historical messages
+  useEffect(() => {
+    setMessages(historicalMessages);
+  }, [historicalMessages]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
