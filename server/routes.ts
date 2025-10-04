@@ -2,7 +2,7 @@ import type { Express, Request } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated } from "./replitAuth";
+import { setupAuth, isAuthenticated, getSession } from "./replitAuth";
 import multer from "multer";
 import { insertPostSchema, insertMessageSchema } from "@shared/schema";
 
@@ -380,25 +380,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
 
   // WebSocket server for real-time messaging
-  const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
+  const wss = new WebSocketServer({ noServer: true });
 
   // Store connected clients with their user IDs
   const clients = new Map<string, WebSocket>();
 
-  wss.on('connection', (ws: WebSocket) => {
-    let userId: string | null = null;
+  // Handle WebSocket upgrade with session authentication
+  httpServer.on('upgrade', (request, socket, head) => {
+    // Only handle WebSocket upgrades on /ws path
+    if (request.url !== '/ws') {
+      socket.destroy();
+      return;
+    }
+
+    const sessionParser = getSession();
+    
+    sessionParser(request as any, {} as any, () => {
+      if (!request.user || !(request as any).user.claims) {
+        socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
+        socket.destroy();
+        return;
+      }
+
+      wss.handleUpgrade(request, socket, head, (ws) => {
+        wss.emit('connection', ws, request);
+      });
+    });
+  });
+
+  wss.on('connection', (ws: WebSocket, request: any) => {
+    const userId = request.user.claims.sub;
+    
+    if (!userId) {
+      ws.close();
+      return;
+    }
+
+    clients.set(userId, ws);
+    ws.send(JSON.stringify({ type: 'auth', success: true }));
 
     ws.on('message', async (data: string) => {
       try {
         const message = JSON.parse(data.toString());
 
-        if (message.type === 'auth') {
-          userId = message.userId;
-          if (userId) {
-            clients.set(userId, ws);
-          }
-          ws.send(JSON.stringify({ type: 'auth', success: true }));
-        } else if (message.type === 'message' && userId) {
+        if (message.type === 'message') {
           const newMessage = await storage.createMessage({
             conversationId: message.conversationId,
             senderId: userId,
