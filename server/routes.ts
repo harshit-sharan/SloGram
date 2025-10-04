@@ -61,7 +61,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Posts API
-  app.get("/api/posts", async (req, res) => {
+  app.get("/api/posts", isAuthenticated, async (req, res) => {
     try {
       const posts = await storage.getPosts();
       res.json(posts);
@@ -87,7 +87,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/posts/:postId", async (req, res) => {
+  app.get("/api/posts/:postId", isAuthenticated, async (req, res) => {
     try {
       const posts = await storage.getPosts();
       const post = posts.find(p => p.id === req.params.postId);
@@ -113,7 +113,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/users/search", async (req, res) => {
+  app.get("/api/users/search", isAuthenticated, async (req, res) => {
     try {
       const query = req.query.q as string;
       if (!query || query.trim().length === 0) {
@@ -126,7 +126,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/users/:userId", async (req, res) => {
+  app.get("/api/users/:userId", isAuthenticated, async (req, res) => {
     try {
       const user = await storage.getUser(req.params.userId);
       if (!user) {
@@ -138,7 +138,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/posts/user/:userId", async (req, res) => {
+  app.get("/api/posts/user/:userId", isAuthenticated, async (req, res) => {
     try {
       const posts = await storage.getPostsByUserId(req.params.userId);
       res.json(posts);
@@ -174,7 +174,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/posts/:postId/likes", async (req, res) => {
+  app.get("/api/posts/:postId/likes", isAuthenticated, async (req, res) => {
     try {
       const count = await storage.getLikesByPostId(req.params.postId);
       res.json({ count });
@@ -251,7 +251,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/posts/:postId/comments", async (req, res) => {
+  app.get("/api/posts/:postId/comments", isAuthenticated, async (req, res) => {
     try {
       const comments = await storage.getCommentsByPostId(req.params.postId);
       res.json(comments);
@@ -281,7 +281,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/notifications/:notificationId/read", async (req, res) => {
+  app.post("/api/notifications/:notificationId/read", isAuthenticated, async (req, res) => {
     try {
       await storage.markNotificationAsRead(req.params.notificationId);
       res.json({ success: true });
@@ -327,7 +327,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/conversations/:userId", async (req, res) => {
+  app.get("/api/conversations/:userId", isAuthenticated, async (req, res) => {
     try {
       const conversations = await storage.getConversationsByUserId(req.params.userId);
       res.json(conversations);
@@ -336,7 +336,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/conversations", async (req, res) => {
+  app.post("/api/conversations", isAuthenticated, async (req, res) => {
     try {
       const conversation = await storage.getOrCreateConversation(
         req.body.user1Id,
@@ -349,7 +349,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Messages API
-  app.get("/api/conversations/:conversationId/messages", async (req, res) => {
+  app.get("/api/conversations/:conversationId/messages", isAuthenticated, async (req, res) => {
     try {
       const messages = await storage.getMessagesByConversationId(req.params.conversationId);
       res.json(messages);

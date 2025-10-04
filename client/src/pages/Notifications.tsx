@@ -5,6 +5,7 @@ import { Heart, MessageCircle } from "lucide-react";
 import { Link } from "wouter";
 import { formatDistanceToNow } from "date-fns";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useAuth } from "@/hooks/useAuth";
 
 interface NotificationData {
   id: string;
@@ -31,10 +32,11 @@ interface NotificationData {
 }
 
 export default function Notifications() {
-  const currentUserId = "ca1a588a-2f07-4b75-ad8a-2ac21444840e";
+  const { user } = useAuth();
 
   const { data: notifications = [], isLoading } = useQuery<NotificationData[]>({
-    queryKey: ["/api/notifications", currentUserId],
+    queryKey: ["/api/notifications", user?.id],
+    enabled: !!user,
   });
 
   const markAsReadMutation = useMutation({
@@ -43,24 +45,24 @@ export default function Notifications() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ["/api/notifications", currentUserId],
+        queryKey: ["/api/notifications", user?.id],
       });
       queryClient.invalidateQueries({
-        queryKey: ["/api/notifications", currentUserId, "unread-count"],
+        queryKey: ["/api/notifications", user?.id, "unread-count"],
       });
     },
   });
 
   const markAllAsReadMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest("POST", `/api/notifications/${currentUserId}/read-all`, {});
+      return apiRequest("POST", `/api/notifications/${user?.id}/read-all`, {});
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ["/api/notifications", currentUserId],
+        queryKey: ["/api/notifications", user?.id],
       });
       queryClient.invalidateQueries({
-        queryKey: ["/api/notifications", currentUserId, "unread-count"],
+        queryKey: ["/api/notifications", user?.id, "unread-count"],
       });
     },
   });

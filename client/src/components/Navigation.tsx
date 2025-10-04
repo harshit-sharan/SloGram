@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from "react";
-import { Heart, Home, PlusSquare, Search, Moon, Sun, MessageCircle } from "lucide-react";
+import { Heart, Home, PlusSquare, Search, Moon, Sun, MessageCircle, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -7,6 +7,8 @@ import { useTheme } from "./ThemeProvider";
 import { Link, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
+import { useAuth } from "@/hooks/useAuth";
+import { logout } from "@/lib/authUtils";
 
 interface SearchUser {
   id: string;
@@ -32,7 +34,7 @@ function useDebounce<T>(value: T, delay: number): T {
 }
 
 export function Navigation() {
-  const currentUserId = "ca1a588a-2f07-4b75-ad8a-2ac21444840e";
+  const { user, isLoading: authLoading } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const [location] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
@@ -47,7 +49,8 @@ export function Navigation() {
   });
 
   const { data: unreadCountData } = useQuery<{ count: number }>({
-    queryKey: ["/api/notifications", currentUserId, "unread-count"],
+    queryKey: ["/api/notifications", user?.id, "unread-count"],
+    enabled: !!user,
     refetchInterval: 10000, // Refetch every 10 seconds
   });
 
@@ -193,19 +196,40 @@ export function Navigation() {
             {theme === "light" ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
           </Button>
 
-          <Button
-            variant="ghost"
-            size="icon"
-            asChild
-            data-testid="button-profile"
-          >
-            <Link href="/profile/ca1a588a-2f07-4b75-ad8a-2ac21444840e">
-              <Avatar className="h-8 w-8">
-                <AvatarImage src="" />
-                <AvatarFallback>ME</AvatarFallback>
-              </Avatar>
-            </Link>
-          </Button>
+          {user ? (
+            <>
+              <Button
+                variant="ghost"
+                size="icon"
+                asChild
+                data-testid="button-profile"
+              >
+                <Link href={`/profile/${user.id}`}>
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={user.profileImageUrl || ""} />
+                    <AvatarFallback>{user.firstName?.charAt(0) || user.displayName?.charAt(0) || "U"}</AvatarFallback>
+                  </Avatar>
+                </Link>
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => logout()}
+                data-testid="button-logout"
+              >
+                <LogOut className="h-5 w-5" />
+              </Button>
+            </>
+          ) : (
+            <Button
+              variant="default"
+              onClick={() => window.location.href = '/api/login'}
+              data-testid="button-login"
+            >
+              Log In
+            </Button>
+          )}
         </div>
       </div>
     </nav>

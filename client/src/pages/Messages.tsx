@@ -3,6 +3,7 @@ import { MessageCircle } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { MessageThread } from "@/components/MessageThread";
 import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/useAuth";
 
 interface ConversationWithUser {
   conversation: {
@@ -24,11 +25,12 @@ interface ConversationWithUser {
 }
 
 export default function Messages() {
+  const { user } = useAuth();
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
-  const currentUserId = "ca1a588a-2f07-4b75-ad8a-2ac21444840e"; // Current user from seed
 
   const { data: conversations = [], isLoading } = useQuery<ConversationWithUser[]>({
-    queryKey: ["/api/conversations-with-details", currentUserId],
+    queryKey: ["/api/conversations-with-details", user?.id],
+    enabled: !!user,
   });
 
   const selected = conversations.find((c) => c.conversation.id === selectedConversation);
@@ -84,10 +86,10 @@ export default function Messages() {
       </div>
 
       <div className="flex-1 hidden md:flex flex-col">
-        {selected ? (
+        {selected && user ? (
           <MessageThread
             conversationId={selected.conversation.id}
-            currentUserId={currentUserId}
+            currentUserId={user.id}
             otherUser={{
               id: selected.otherUser.id,
               name: selected.otherUser.displayName || selected.otherUser.username,

@@ -7,6 +7,7 @@ import { Link } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 
 interface CommentWithUser {
   id: string;
@@ -39,7 +40,7 @@ export interface PostData {
 }
 
 export function Post({ post }: { post: PostData }) {
-  const currentUserId = "ca1a588a-2f07-4b75-ad8a-2ac21444840e"; // Hardcoded user ID
+  const { user } = useAuth();
   const [saved, setSaved] = useState(false);
   const [showFullCaption, setShowFullCaption] = useState(false);
   const [showComments, setShowComments] = useState(false);
@@ -48,12 +49,13 @@ export function Post({ post }: { post: PostData }) {
 
   // Fetch initial like status
   const { data: likeData } = useQuery<{ liked: boolean }>({
-    queryKey: ["/api/posts", post.id, "liked", currentUserId],
+    queryKey: ["/api/posts", post.id, "liked", user?.id],
     queryFn: async () => {
-      const response = await fetch(`/api/posts/${post.id}/liked?userId=${currentUserId}`);
+      const response = await fetch(`/api/posts/${post.id}/liked?userId=${user?.id}`);
       if (!response.ok) throw new Error("Failed to fetch like status");
       return response.json();
     },
+    enabled: !!user,
     staleTime: 0, // Always fetch fresh like status
     refetchOnMount: true,
   });
@@ -69,12 +71,13 @@ export function Post({ post }: { post: PostData }) {
 
   // Fetch initial save status
   const { data: saveData } = useQuery<{ saved: boolean }>({
-    queryKey: ["/api/posts", post.id, "saved", currentUserId],
+    queryKey: ["/api/posts", post.id, "saved", user?.id],
     queryFn: async () => {
-      const response = await fetch(`/api/posts/${post.id}/saved?userId=${currentUserId}`);
+      const response = await fetch(`/api/posts/${post.id}/saved?userId=${user?.id}`);
       if (!response.ok) throw new Error("Failed to fetch save status");
       return response.json();
     },
+    enabled: !!user,
     staleTime: 0, // Always fetch fresh save status
     refetchOnMount: true,
   });
@@ -100,7 +103,7 @@ export function Post({ post }: { post: PostData }) {
   // Mutation to toggle like
   const likeMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest("POST", `/api/posts/${post.id}/like`, { userId: currentUserId });
+      return apiRequest("POST", `/api/posts/${post.id}/like`, { userId: user?.id });
     },
     onMutate: async () => {
       // Optimistically update the UI
@@ -109,7 +112,7 @@ export function Post({ post }: { post: PostData }) {
     onSuccess: () => {
       // Invalidate and refetch like status
       queryClient.invalidateQueries({
-        queryKey: ["/api/posts", post.id, "liked", currentUserId],
+        queryKey: ["/api/posts", post.id, "liked", user?.id],
       });
       // Invalidate posts queries to update like count
       queryClient.invalidateQueries({
@@ -132,7 +135,7 @@ export function Post({ post }: { post: PostData }) {
   // Mutation to toggle save
   const saveMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest("POST", `/api/posts/${post.id}/save`, { userId: currentUserId });
+      return apiRequest("POST", `/api/posts/${post.id}/save`, { userId: user?.id });
     },
     onMutate: async () => {
       // Optimistically update the UI
@@ -141,7 +144,7 @@ export function Post({ post }: { post: PostData }) {
     onSuccess: () => {
       // Invalidate and refetch save status
       queryClient.invalidateQueries({
-        queryKey: ["/api/posts", post.id, "saved", currentUserId],
+        queryKey: ["/api/posts", post.id, "saved", user?.id],
       });
     },
     onError: () => {
@@ -158,7 +161,7 @@ export function Post({ post }: { post: PostData }) {
   const commentMutation = useMutation({
     mutationFn: async (text: string) => {
       return apiRequest("POST", `/api/posts/${post.id}/comments`, {
-        userId: currentUserId,
+        userId: user?.id,
         text,
       });
     },

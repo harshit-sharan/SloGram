@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useQuery } from "@tanstack/react-query";
 import { useRoute, Link } from "wouter";
+import { useAuth } from "@/hooks/useAuth";
 
 interface User {
   id: string;
@@ -22,6 +23,7 @@ interface Post {
 }
 
 export default function Profile() {
+  const { user: currentUser } = useAuth();
   const [, params] = useRoute("/profile/:userId");
   const userId = params?.userId || "";
 
@@ -55,8 +57,7 @@ export default function Profile() {
     );
   }
 
-  const currentUserId = "ca1a588a-2f07-4b75-ad8a-2ac21444840e";
-  const isOwnProfile = userId === currentUserId;
+  const isOwnProfile = userId === currentUser?.id;
 
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">

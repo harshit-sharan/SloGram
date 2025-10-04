@@ -12,6 +12,7 @@ import {
 import { useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 
 export function CreatePostModal({
   open,
@@ -20,6 +21,7 @@ export function CreatePostModal({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const { user } = useAuth();
   const [caption, setCaption] = useState("");
   const [selectedMedia, setSelectedMedia] = useState<{ file: File; url: string; type: "image" | "video" } | null>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -107,12 +109,10 @@ export function CreatePostModal({
   };
 
   const handlePost = () => {
-    if (!selectedMedia) return;
-    
-    const currentUserId = "ca1a588a-2f07-4b75-ad8a-2ac21444840e";
+    if (!selectedMedia || !user) return;
     
     createPostMutation.mutate({
-      userId: currentUserId,
+      userId: user.id,
       type: selectedMedia.type,
       file: selectedMedia.file,
       caption: caption.trim(),
@@ -138,8 +138,8 @@ export function CreatePostModal({
         <div className="space-y-4">
           <div className="flex items-start gap-3">
             <Avatar className="h-10 w-10">
-              <AvatarImage src="" />
-              <AvatarFallback>ME</AvatarFallback>
+              <AvatarImage src={user?.profileImageUrl || ""} />
+              <AvatarFallback>{user?.firstName?.charAt(0) || user?.displayName?.charAt(0) || "U"}</AvatarFallback>
             </Avatar>
             <Textarea
               placeholder="Share your slow living moment..."
