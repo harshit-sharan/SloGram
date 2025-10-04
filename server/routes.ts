@@ -327,20 +327,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/conversations/:userId", isAuthenticated, async (req, res) => {
+  app.get("/api/conversations/:userId", isAuthenticated, async (req: any, res) => {
     try {
-      const conversations = await storage.getConversationsByUserId(req.params.userId);
+      const userId = req.user.claims.sub;
+      const conversations = await storage.getConversationsByUserId(userId);
       res.json(conversations);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch conversations" });
     }
   });
 
-  app.post("/api/conversations", isAuthenticated, async (req, res) => {
+  app.post("/api/conversations", isAuthenticated, async (req: any, res) => {
     try {
+      const userId = req.user.claims.sub;
+      const otherUserId = req.body.otherUserId;
+      
+      if (!otherUserId) {
+        return res.status(400).json({ error: "Other user ID is required" });
+      }
+      
       const conversation = await storage.getOrCreateConversation(
-        req.body.user1Id,
-        req.body.user2Id
+        userId,
+        otherUserId
       );
       res.json(conversation);
     } catch (error) {
@@ -349,9 +357,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Messages API
-  app.get("/api/conversations/:conversationId/messages", isAuthenticated, async (req, res) => {
+  app.get("/api/conversations/:conversationId/messages", isAuthenticated, async (req: any, res) => {
     try {
-      const messages = await storage.getMessagesByConversationId(req.params.conversationId);
+      const userId = req.user.claims.sub;
+      const conversationId = req.params.conversationId;
+      
+      // Get the conversation to verify the user is a participant
+      const conversations = await storage.getConversationsByUserId(userId);
+      const conversation = conversations.find(c => c.id === conversationId);
+      
+      if (!conversation) {
+        return res.status(403).json({ error: "Access denied to this conversation" });
+      }
+      
+      const messages = await storage.getMessagesByConversationId(conversationId);
       res.json(messages);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch messages" });
