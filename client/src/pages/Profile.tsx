@@ -2,7 +2,7 @@ import { Settings, Grid3x3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useQuery } from "@tanstack/react-query";
-import { useRoute } from "wouter";
+import { useRoute, Link } from "wouter";
 
 interface User {
   id: string;
@@ -122,25 +122,26 @@ export default function Profile() {
           ) : (
             <div className="grid grid-cols-3 gap-1">
               {posts.map((post, index) => (
-                <button
+                <Link
                   key={post.id}
-                  className="aspect-square hover-elevate overflow-hidden"
-                  onClick={() => console.log(`View post ${post.id}`)}
+                  href={`/post/${post.id}`}
                   data-testid={`button-post-${index}`}
                 >
-                  {post.type === "image" ? (
-                    <img
-                      src={post.mediaUrl}
-                      alt={`Post ${index + 1}`}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <video
-                      src={post.mediaUrl}
-                      className="w-full h-full object-cover"
-                    />
-                  )}
-                </button>
+                  <div className="aspect-square hover-elevate overflow-hidden cursor-pointer">
+                    {post.type === "image" ? (
+                      <img
+                        src={post.mediaUrl}
+                        alt={`Post ${index + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <video
+                        src={post.mediaUrl}
+                        className="w-full h-full object-cover"
+                      />
+                    )}
+                  </div>
+                </Link>
               ))}
             </div>
           )}

@@ -70,6 +70,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/posts/:postId", async (req, res) => {
+    try {
+      const posts = await storage.getPosts();
+      const post = posts.find(p => p.id === req.params.postId);
+      
+      if (!post) {
+        return res.status(404).json({ error: "Post not found" });
+      }
+      
+      const user = await storage.getUser(post.userId);
+      const likesCount = await storage.getLikesByPostId(post.id);
+      const comments = await storage.getCommentsByPostId(post.id);
+      
+      res.json({
+        ...post,
+        user,
+        _count: {
+          likes: likesCount,
+          comments: comments.length,
+        },
+      });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch post" });
+    }
+  });
+
   app.get("/api/users/search", async (req, res) => {
     try {
       const query = req.query.q as string;

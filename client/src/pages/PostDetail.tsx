@@ -41,8 +41,9 @@ export default function PostDetail() {
   const [, params] = useRoute("/post/:id");
   const postId = params?.id;
 
-  const { data: posts = [], isLoading, error } = useQuery<PostWithAuthor[]>({
-    queryKey: ["/api/posts-with-authors"],
+  const { data: post, isLoading, error } = useQuery<PostWithAuthor>({
+    queryKey: [`/api/posts/${postId}`],
+    enabled: !!postId,
   });
 
   if (isLoading) {
@@ -54,8 +55,6 @@ export default function PostDetail() {
       </div>
     );
   }
-
-  const post = posts.find(p => p.id === postId);
 
   if (!post) {
     return (
