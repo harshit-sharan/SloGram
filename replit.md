@@ -57,7 +57,8 @@ Preferred communication style: Simple, everyday language.
 - Connection pooling for efficient resource management
 
 **Schema Architecture:**
-- `users`: Authentication and profile data (username, password, displayName, bio, avatar)
+- `users`: Profile data (username, displayName, bio, avatar, email, firstName, lastName, profileImageUrl)
+- `sessions`: PostgreSQL session storage for Replit Auth (connect-pg-simple)
 - `posts`: Content with media URLs, captions, timestamps, and user references
 - `likes`: Many-to-many relationship between users and posts
 - `comments`: Threaded discussion on posts with user attribution
@@ -82,6 +83,29 @@ Preferred communication style: Simple, everyday language.
 - TypeScript for static type checking across shared code
 
 **Key Integrations:**
+- Replit Auth (OpenID Connect) for authentication with session-based security
 - WebSocket protocol for real-time messaging (ws library)
 - Session management via PostgreSQL (connect-pg-simple)
 - Image/video upload handling (Multer middleware)
+
+### Authentication & Security
+
+**Authentication Method:**
+- Replit Auth using OpenID Connect protocol
+- Session-based authentication with httpOnly secure cookies
+- Sessions stored in PostgreSQL with 7-day TTL
+- All API routes protected with isAuthenticated middleware
+- WebSocket connections authenticated via session validation
+
+**User Claims from Replit:**
+- `sub`: User ID (unique identifier)
+- `email`: User's email address
+- `first_name`: User's first name
+- `last_name`: User's last name
+- `profile_image_url`: User's profile image URL
+
+**Security Measures:**
+- Server-side user ID validation (req.user.claims.sub) on all routes
+- WebSocket upgrade handler validates session before establishing connection
+- No client-provided user IDs trusted - all derived from authenticated session
+- IDOR vulnerabilities prevented via server-side authorization checks
