@@ -45,7 +45,10 @@ export function Post({ post }: { post: PostData }) {
   const [showFullCaption, setShowFullCaption] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState("");
+  const [following, setFollowing] = useState(false);
   const { toast } = useToast();
+  
+  const isOwnPost = user?.id === post.author.id;
 
   // Fetch initial like status
   const { data: likeData } = useQuery<{ liked: boolean }>({
@@ -88,6 +91,26 @@ export function Post({ post }: { post: PostData }) {
       setSaved(saveData.saved);
     }
   }, [saveData]);
+
+  // Fetch follow status
+  const { data: followData } = useQuery<{ following: boolean }>({
+    queryKey: ["/api/users", post.author.id, "is-following", user?.id],
+    queryFn: async () => {
+      const response = await fetch(`/api/users/${post.author.id}/is-following`);
+      if (!response.ok) throw new Error("Failed to fetch follow status");
+      return response.json();
+    },
+    enabled: !!user && !isOwnPost,
+    staleTime: 0,
+    refetchOnMount: true,
+  });
+
+  // Update local state when follow query data is available
+  useEffect(() => {
+    if (followData !== undefined) {
+      setFollowing(followData.following);
+    }
+  }, [followData]);
 
   // Fetch comments
   const { data: comments = [] } = useQuery<CommentWithUser[]>({
@@ -183,6 +206,36 @@ export function Post({ post }: { post: PostData }) {
     }
   };
 
+  // Mutation to toggle follow
+  const followMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest("POST", `/api/users/${post.author.id}/follow`, {});
+    },
+    onMutate: async () => {
+      setFollowing(!following);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["/api/users", post.author.id, "is-following", user?.id],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/posts-with-authors"],
+      });
+    },
+    onError: () => {
+      setFollowing(following);
+      toast({
+        title: "Failed to update follow status",
+        description: "Please try again",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleFollow = () => {
+    followMutation.mutate();
+  };
+
   const handleShare = async () => {
     const postUrl = `${window.location.origin}/post/${post.id}`;
     try {
@@ -223,6 +276,16 @@ export function Post({ post }: { post: PostData }) {
             {post.timestamp}
           </p>
         </div>
+        {!isOwnPost && (
+          <Button
+            variant={following ? "outline" : "default"}
+            size="sm"
+            onClick={handleFollow}
+            data-testid={`button-follow-${post.id}`}
+          >
+            {following ? "Following" : "Follow"}
+          </Button>
+        )}
       </div>
 
       {(post.video || post.image) && (
