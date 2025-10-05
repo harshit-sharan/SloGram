@@ -1,10 +1,11 @@
-import { Settings, Grid3x3 } from "lucide-react";
+import { Settings, Grid3x3, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useRoute, Link } from "wouter";
+import { useRoute, Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 interface User {
   id: string;
@@ -30,6 +31,8 @@ interface Post {
 export default function Profile() {
   const { user: currentUser } = useAuth();
   const [, params] = useRoute("/profile/:userId");
+  const [, setLocation] = useLocation();
+  const { toast } = useToast();
   const userId = params?.userId || "";
 
   const isOwnProfile = userId === currentUser?.id;
@@ -58,10 +61,34 @@ export default function Profile() {
     },
   });
 
+  const messageMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("POST", `/api/conversations`, {
+        otherUserId: userId,
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/conversations-with-details", currentUser?.id] });
+      setLocation("/messages");
+    },
+    onError: () => {
+      toast({
+        title: "Failed to start conversation",
+        description: "Please try again",
+        variant: "destructive",
+      });
+    },
+  });
+
   const isFollowing = followData?.following || false;
 
   const handleFollowClick = () => {
     followMutation.mutate();
+  };
+
+  const handleMessageClick = () => {
+    messageMutation.mutate();
   };
 
   if (userLoading || postsLoading) {
@@ -110,15 +137,26 @@ export default function Profile() {
                   </Button>
                 </div>
               ) : (
-                <Button
-                  variant={isFollowing ? "secondary" : "default"}
-                  size="sm"
-                  onClick={handleFollowClick}
-                  disabled={followMutation.isPending || followLoading}
-                  data-testid="button-follow"
-                >
-                  {followMutation.isPending ? "..." : isFollowing ? "Following" : "Follow"}
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    variant={isFollowing ? "secondary" : "default"}
+                    size="sm"
+                    onClick={handleFollowClick}
+                    disabled={followMutation.isPending || followLoading}
+                    data-testid="button-follow"
+                  >
+                    {followMutation.isPending ? "..." : isFollowing ? "Following" : "Follow"}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleMessageClick}
+                    disabled={messageMutation.isPending}
+                    data-testid="button-message"
+                  >
+                    <MessageCircle className="h-4 w-4" />
+                  </Button>
+                </div>
               )}
             </div>
 
