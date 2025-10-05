@@ -139,14 +139,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const profileImageUrl = `/uploads/${req.file.filename}`;
+      const existingUser = await storage.getUser(userId);
       
-      // Update user's avatar directly in database
-      await db.update(users).set({ avatar: profileImageUrl }).where(eq(users.id, userId));
+      if (!existingUser) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      
+      // Update user with avatar
+      await storage.upsertUser({
+        id: userId,
+        email: existingUser.email,
+        avatar: profileImageUrl,
+      });
       
       res.json({ profileImageUrl });
     } catch (error) {
       console.error("Profile picture upload error:", error);
-      res.status(400).json({ error: "Failed to upload profile picture" });
+      const errorMessage = error instanceof Error ? error.message : "Failed to upload profile picture";
+      res.status(400).json({ error: errorMessage });
     }
   });
 
