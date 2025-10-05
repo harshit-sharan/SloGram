@@ -4,7 +4,7 @@ import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated, getSession } from "./replitAuth";
 import multer from "multer";
-import { insertPostSchema, insertMessageSchema } from "@shared/schema";
+import { insertPostSchema, insertMessageSchema, updateUserProfileSchema } from "@shared/schema";
 
 const upload = multer({ dest: "uploads/" });
 
@@ -144,6 +144,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(user);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch user" });
+    }
+  });
+
+  app.patch("/api/users/:userId", isAuthenticated, async (req: any, res) => {
+    try {
+      const currentUserId = req.user.claims.sub;
+      const targetUserId = req.params.userId;
+      
+      // Only allow users to update their own profile
+      if (currentUserId !== targetUserId) {
+        return res.status(403).json({ error: "Not authorized to update this profile" });
+      }
+      
+      const updateData = updateUserProfileSchema.parse(req.body);
+      
+      // Check if username is being changed and if it's already taken
+      if (updateData.username) {
+        const trimmedUsername = updateData.username.trim();
+        
+        // Reject empty username
+        if (trimmedUsername.length === 0) {
+          return res.status(400).json({ error: "Username cannot be empty" });
+        }
+        
+        const existingUser = await storage.getUserByUsername(trimmedUsername);
+        if (existingUser && existingUser.id !== currentUserId) {
+          return res.status(400).json({ error: "Username already taken" });
+        }
+        
+        updateData.username = trimmedUsername;
+      }
+      
+      const updatedUser = await storage.upsertUser({
+        id: currentUserId,
+        ...updateData,
+      });
+      
+      res.json(updatedUser);
+    } catch (error) {
+      console.error("Error updating user profile:", error);
+      res.status(400).json({ error: "Failed to update profile" });
     }
   });
 

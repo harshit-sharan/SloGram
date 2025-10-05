@@ -6,6 +6,27 @@ import { useRoute, Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { updateUserProfileSchema, type UpdateUserProfile } from "@shared/schema";
+import { useState } from "react";
 
 interface User {
   id: string;
@@ -26,6 +47,138 @@ interface Post {
   mediaUrl: string;
   caption?: string;
   createdAt: string;
+}
+
+function EditProfileDialog({ user }: { user: User }) {
+  const [open, setOpen] = useState(false);
+  const { toast } = useToast();
+
+  const form = useForm<UpdateUserProfile>({
+    resolver: zodResolver(updateUserProfileSchema),
+    defaultValues: {
+      displayName: user.displayName ?? "",
+      bio: user.bio ?? "",
+      username: user.username ?? "",
+    },
+  });
+
+  const updateProfileMutation = useMutation({
+    mutationFn: async (data: UpdateUserProfile) => {
+      const response = await apiRequest("PATCH", `/api/users/${user.id}`, data);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/users", user.id] });
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      toast({
+        title: "Profile updated",
+        description: "Your profile has been updated successfully",
+      });
+      setOpen(false);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to update profile",
+        description: error.message || "Please try again",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const onSubmit = (data: UpdateUserProfile) => {
+    updateProfileMutation.mutate(data);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="secondary" size="sm" data-testid="button-edit-profile">
+          Edit Profile
+        </Button>
+      </DialogTrigger>
+      <DialogContent data-testid="dialog-edit-profile">
+        <DialogHeader>
+          <DialogTitle>Edit Profile</DialogTitle>
+        </DialogHeader>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="username"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Username</FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      value={field.value ?? ""}
+                      placeholder="username"
+                      data-testid="input-username"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="displayName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Display Name</FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      value={field.value ?? ""}
+                      placeholder="Your display name"
+                      data-testid="input-display-name"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="bio"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Bio</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      {...field}
+                      value={field.value ?? ""}
+                      placeholder="Tell us about yourself"
+                      rows={4}
+                      data-testid="textarea-bio"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <div className="flex justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setOpen(false)}
+                data-testid="button-cancel"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={updateProfileMutation.isPending}
+                data-testid="button-save"
+              >
+                {updateProfileMutation.isPending ? "Saving..." : "Save"}
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  );
 }
 
 export default function Profile() {
@@ -129,9 +282,7 @@ export default function Profile() {
               </h1>
               {isOwnProfile ? (
                 <div className="flex gap-2">
-                  <Button variant="secondary" size="sm" data-testid="button-edit-profile">
-                    Edit Profile
-                  </Button>
+                  <EditProfileDialog user={user} />
                   <Button variant="ghost" size="icon" data-testid="button-settings">
                     <Settings className="h-5 w-5" />
                   </Button>

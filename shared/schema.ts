@@ -125,7 +125,18 @@ export const updateUserProfileSchema = createInsertSchema(users).pick({
   displayName: true,
   bio: true,
   username: true,
-}).partial();
+}).partial().refine(
+  (data) => {
+    if (data.username !== undefined && data.username !== null) {
+      return data.username.trim().length > 0;
+    }
+    return true;
+  },
+  {
+    message: "Username cannot be empty",
+    path: ["username"],
+  }
+);
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type UpsertUser = typeof users.$inferInsert;
