@@ -4,6 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { MessageThread } from "@/components/MessageThread";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
+import { useLocation } from "wouter";
 
 interface ConversationWithUser {
   conversation: {
@@ -26,12 +27,26 @@ interface ConversationWithUser {
 
 export default function Messages() {
   const { user } = useAuth();
+  const [location] = useLocation();
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
 
   const { data: conversations = [], isLoading } = useQuery<ConversationWithUser[]>({
     queryKey: ["/api/conversations-with-details", user?.id],
     enabled: !!user,
   });
+
+  // Auto-select conversation from URL parameter
+  useEffect(() => {
+    const params = new URLSearchParams(location.split('?')[1]);
+    const conversationId = params.get('conversation');
+    
+    if (conversationId && conversations.length > 0) {
+      const conversationExists = conversations.find(c => c.conversation.id === conversationId);
+      if (conversationExists) {
+        setSelectedConversation(conversationId);
+      }
+    }
+  }, [location, conversations]);
 
   const selected = conversations.find((c) => c.conversation.id === selectedConversation);
 

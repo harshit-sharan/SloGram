@@ -221,9 +221,9 @@ export default function Profile() {
       });
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/conversations-with-details", currentUser?.id] });
-      setLocation("/messages");
+      setLocation(`/messages?conversation=${data.id}`);
     },
     onError: () => {
       toast({
