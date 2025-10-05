@@ -147,6 +147,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Follow API
+  app.post("/api/users/:userId/follow", isAuthenticated, async (req: any, res) => {
+    try {
+      const currentUserId = req.user.claims.sub;
+      const targetUserId = req.params.userId;
+      
+      if (currentUserId === targetUserId) {
+        return res.status(400).json({ error: "Cannot follow yourself" });
+      }
+      
+      const isFollowing = await storage.toggleFollow(currentUserId, targetUserId);
+      res.json({ following: isFollowing });
+    } catch (error) {
+      console.error("Error toggling follow:", error);
+      res.status(500).json({ error: "Failed to toggle follow" });
+    }
+  });
+
+  app.get("/api/users/:userId/is-following", isAuthenticated, async (req: any, res) => {
+    try {
+      const currentUserId = req.user.claims.sub;
+      const targetUserId = req.params.userId;
+      const isFollowing = await storage.isFollowing(currentUserId, targetUserId);
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+      res.json({ following: isFollowing });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to check follow status" });
+    }
+  });
+
+  app.get("/api/users/:userId/followers", isAuthenticated, async (req, res) => {
+    try {
+      const followers = await storage.getFollowers(req.params.userId);
+      res.json(followers);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch followers" });
+    }
+  });
+
+  app.get("/api/users/:userId/following", isAuthenticated, async (req, res) => {
+    try {
+      const following = await storage.getFollowing(req.params.userId);
+      res.json(following);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch following" });
+    }
+  });
+
   // Likes API
   app.post("/api/posts/:postId/like", isAuthenticated, async (req: any, res) => {
     try {
