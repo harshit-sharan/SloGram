@@ -477,36 +477,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/conversations/:conversationId/messages", isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const conversationId = req.params.conversationId;
-      const { text } = req.body;
-      
-      if (!text || !text.trim()) {
-        return res.status(400).json({ error: "Message text is required" });
-      }
-      
-      // Get the conversation to verify the user is a participant
-      const conversations = await storage.getConversationsByUserId(userId);
-      const conversation = conversations.find(c => c.id === conversationId);
-      
-      if (!conversation) {
-        return res.status(403).json({ error: "Access denied to this conversation" });
-      }
-      
-      const newMessage = await storage.createMessage({
-        conversationId,
-        senderId: userId,
-        text: text.trim(),
-      });
-      
-      res.json(newMessage);
-    } catch (error) {
-      res.status(500).json({ error: "Failed to create message" });
-    }
-  });
-
   const httpServer = createServer(app);
 
   // WebSocket server for real-time messaging
