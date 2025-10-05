@@ -79,7 +79,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
         })
       );
       
-      res.json(postsWithAuthors);
+      // Weighted randomization favoring recent posts
+      const now = Date.now();
+      const postsWithWeights = postsWithAuthors.map(post => {
+        const ageInHours = (now - new Date(post.createdAt).getTime()) / (1000 * 60 * 60);
+        // Exponential decay: newer posts get higher weights
+        // Posts less than 1 hour old get weight ~1.0, 24 hours old get ~0.37, 48 hours get ~0.14
+        const weight = Math.exp(-ageInHours / 24);
+        return { post, weight };
+      });
+      
+      // Weighted shuffle algorithm
+      const shuffled = [];
+      const items = [...postsWithWeights];
+      
+      while (items.length > 0) {
+        const totalWeight = items.reduce((sum, item) => sum + item.weight, 0);
+        let random = Math.random() * totalWeight;
+        
+        let selectedIndex = 0;
+        for (let i = 0; i < items.length; i++) {
+          random -= items[i].weight;
+          if (random <= 0) {
+            selectedIndex = i;
+            break;
+          }
+        }
+        
+        shuffled.push(items[selectedIndex].post);
+        items.splice(selectedIndex, 1);
+      }
+      
+      res.json(shuffled);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch posts" });
     }
