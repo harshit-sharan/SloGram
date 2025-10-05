@@ -4,8 +4,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useWebSocket } from "@/hooks/useWebSocket";
-import { useQuery } from "@tanstack/react-query";
-import { queryClient } from "@/lib/queryClient";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/useAuth";
 
 interface Message {
@@ -63,15 +63,33 @@ export function MessageThread({ conversationId, otherUser }: MessageThreadProps)
     }
   }, [lastMessage, conversationId, user?.id, refetch]);
 
+  const sendMessageMutation = useMutation({
+    mutationFn: async (text: string) => {
+      return await apiRequest("POST", `/api/conversations/${conversationId}/messages`, { text });
+    },
+    onSuccess: () => {
+      refetch();
+      queryClient.invalidateQueries({
+        queryKey: ["/api/conversations-with-details", user?.id],
+      });
+    },
+  });
+
   const handleSend = () => {
     if (!newMessage.trim()) return;
 
-    sendMessage({
-      type: "message",
-      conversationId,
-      recipientId: otherUser.id,
-      text: newMessage,
-    });
+    if (isConnected) {
+      // Send via WebSocket if connected
+      sendMessage({
+        type: "message",
+        conversationId,
+        recipientId: otherUser.id,
+        text: newMessage,
+      });
+    } else {
+      // Fallback to HTTP POST if WebSocket not connected
+      sendMessageMutation.mutate(newMessage);
+    }
 
     setNewMessage("");
   };
@@ -133,7 +151,7 @@ export function MessageThread({ conversationId, otherUser }: MessageThreadProps)
           />
           <Button
             onClick={handleSend}
-            disabled={!newMessage.trim() || !isConnected}
+            disabled={!newMessage.trim() || sendMessageMutation.isPending}
             data-testid="button-send-message"
           >
             <Send className="h-4 w-4" />
