@@ -185,11 +185,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "User not found" });
       }
       
-      // Update user with avatar
+      // Update user with both avatar and profileImageUrl
       await storage.upsertUser({
         id: userId,
         email: existingUser.email,
         avatar: profileImageUrl,
+        profileImageUrl: profileImageUrl,
       });
       
       res.json({ profileImageUrl });
