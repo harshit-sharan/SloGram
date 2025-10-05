@@ -114,7 +114,7 @@ export function Navigation() {
                   <div className="flex items-center gap-3 px-4 py-3 hover-elevate cursor-pointer">
                     <Avatar className="h-10 w-10">
                       <AvatarImage src={user.avatar} />
-                      <AvatarFallback>{user.displayName.charAt(0)}</AvatarFallback>
+                      <AvatarFallback>{user.displayName?.charAt(0) || user.username?.charAt(0) || "U"}</AvatarFallback>
                     </Avatar>
                     <div>
                       <p className="font-semibold text-sm">{user.displayName}</p>

@@ -263,7 +263,7 @@ export function Post({ post }: { post: PostData }) {
         <Link href={`/profile/${post.author.id}`} data-testid={`link-author-avatar-${post.id}`}>
           <Avatar className="h-10 w-10 cursor-pointer hover-elevate">
             <AvatarImage src={post.author.avatar} />
-            <AvatarFallback>{post.author.name.charAt(0)}</AvatarFallback>
+            <AvatarFallback>{post.author.name?.charAt(0) || post.author.username?.charAt(0) || "U"}</AvatarFallback>
           </Avatar>
         </Link>
         <div className="flex-1">
@@ -385,7 +385,7 @@ export function Post({ post }: { post: PostData }) {
                 <Avatar className="h-6 w-6 flex-shrink-0">
                   <AvatarImage src={comment.user.avatar || undefined} />
                   <AvatarFallback>
-                    {(comment.user.displayName || comment.user.username).charAt(0)}
+                    {(comment.user.displayName || comment.user.username)?.charAt(0) || "U"}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 text-sm">

@@ -69,7 +69,7 @@ export function VideoPost({ post }: { post: VideoPostData }) {
       <div className="flex items-center gap-3 px-4 py-3">
         <Avatar className="h-10 w-10">
           <AvatarImage src={post.author.avatar} />
-          <AvatarFallback>{post.author.name.charAt(0)}</AvatarFallback>
+          <AvatarFallback>{post.author.name?.charAt(0) || post.author.username?.charAt(0) || "U"}</AvatarFallback>
         </Avatar>
         <div className="flex-1">
           <p className="font-serif font-semibold text-foreground" data-testid={`text-author-${post.id}`}>
