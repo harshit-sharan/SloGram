@@ -32,13 +32,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/posts-with-authors", isAuthenticated, async (req: any, res) => {
     try {
       const currentUserId = req.user.claims.sub;
+      
+      // Get list of users that current user follows
+      const followedUserIds = await storage.getFollowedUserIds(currentUserId);
+      
+      // If not following anyone, return empty array
+      if (followedUserIds.length === 0) {
+        return res.json([]);
+      }
+      
       const posts = await storage.getPosts();
       
-      // Filter out current user's posts
-      const otherUsersPosts = posts.filter(post => post.userId !== currentUserId);
+      // Filter posts to only show those from followed users
+      const followedUsersPosts = posts.filter(post => followedUserIds.includes(post.userId));
       
       const postsWithAuthors = await Promise.all(
-        otherUsersPosts.map(async (post) => {
+        followedUsersPosts.map(async (post) => {
           const user = await storage.getUser(post.userId);
           const likesCount = await storage.getLikesByPostId(post.id);
           const comments = await storage.getCommentsByPostId(post.id);
