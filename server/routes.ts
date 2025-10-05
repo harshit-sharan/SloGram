@@ -4,7 +4,9 @@ import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated, getSession } from "./replitAuth";
 import multer from "multer";
-import { insertPostSchema, insertMessageSchema, updateUserProfileSchema } from "@shared/schema";
+import { insertPostSchema, insertMessageSchema, updateUserProfileSchema, users } from "@shared/schema";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
 
 const upload = multer({ 
   dest: "uploads/",
@@ -137,18 +139,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const profileImageUrl = `/uploads/${req.file.filename}`;
-      const existingUser = await storage.getUser(userId);
       
-      if (existingUser) {
-        await storage.upsertUser({
-          id: userId,
-          email: existingUser.email,
-          avatar: profileImageUrl,
-        });
-      }
+      // Update user's avatar directly in database
+      await db.update(users).set({ avatar: profileImageUrl }).where(eq(users.id, userId));
       
       res.json({ profileImageUrl });
     } catch (error) {
+      console.error("Profile picture upload error:", error);
       res.status(400).json({ error: "Failed to upload profile picture" });
     }
   });
