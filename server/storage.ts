@@ -39,6 +39,7 @@ export interface IStorage {
   // Saves
   toggleSave(userId: string, postId: string): Promise<boolean>;
   isPostSavedByUser(userId: string, postId: string): Promise<boolean>;
+  getSavedPostsByUserId(userId: string): Promise<Array<Post & { savedAt: Date }>>;
   
   // Notifications
   createNotification(notification: { userId: string; type: "like" | "comment"; actorId: string; postId: string }): Promise<Notification>;
@@ -243,6 +244,23 @@ export class DbStorage implements IStorage {
       and(eq(saves.userId, userId), eq(saves.postId, postId))
     );
     return !!existing;
+  }
+
+  async getSavedPostsByUserId(userId: string): Promise<Array<Post & { savedAt: Date }>> {
+    const savedPosts = await db
+      .select({
+        post: posts,
+        savedAt: saves.createdAt,
+      })
+      .from(saves)
+      .innerJoin(posts, eq(saves.postId, posts.id))
+      .where(eq(saves.userId, userId))
+      .orderBy(desc(saves.createdAt));
+
+    return savedPosts.map(({ post, savedAt }) => ({
+      ...post,
+      savedAt,
+    }));
   }
 
   async createNotification(notification: { userId: string; type: "like" | "comment"; actorId: string; postId: string }): Promise<Notification> {

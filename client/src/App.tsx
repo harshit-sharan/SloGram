@@ -12,6 +12,7 @@ import Profile from "@/pages/Profile";
 import Messages from "@/pages/Messages";
 import PostDetail from "@/pages/PostDetail";
 import Notifications from "@/pages/Notifications";
+import Saved from "@/pages/Saved";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -22,6 +23,7 @@ function Router() {
       <Route path="/profile/:userId" component={Profile} />
       <Route path="/messages" component={Messages} />
       <Route path="/notifications" component={Notifications} />
+      <Route path="/saved" component={Saved} />
       <Route component={NotFound} />
     </Switch>
   );

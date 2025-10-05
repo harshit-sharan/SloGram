@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from "react";
-import { Heart, Home, PlusSquare, Search, Moon, Sun, MessageCircle, LogOut } from "lucide-react";
+import { Heart, Home, PlusSquare, Search, Moon, Sun, MessageCircle, Bookmark, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -184,6 +184,17 @@ export function Navigation() {
                   {unreadCountData.count > 9 ? "9+" : unreadCountData.count}
                 </span>
               )}
+            </Link>
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="icon"
+            asChild
+            data-testid="button-saved"
+          >
+            <Link href="/saved">
+              <Bookmark className={location === "/saved" ? "fill-current" : ""} />
             </Link>
           </Button>
 

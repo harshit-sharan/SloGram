@@ -451,6 +451,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/saved-posts", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const savedPosts = await storage.getSavedPostsByUserId(userId);
+      res.json(savedPosts);
+    } catch (error) {
+      console.error("Failed to fetch saved posts:", error);
+      res.status(500).json({ error: "Failed to fetch saved posts" });
+    }
+  });
+
   // Comments API
   app.post("/api/posts/:postId/comments", isAuthenticated, async (req: any, res) => {
     try {
