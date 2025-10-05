@@ -1,4 +1,4 @@
-import { Settings, Grid3x3, MessageCircle } from "lucide-react";
+import { Settings, Grid3x3, MessageCircle, Camera } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -26,7 +26,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { updateUserProfileSchema, type UpdateUserProfile } from "@shared/schema";
-import { useState } from "react";
+import { useState, useRef } from "react";
 
 interface User {
   id: string;
@@ -187,6 +187,7 @@ export default function Profile() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const userId = params?.userId || "";
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isOwnProfile = userId === currentUser?.id;
 
@@ -234,6 +235,49 @@ export default function Profile() {
     },
   });
 
+  const uploadProfilePictureMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append("profilePicture", file);
+      
+      const response = await fetch(`/api/users/${userId}/profile-picture`, {
+        method: "POST",
+        body: formData,
+        credentials: "include",
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to upload profile picture");
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/users", userId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      toast({
+        title: "Profile picture updated",
+        description: "Your profile picture has been updated successfully",
+      });
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to update profile picture",
+        description: error.message,
+        variant: "destructive",
+      });
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    },
+  });
+
   const isFollowing = followData?.following || false;
 
   const handleFollowClick = () => {
@@ -242,6 +286,39 @@ export default function Profile() {
 
   const handleMessageClick = () => {
     messageMutation.mutate();
+  };
+
+  const handleAvatarClick = () => {
+    if (isOwnProfile) {
+      fileInputRef.current?.click();
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith("image/")) {
+        toast({
+          title: "Invalid file type",
+          description: "Please select an image file",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: "File too large",
+          description: "Please select an image smaller than 5MB",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      uploadProfilePictureMutation.mutate(file);
+    }
   };
 
   if (userLoading || postsLoading) {
@@ -268,12 +345,35 @@ export default function Profile() {
     <div className="min-h-screen bg-background pb-20 md:pb-0">
       <div className="max-w-5xl mx-auto px-4 py-8">
         <div className="flex flex-col md:flex-row gap-8 md:gap-12 items-center md:items-start mb-8">
-          <Avatar className="h-32 w-32" data-testid="img-avatar-profile">
-            <AvatarImage src={user.profileImageUrl || user.avatar} />
-            <AvatarFallback>
-              {user.firstName?.charAt(0) || user.displayName?.charAt(0) || user.username?.charAt(0) || "U"}
-            </AvatarFallback>
-          </Avatar>
+          <div className="relative group">
+            <Avatar 
+              className={`h-32 w-32 ${isOwnProfile ? 'cursor-pointer' : ''}`}
+              onClick={handleAvatarClick}
+              data-testid="img-avatar-profile"
+            >
+              <AvatarImage src={user.profileImageUrl || user.avatar} />
+              <AvatarFallback>
+                {user.firstName?.charAt(0) || user.displayName?.charAt(0) || user.username?.charAt(0) || "U"}
+              </AvatarFallback>
+            </Avatar>
+            {isOwnProfile && (
+              <div 
+                className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                onClick={handleAvatarClick}
+                data-testid="overlay-change-picture"
+              >
+                <Camera className="h-8 w-8 text-white" />
+              </div>
+            )}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleFileChange}
+              className="hidden"
+              data-testid="input-profile-picture"
+            />
+          </div>
 
           <div className="flex-1 text-center md:text-left">
             <div className="flex flex-col md:flex-row items-center gap-4 mb-4">

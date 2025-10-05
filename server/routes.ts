@@ -6,7 +6,21 @@ import { setupAuth, isAuthenticated, getSession } from "./replitAuth";
 import multer from "multer";
 import { insertPostSchema, insertMessageSchema, updateUserProfileSchema } from "@shared/schema";
 
-const upload = multer({ dest: "uploads/" });
+const upload = multer({ 
+  dest: "uploads/",
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB max
+  },
+  fileFilter: (req, file, cb) => {
+    // Allow only image files
+    const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (allowedMimeTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed.'));
+    }
+  },
+});
 
 interface MulterRequest extends Request {
   file?: Express.Multer.File;
@@ -93,6 +107,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(post);
     } catch (error) {
       res.status(400).json({ error: "Invalid post data" });
+    }
+  });
+
+  app.post("/api/users/:userId/profile-picture", isAuthenticated, (req: any, res, next) => {
+    upload.single("profilePicture")(req, res, (err) => {
+      if (err instanceof multer.MulterError) {
+        if (err.code === 'LIMIT_FILE_SIZE') {
+          return res.status(400).json({ error: "File too large. Maximum size is 5MB" });
+        }
+        return res.status(400).json({ error: "File upload error" });
+      } else if (err) {
+        return res.status(400).json({ error: err.message });
+      }
+      next();
+    });
+  }, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const requestedUserId = req.params.userId;
+      
+      // Ensure user can only update their own profile picture
+      if (userId !== requestedUserId) {
+        return res.status(403).json({ error: "Unauthorized" });
+      }
+      
+      if (!req.file) {
+        return res.status(400).json({ error: "No file uploaded" });
+      }
+      
+      const profileImageUrl = `/uploads/${req.file.filename}`;
+      const existingUser = await storage.getUser(userId);
+      
+      if (existingUser) {
+        await storage.upsertUser({
+          id: userId,
+          email: existingUser.email,
+          avatar: profileImageUrl,
+        });
+      }
+      
+      res.json({ profileImageUrl });
+    } catch (error) {
+      res.status(400).json({ error: "Failed to upload profile picture" });
     }
   });
 
