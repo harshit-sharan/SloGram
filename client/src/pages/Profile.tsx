@@ -51,9 +51,7 @@ export default function Profile() {
 
   const followMutation = useMutation({
     mutationFn: async () => {
-      return await apiRequest(`/api/users/${userId}/follow`, {
-        method: "POST",
-      });
+      return await apiRequest("POST", `/api/users/${userId}/follow`, {});
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/users", userId, "is-following"] });
