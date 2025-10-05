@@ -1,9 +1,10 @@
 import { Settings, Grid3x3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useRoute, Link } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 
 interface User {
   id: string;
@@ -31,6 +32,8 @@ export default function Profile() {
   const [, params] = useRoute("/profile/:userId");
   const userId = params?.userId || "";
 
+  const isOwnProfile = userId === currentUser?.id;
+
   const { data: user, isLoading: userLoading } = useQuery<User>({
     queryKey: ["/api/users", userId],
     enabled: !!userId,
@@ -40,6 +43,28 @@ export default function Profile() {
     queryKey: ["/api/posts/user", userId],
     enabled: !!userId,
   });
+
+  const { data: followData, isLoading: followLoading } = useQuery<{ following: boolean }>({
+    queryKey: ["/api/users", userId, "is-following"],
+    enabled: !!userId && !isOwnProfile,
+  });
+
+  const followMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest(`/api/users/${userId}/follow`, {
+        method: "POST",
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/users", userId, "is-following"] });
+    },
+  });
+
+  const isFollowing = followData?.following || false;
+
+  const handleFollowClick = () => {
+    followMutation.mutate();
+  };
 
   if (userLoading || postsLoading) {
     return (
@@ -61,8 +86,6 @@ export default function Profile() {
     );
   }
 
-  const isOwnProfile = userId === currentUser?.id;
-
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
       <div className="max-w-5xl mx-auto px-4 py-8">
@@ -79,7 +102,7 @@ export default function Profile() {
               <h1 className="font-serif text-2xl" data-testid="text-username">
                 {user.username || user.email}
               </h1>
-              {isOwnProfile && (
+              {isOwnProfile ? (
                 <div className="flex gap-2">
                   <Button variant="secondary" size="sm" data-testid="button-edit-profile">
                     Edit Profile
@@ -88,6 +111,16 @@ export default function Profile() {
                     <Settings className="h-5 w-5" />
                   </Button>
                 </div>
+              ) : (
+                <Button
+                  variant={isFollowing ? "secondary" : "default"}
+                  size="sm"
+                  onClick={handleFollowClick}
+                  disabled={followMutation.isPending || followLoading}
+                  data-testid="button-follow"
+                >
+                  {followMutation.isPending ? "..." : isFollowing ? "Following" : "Follow"}
+                </Button>
               )}
             </div>
 
