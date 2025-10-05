@@ -87,8 +87,8 @@ export function MessageThread({ conversationId, otherUser }: MessageThreadProps)
     <div className="flex flex-col h-full" data-testid="message-thread">
       <div className="border-b p-4 flex items-center gap-3">
         <Avatar className="h-10 w-10">
-          <AvatarImage src={otherUser.avatar} />
-          <AvatarFallback>{otherUser.name?.charAt(0) || otherUser.username?.charAt(0) || "U"}</AvatarFallback>
+          <AvatarImage src={otherUser?.avatar} />
+          <AvatarFallback>{otherUser?.name?.charAt(0) || otherUser?.username?.charAt(0) || "U"}</AvatarFallback>
         </Avatar>
         <div>
           <p className="font-serif font-semibold" data-testid="text-recipient-name">
