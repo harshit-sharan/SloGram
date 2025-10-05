@@ -23,6 +23,7 @@ interface PostWithAuthor {
     username: string;
     displayName: string;
     avatar?: string;
+    profileImageUrl?: string;
   };
   _count?: {
     likes: number;
@@ -102,7 +103,7 @@ export default function Feed() {
       id: post.user.id,
       name: post.user.displayName || post.user.username,
       username: post.user.username,
-      avatar: post.user.avatar,
+      avatar: post.user.profileImageUrl || post.user.avatar,
     },
     image: post.type === "image" ? post.mediaUrl : undefined,
     video: post.type === "video" ? post.mediaUrl : undefined,

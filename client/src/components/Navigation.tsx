@@ -206,7 +206,7 @@ export function Navigation() {
               >
                 <Link href={`/profile/${user.id}`}>
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src={user.profileImageUrl || ""} />
+                    <AvatarImage src={user.profileImageUrl || user.avatar || ""} />
                     <AvatarFallback>{user.firstName?.charAt(0) || user.displayName?.charAt(0) || "U"}</AvatarFallback>
                   </Avatar>
                 </Link>
