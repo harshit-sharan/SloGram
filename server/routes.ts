@@ -11,15 +11,24 @@ import { eq } from "drizzle-orm";
 const upload = multer({ 
   dest: "uploads/",
   limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB max
+    fileSize: 50 * 1024 * 1024, // 50MB max for videos
   },
   fileFilter: (req, file, cb) => {
-    // Allow only image files
-    const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    // Allow images and videos
+    const allowedMimeTypes = [
+      'image/jpeg', 
+      'image/png', 
+      'image/gif', 
+      'image/webp',
+      'video/mp4',
+      'video/quicktime',
+      'video/x-msvideo',
+      'video/webm'
+    ];
     if (allowedMimeTypes.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error('Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed.'));
+      cb(new Error('Invalid file type. Only JPEG, PNG, GIF, WebP images and MP4, MOV, AVI, WebM videos are allowed.'));
     }
   },
 });
