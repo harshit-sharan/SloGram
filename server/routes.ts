@@ -496,7 +496,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const sessionParser = getSession();
     
     sessionParser(request as any, {} as any, () => {
-      if (!request.user || !(request as any).user.claims) {
+      const req = request as any;
+      
+      // Manually deserialize user from session (passport middleware doesn't run on upgrade)
+      if (req.session && req.session.passport && req.session.passport.user) {
+        req.user = req.session.passport.user;
+      }
+      
+      if (!req.user || !req.user.claims) {
         socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
         socket.destroy();
         return;
@@ -524,19 +531,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const message = JSON.parse(data.toString());
 
         if (message.type === 'message') {
+          // Validate message payload
+          if (!message.conversationId || !message.text || typeof message.text !== 'string') {
+            ws.send(JSON.stringify({
+              type: 'error',
+              message: 'Invalid message format',
+            }));
+            return;
+          }
+          
+          // Validate text length
+          if (message.text.length > 10000) {
+            ws.send(JSON.stringify({
+              type: 'error',
+              message: 'Message too long',
+            }));
+            return;
+          }
+          
+          // Validate that the conversation exists and user is a participant
+          const conversations = await storage.getConversationsByUserId(userId);
+          const conversation = conversations.find(c => c.id === message.conversationId);
+          
+          if (!conversation) {
+            ws.send(JSON.stringify({
+              type: 'error',
+              message: 'Access denied to this conversation',
+            }));
+            return;
+          }
+          
+          // Derive recipient from conversation (don't trust client-supplied recipientId)
+          const recipientId = conversation.user1Id === userId 
+            ? conversation.user2Id 
+            : conversation.user1Id;
+          
           const newMessage = await storage.createMessage({
             conversationId: message.conversationId,
             senderId: userId,
             text: message.text,
           });
-
-          // Send to recipient if they're online
-          const conversation = await storage.getOrCreateConversation(
-            message.recipientId,
-            userId
-          );
           
-          const recipientWs = clients.get(message.recipientId);
+          const recipientWs = clients.get(recipientId);
           if (recipientWs && recipientWs.readyState === WebSocket.OPEN) {
             recipientWs.send(JSON.stringify({
               type: 'message',
