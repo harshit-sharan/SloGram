@@ -1,7 +1,7 @@
-import { type User, type InsertUser, type UpsertUser, type Post, type InsertPost, type Message, type InsertMessage, type Conversation, type Comment, type Notification } from "@shared/schema";
+import { type User, type InsertUser, type UpsertUser, type Post, type InsertPost, type Message, type InsertMessage, type Conversation, type Comment, type Notification, type Follow } from "@shared/schema";
 import { db } from "./db";
-import { users, posts, messages, conversations, comments, likes, saves, notifications } from "@shared/schema";
-import { eq, and, or, desc, ilike } from "drizzle-orm";
+import { users, posts, messages, conversations, comments, likes, saves, notifications, follows } from "@shared/schema";
+import { eq, and, or, desc, ilike, inArray } from "drizzle-orm";
 
 export interface IStorage {
   // Users
@@ -45,6 +45,13 @@ export interface IStorage {
   markNotificationAsRead(notificationId: string): Promise<void>;
   markAllNotificationsAsRead(userId: string): Promise<void>;
   getUnreadNotificationCount(userId: string): Promise<number>;
+  
+  // Follows
+  toggleFollow(followerId: string, followingId: string): Promise<boolean>;
+  isFollowing(followerId: string, followingId: string): Promise<boolean>;
+  getFollowedUserIds(userId: string): Promise<string[]>;
+  getFollowers(userId: string): Promise<User[]>;
+  getFollowing(userId: string): Promise<User[]>;
 }
 
 export class DbStorage implements IStorage {
@@ -281,6 +288,83 @@ export class DbStorage implements IStorage {
       and(eq(notifications.userId, userId), eq(notifications.read, false))
     );
     return result.length;
+  }
+
+  async toggleFollow(followerId: string, followingId: string): Promise<boolean> {
+    // Prevent self-follow
+    if (followerId === followingId) {
+      throw new Error("Cannot follow yourself");
+    }
+
+    const [existing] = await db.select().from(follows).where(
+      and(eq(follows.followerId, followerId), eq(follows.followingId, followingId))
+    );
+
+    if (existing) {
+      await db.delete(follows).where(eq(follows.id, existing.id));
+      return false;
+    } else {
+      await db.insert(follows).values({ followerId, followingId });
+      return true;
+    }
+  }
+
+  async isFollowing(followerId: string, followingId: string): Promise<boolean> {
+    const [existing] = await db.select().from(follows).where(
+      and(eq(follows.followerId, followerId), eq(follows.followingId, followingId))
+    );
+    return !!existing;
+  }
+
+  async getFollowedUserIds(userId: string): Promise<string[]> {
+    const result = await db.select({ followingId: follows.followingId })
+      .from(follows)
+      .where(eq(follows.followerId, userId));
+    return result.map(row => row.followingId);
+  }
+
+  async getFollowers(userId: string): Promise<User[]> {
+    const result = await db
+      .select({
+        id: users.id,
+        username: users.username,
+        displayName: users.displayName,
+        avatar: users.avatar,
+        bio: users.bio,
+        email: users.email,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        profileImageUrl: users.profileImageUrl,
+        password: users.password,
+        createdAt: users.createdAt,
+        updatedAt: users.updatedAt,
+      })
+      .from(follows)
+      .innerJoin(users, eq(follows.followerId, users.id))
+      .where(eq(follows.followingId, userId));
+    return result as User[];
+  }
+
+  async getFollowing(userId: string): Promise<User[]> {
+    const result = await db
+      .select({
+        id: users.id,
+        username: users.username,
+        displayName: users.displayName,
+        avatar: users.avatar,
+        bio: users.bio,
+        email: users.email,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        profileImageUrl: users.profileImageUrl,
+        password: users.password,
+        createdAt: users.createdAt,
+        updatedAt: users.updatedAt,
+      })
+      .from(follows)
+      .innerJoin(users, eq(follows.followingId, users.id))
+      .where(eq(follows.followerId, userId));
+    return result as User[];
   }
 }
 
