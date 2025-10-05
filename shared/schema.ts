@@ -121,9 +121,16 @@ export const insertFollowSchema = createInsertSchema(follows).omit({
   createdAt: true,
 });
 
+export const updateUserProfileSchema = createInsertSchema(users).pick({
+  displayName: true,
+  bio: true,
+  username: true,
+}).partial();
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
+export type UpdateUserProfile = z.infer<typeof updateUserProfileSchema>;
 export type InsertPost = z.infer<typeof insertPostSchema>;
 export type Post = typeof posts.$inferSelect;
 export type InsertMessage = z.infer<typeof insertMessageSchema>;
