@@ -7,8 +7,12 @@ import { useAuth } from "@/hooks/useAuth";
 
 interface User {
   id: string;
-  username: string;
-  displayName: string;
+  email?: string;
+  username?: string;
+  firstName?: string;
+  lastName?: string;
+  displayName?: string;
+  profileImageUrl?: string;
   bio?: string;
   avatar?: string;
 }
@@ -64,14 +68,16 @@ export default function Profile() {
       <div className="max-w-5xl mx-auto px-4 py-8">
         <div className="flex flex-col md:flex-row gap-8 md:gap-12 items-center md:items-start mb-8">
           <Avatar className="h-32 w-32" data-testid="img-avatar-profile">
-            <AvatarImage src={user.avatar} />
-            <AvatarFallback>{user.displayName.charAt(0)}</AvatarFallback>
+            <AvatarImage src={user.profileImageUrl || user.avatar} />
+            <AvatarFallback>
+              {user.firstName?.charAt(0) || user.displayName?.charAt(0) || user.username?.charAt(0) || "U"}
+            </AvatarFallback>
           </Avatar>
 
           <div className="flex-1 text-center md:text-left">
             <div className="flex flex-col md:flex-row items-center gap-4 mb-4">
               <h1 className="font-serif text-2xl" data-testid="text-username">
-                {user.username}
+                {user.username || user.email}
               </h1>
               {isOwnProfile && (
                 <div className="flex gap-2">
@@ -99,7 +105,7 @@ export default function Profile() {
 
             <div>
               <p className="font-semibold mb-1" data-testid="text-display-name">
-                {user.displayName}
+                {user.displayName || `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email}
               </p>
               {user.bio && (
                 <p className="text-muted-foreground max-w-md whitespace-pre-line" data-testid="text-bio">
