@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Heart, MessageCircle, Share2, Bookmark } from "lucide-react";
+import { Heart, MessageCircle, Share2, Bookmark, MoreVertical, Trash2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,22 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface CommentWithUser {
   id: string;
@@ -46,6 +62,7 @@ export function Post({ post }: { post: PostData }) {
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState("");
   const [following, setFollowing] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const { toast } = useToast();
   
   const isOwnPost = user?.id === post.author.id;
@@ -236,6 +253,33 @@ export function Post({ post }: { post: PostData }) {
     followMutation.mutate();
   };
 
+  // Mutation to delete post
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest("DELETE", `/api/posts/${post.id}`, {});
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/posts-with-authors"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/posts/user", post.author.id] });
+      toast({
+        title: "Post deleted",
+        description: "Your post has been deleted successfully",
+      });
+      setShowDeleteDialog(false);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to delete post",
+        description: error.message || "Please try again",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleDelete = () => {
+    deleteMutation.mutate();
+  };
+
   const handleShare = async () => {
     const postUrl = `${window.location.origin}/post/${post.id}`;
     try {
@@ -285,6 +329,25 @@ export function Post({ post }: { post: PostData }) {
           >
             {following ? "Following" : "Follow"}
           </Button>
+        )}
+        {isOwnPost && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" data-testid={`button-menu-${post.id}`}>
+                <MoreVertical className="h-5 w-5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                onClick={() => setShowDeleteDialog(true)}
+                className="text-destructive focus:text-destructive"
+                data-testid={`button-delete-${post.id}`}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete Post
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         )}
       </div>
 
@@ -421,6 +484,27 @@ export function Post({ post }: { post: PostData }) {
           </div>
         )}
       </div>
+
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent data-testid="dialog-delete-post">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Post</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this post? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-cancel-delete">Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              data-testid="button-confirm-delete"
+            >
+              {deleteMutation.isPending ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </article>
   );
 }

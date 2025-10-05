@@ -16,6 +16,7 @@ export interface IStorage {
   getPosts(): Promise<Post[]>;
   getPost(postId: string): Promise<Post | undefined>;
   getPostsByUserId(userId: string): Promise<Post[]>;
+  deletePost(postId: string): Promise<void>;
   
   // Messages
   createMessage(message: InsertMessage): Promise<Message>;
@@ -114,6 +115,14 @@ export class DbStorage implements IStorage {
 
   async getPostsByUserId(userId: string): Promise<Post[]> {
     return db.select().from(posts).where(eq(posts.userId, userId)).orderBy(desc(posts.createdAt));
+  }
+
+  async deletePost(postId: string): Promise<void> {
+    await db.delete(likes).where(eq(likes.postId, postId));
+    await db.delete(saves).where(eq(saves.postId, postId));
+    await db.delete(comments).where(eq(comments.postId, postId));
+    await db.delete(notifications).where(eq(notifications.postId, postId));
+    await db.delete(posts).where(eq(posts.id, postId));
   }
 
   async createMessage(message: InsertMessage): Promise<Message> {
