@@ -117,15 +117,9 @@ export default function Feed() {
       <div className="max-w-2xl mx-auto pt-6">
         {formattedPosts.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 px-4" data-testid="empty-feed">
-            <p className="text-center text-muted-foreground mb-4">
+            <p className="text-center text-muted-foreground">
               Your feed is empty. Follow other users to see their posts here.
             </p>
-            <Button
-              onClick={() => window.location.href = '/search'}
-              data-testid="button-discover-users"
-            >
-              Discover Users
-            </Button>
           </div>
         ) : (
           formattedPosts.map((post) => <Post key={post.id} post={post} />)
