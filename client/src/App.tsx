@@ -42,13 +42,35 @@ function useScrollRestoration() {
       // This page was visited before, restore scroll position
       isRestoringRef.current = true;
       
-      // Use multiple animation frames to ensure DOM is fully rendered
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          setTimeout(() => {
+      // Wait longer for content to load before restoring scroll
+      // Use requestIdleCallback if available, otherwise setTimeout
+      const restoreScroll = () => {
+        // Check if content has loaded by verifying document height
+        const attemptRestore = (attempts = 0) => {
+          if (attempts > 20) {
+            // Give up after 20 attempts (2 seconds)
+            isRestoringRef.current = false;
+            return;
+          }
+
+          // If document is tall enough to scroll to saved position, restore it
+          const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+          if (maxScroll >= savedPosition || attempts > 10) {
             window.scrollTo(0, savedPosition);
             isRestoringRef.current = false;
-          }, 100);
+          } else {
+            // Content not loaded yet, try again
+            setTimeout(() => attemptRestore(attempts + 1), 100);
+          }
+        };
+
+        attemptRestore();
+      };
+
+      // Start restoration after a brief delay
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setTimeout(restoreScroll, 50);
         });
       });
     } else {
