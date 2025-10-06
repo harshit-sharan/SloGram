@@ -23,6 +23,8 @@ export interface IStorage {
   getMessagesByConversationId(conversationId: string): Promise<Message[]>;
   getMessagesByConversationIdPaginated(conversationId: string, limit: number, cursor?: string): Promise<{ messages: Message[]; hasMore: boolean }>;
   markMessageAsRead(messageId: string): Promise<void>;
+  getUnreadMessageCount(userId: string): Promise<number>;
+  getUnreadMessageCountByConversation(conversationId: string, userId: string): Promise<number>;
   
   // Conversations
   getOrCreateConversation(user1Id: string, user2Id: string): Promise<Conversation>;
@@ -189,6 +191,46 @@ export class DbStorage implements IStorage {
 
   async markMessageAsRead(messageId: string): Promise<void> {
     await db.update(messages).set({ read: true }).where(eq(messages.id, messageId));
+  }
+
+  async getUnreadMessageCount(userId: string): Promise<number> {
+    // Get all conversations for the user
+    const userConversations = await this.getConversationsByUserId(userId);
+    const conversationIds = userConversations.map(c => c.id);
+    
+    if (conversationIds.length === 0) {
+      return 0;
+    }
+    
+    // Count unread messages in those conversations where the user is NOT the sender
+    const result = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(messages)
+      .where(
+        and(
+          inArray(messages.conversationId, conversationIds),
+          eq(messages.read, false),
+          sql`${messages.senderId} != ${userId}`
+        )
+      );
+    
+    return Number(result[0]?.count || 0);
+  }
+
+  async getUnreadMessageCountByConversation(conversationId: string, userId: string): Promise<number> {
+    // Count unread messages in this conversation where the user is NOT the sender
+    const result = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(messages)
+      .where(
+        and(
+          eq(messages.conversationId, conversationId),
+          eq(messages.read, false),
+          sql`${messages.senderId} != ${userId}`
+        )
+      );
+    
+    return Number(result[0]?.count || 0);
   }
 
   async getOrCreateConversation(user1Id: string, user2Id: string): Promise<Conversation> {

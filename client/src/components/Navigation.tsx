@@ -60,6 +60,12 @@ export function Navigation() {
     refetchInterval: 10000,
   });
 
+  const { data: unreadMessagesData } = useQuery<{ count: number }>({
+    queryKey: ["/api/messages", user?.id, "unread-count"],
+    enabled: !!user,
+    refetchInterval: 10000,
+  });
+
   const { data: searchResults = [] } = useQuery<SearchUser[]>({
     queryKey: [
       "/api/users/search?q=" + encodeURIComponent(debouncedSearchQuery),
@@ -234,10 +240,22 @@ export function Navigation() {
             <Link
               href="/messages"
               onClick={(e) => handleNavigation("/messages", e)}
+              className="relative"
             >
               <MessageCircle
-                className={location === "/messages" ? "fill-current" : ""}
+                className={`${
+                  location === "/messages" ? "fill-current" : ""
+                } ${
+                  unreadMessagesData && unreadMessagesData.count > 0
+                    ? "text-primary fill-current"
+                    : ""
+                }`}
               />
+              {unreadMessagesData && unreadMessagesData.count > 0 && (
+                <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center font-semibold">
+                  {unreadMessagesData.count > 9 ? "9+" : unreadMessagesData.count}
+                </span>
+              )}
             </Link>
           </Button>
 

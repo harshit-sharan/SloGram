@@ -620,6 +620,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get unread message count for user
+  app.get("/api/messages/:userId/unread-count", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const count = await storage.getUnreadMessageCount(userId);
+      res.json({ count });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch unread message count" });
+    }
+  });
+
   // Conversations API with user details and last message
   app.get("/api/conversations-with-details/:userId", isAuthenticated, async (req: any, res) => {
     try {
@@ -632,11 +643,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const otherUser = await storage.getUser(otherUserId);
           const messages = await storage.getMessagesByConversationId(conv.id);
           const lastMessage = messages[messages.length - 1];
+          const unreadCount = await storage.getUnreadMessageCountByConversation(conv.id, userId);
           
           return {
             conversation: conv,
             otherUser,
             lastMessage,
+            unreadCount,
           };
         })
       );

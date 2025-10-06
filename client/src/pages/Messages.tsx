@@ -23,6 +23,7 @@ interface ConversationWithUser {
     text: string;
     createdAt: string;
   };
+  unreadCount: number;
 }
 
 export default function Messages() {
@@ -90,7 +91,7 @@ export default function Messages() {
               <p>No conversations yet</p>
             </div>
           ) : (
-            conversations.map(({ conversation, otherUser, lastMessage }) => (
+            conversations.map(({ conversation, otherUser, lastMessage, unreadCount }) => (
               <button
                 key={conversation.id}
                 onClick={() => {
@@ -100,18 +101,27 @@ export default function Messages() {
                 }}
                 className={`w-full p-4 flex items-center gap-3 hover-elevate border-b ${
                   String(conversation.id) === selectedConversation ? "bg-muted" : ""
+                } ${
+                  unreadCount > 0 ? "bg-accent/20" : ""
                 }`}
                 data-testid={`conversation-${conversation.id}`}
               >
-                <Avatar className="h-12 w-12">
-                  <AvatarImage src={otherUser.avatar} />
-                  <AvatarFallback>{otherUser.displayName?.charAt(0) || "U"}</AvatarFallback>
-                </Avatar>
+                <div className="relative">
+                  <Avatar className="h-12 w-12">
+                    <AvatarImage src={otherUser.avatar} />
+                    <AvatarFallback>{otherUser.displayName?.charAt(0) || "U"}</AvatarFallback>
+                  </Avatar>
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center font-semibold">
+                      {unreadCount > 9 ? "9+" : unreadCount}
+                    </span>
+                  )}
+                </div>
                 <div className="flex-1 text-left">
-                  <p className="font-serif font-semibold" data-testid={`text-name-${conversation.id}`}>
+                  <p className={`font-serif ${unreadCount > 0 ? "font-bold" : "font-semibold"}`} data-testid={`text-name-${conversation.id}`}>
                     {otherUser.displayName}
                   </p>
-                  <p className="text-sm text-muted-foreground">
+                  <p className={`text-sm ${unreadCount > 0 ? "text-foreground font-semibold" : "text-muted-foreground"}`}>
                     {lastMessage?.text || "No messages yet"}
                   </p>
                 </div>
