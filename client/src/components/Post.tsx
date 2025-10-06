@@ -117,6 +117,7 @@ export function Post({ post }: { post: PostData }) {
   });
 
   const [liked, setLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(post.likes);
 
   // Update local state when query data is available
   useEffect(() => {
@@ -124,6 +125,11 @@ export function Post({ post }: { post: PostData }) {
       setLiked(likeData.liked);
     }
   }, [likeData]);
+
+  // Update like count when post data changes
+  useEffect(() => {
+    setLikeCount(post.likes);
+  }, [post.likes]);
 
   // Fetch initial save status
   const { data: saveData } = useQuery<{ saved: boolean }>({
@@ -183,7 +189,10 @@ export function Post({ post }: { post: PostData }) {
     },
     onMutate: async () => {
       // Optimistically update the UI
-      setLiked(!liked);
+      const newLikedState = !liked;
+      setLiked(newLikedState);
+      // Update like count optimistically
+      setLikeCount(prev => newLikedState ? prev + 1 : prev - 1);
     },
     onSuccess: () => {
       // Invalidate and refetch like status
@@ -194,6 +203,7 @@ export function Post({ post }: { post: PostData }) {
     onError: () => {
       // Revert on error
       setLiked(liked);
+      setLikeCount(post.likes);
     },
   });
 
@@ -577,7 +587,7 @@ export function Post({ post }: { post: PostData }) {
         </div>
 
         <p className="font-semibold text-sm mb-2" data-testid={`text-likes-${post.id}`}>
-          {post.likes} likes
+          {likeCount} {likeCount === 1 ? 'like' : 'likes'}
         </p>
 
         <div className="text-sm">
