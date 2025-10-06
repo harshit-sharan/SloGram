@@ -57,13 +57,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/posts-with-authors", isAuthenticated, async (req: any, res) => {
     try {
       const currentUserId = req.user.claims.sub;
+      const limit = parseInt(req.query.limit as string) || 10;
+      const offset = parseInt(req.query.offset as string) || 0;
       
       // Get list of users that current user follows
       const followedUserIds = await storage.getFollowedUserIds(currentUserId);
       
       // If not following anyone, return empty array
       if (followedUserIds.length === 0) {
-        return res.json([]);
+        return res.json({ posts: [], hasMore: false });
       }
       
       const posts = await storage.getPosts();
@@ -119,7 +121,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         items.splice(selectedIndex, 1);
       }
       
-      res.json(shuffled);
+      // Apply pagination
+      const paginatedPosts = shuffled.slice(offset, offset + limit);
+      const hasMore = offset + limit < shuffled.length;
+      
+      res.json({ posts: paginatedPosts, hasMore });
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch posts" });
     }

@@ -1,8 +1,9 @@
 import { Post, type PostData } from "@/components/Post";
 import { PlusSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
+import { useEffect, useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -46,10 +47,48 @@ function formatTimestamp(dateString: string): string {
 
 export default function Feed() {
   const { user, isLoading: isAuthLoading } = useAuth();
-  const { data: posts = [], isLoading } = useQuery<PostWithAuthor[]>({
+  const loadMoreRef = useRef<HTMLDivElement>(null);
+
+  const {
+    data,
+    isLoading,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
     queryKey: ["/api/posts-with-authors"],
+    queryFn: async ({ pageParam = 0 }) => {
+      const response = await fetch(
+        `/api/posts-with-authors?limit=10&offset=${pageParam}`
+      );
+      if (!response.ok) throw new Error("Failed to fetch posts");
+      return response.json();
+    },
+    getNextPageParam: (lastPage, allPages) => {
+      if (!lastPage.hasMore) return undefined;
+      return allPages.reduce((total, page) => total + page.posts.length, 0);
+    },
+    initialPageParam: 0,
     enabled: !!user,
   });
+
+  // Infinite scroll observer
+  useEffect(() => {
+    if (!loadMoreRef.current || !hasNextPage || isFetchingNextPage) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          fetchNextPage();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    observer.observe(loadMoreRef.current);
+
+    return () => observer.disconnect();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   // Show login dialog when not authenticated
   if (!user && !isAuthLoading) {
@@ -97,7 +136,10 @@ export default function Feed() {
     );
   }
 
-  const formattedPosts: PostData[] = posts.map((post) => ({
+  // Flatten all posts from all pages
+  const allPosts = data?.pages.flatMap((page) => page.posts) || [];
+
+  const formattedPosts: PostData[] = allPosts.map((post) => ({
     id: post.id,
     author: {
       id: post.user.id,
@@ -123,7 +165,23 @@ export default function Feed() {
             </p>
           </div>
         ) : (
-          formattedPosts.map((post) => <Post key={post.id} post={post} />)
+          <>
+            {formattedPosts.map((post) => (
+              <Post key={post.id} post={post} />
+            ))}
+            
+            {hasNextPage && (
+              <div
+                ref={loadMoreRef}
+                className="flex justify-center py-8"
+                data-testid="load-more-trigger"
+              >
+                {isFetchingNextPage ? (
+                  <p className="text-muted-foreground">Loading more posts...</p>
+                ) : null}
+              </div>
+            )}
+          </>
         )}
       </div>
 
