@@ -673,11 +673,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Messages API
+  // Messages API with pagination
   app.get("/api/conversations/:conversationId/messages", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const conversationId = req.params.conversationId;
+      const limit = parseInt(req.query.limit as string) || 20;
+      const cursor = req.query.cursor as string | undefined;
       
       // Get the conversation to verify the user is a participant
       const conversations = await storage.getConversationsByUserId(userId);
@@ -687,8 +689,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: "Access denied to this conversation" });
       }
       
-      const messages = await storage.getMessagesByConversationId(conversationId);
-      res.json(messages);
+      const result = await storage.getMessagesByConversationIdPaginated(conversationId, limit, cursor);
+      res.json(result);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch messages" });
     }
