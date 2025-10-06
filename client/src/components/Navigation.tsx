@@ -253,7 +253,13 @@ export function Navigation() {
               className="relative"
             >
               <Heart
-                className={location === "/notifications" ? "fill-current" : ""}
+                className={`${
+                  location === "/notifications" ? "fill-current" : ""
+                } ${
+                  unreadCountData && unreadCountData.count > 0
+                    ? "text-destructive fill-current"
+                    : ""
+                }`}
               />
               {unreadCountData && unreadCountData.count > 0 && (
                 <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center font-semibold">
