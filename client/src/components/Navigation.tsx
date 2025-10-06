@@ -201,9 +201,7 @@ export function Navigation() {
               onClick={(e) => handleNavigation("/explore", e)}
             >
               <Search className="h-4 w-4 text-muted-foreground" />
-              <span className="text-muted-foreground">
-                Search slow living...
-              </span>
+              <span className="text-muted-foreground">Explore Slogram...</span>
             </Link>
           </Button>
         )}
@@ -303,7 +301,9 @@ export function Navigation() {
                   >
                     <Link
                       href={`/profile/${user.id}`}
-                      onClick={(e) => handleNavigation(`/profile/${user.id}`, e)}
+                      onClick={(e) =>
+                        handleNavigation(`/profile/${user.id}`, e)
+                      }
                     >
                       <Avatar className="h-8 w-8">
                         <AvatarImage
