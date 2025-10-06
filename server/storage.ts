@@ -1,7 +1,7 @@
 import { type User, type InsertUser, type UpsertUser, type Post, type InsertPost, type Message, type InsertMessage, type Conversation, type Comment, type Notification, type Follow } from "@shared/schema";
 import { db } from "./db";
 import { users, posts, messages, conversations, comments, likes, saves, notifications, follows } from "@shared/schema";
-import { eq, and, or, desc, ilike, inArray } from "drizzle-orm";
+import { eq, and, or, desc, ilike, inArray, sql } from "drizzle-orm";
 
 export interface IStorage {
   // Users
@@ -21,6 +21,7 @@ export interface IStorage {
   // Messages
   createMessage(message: InsertMessage): Promise<Message>;
   getMessagesByConversationId(conversationId: string): Promise<Message[]>;
+  getMessagesByConversationIdPaginated(conversationId: string, limit: number, cursor?: string): Promise<{ messages: Message[]; hasMore: boolean }>;
   markMessageAsRead(messageId: string): Promise<void>;
   
   // Conversations
@@ -141,6 +142,49 @@ export class DbStorage implements IStorage {
     return db.select().from(messages)
       .where(eq(messages.conversationId, conversationId))
       .orderBy(messages.createdAt);
+  }
+
+  async getMessagesByConversationIdPaginated(
+    conversationId: string, 
+    limit: number = 20, 
+    cursor?: string
+  ): Promise<{ messages: Message[]; hasMore: boolean }> {
+    // Build the query - fetch messages in descending order (newest first)
+    let query = db.select().from(messages)
+      .where(eq(messages.conversationId, conversationId))
+      .orderBy(desc(messages.createdAt))
+      .limit(limit + 1); // Fetch one extra to check if there are more
+    
+    // If cursor is provided, only fetch messages older than the cursor
+    if (cursor) {
+      const result = await db.select().from(messages)
+        .where(
+          and(
+            eq(messages.conversationId, conversationId),
+            // Only get messages older than cursor (createdAt < cursor)
+            sql`${messages.createdAt} < ${new Date(cursor)}`
+          )
+        )
+        .orderBy(desc(messages.createdAt))
+        .limit(limit + 1);
+      
+      const hasMore = result.length > limit;
+      const messagesToReturn = hasMore ? result.slice(0, -1) : result;
+      
+      return {
+        messages: messagesToReturn,
+        hasMore,
+      };
+    }
+    
+    const result = await query;
+    const hasMore = result.length > limit;
+    const messagesToReturn = hasMore ? result.slice(0, -1) : result;
+    
+    return {
+      messages: messagesToReturn,
+      hasMore,
+    };
   }
 
   async markMessageAsRead(messageId: string): Promise<void> {
