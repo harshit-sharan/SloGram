@@ -424,73 +424,77 @@ export function Post({ post }: { post: PostData }) {
       {(post.video || post.image) && (
         <div className="relative w-full bg-muted">
           {post.video ? (
-            <>
-              <video
-                ref={videoRef}
-                src={post.video}
-                muted={isMuted}
-                loop
-                playsInline
-                className="w-full object-cover"
-                data-testid={`video-post-${post.id}`}
-                onTimeUpdate={handleTimeUpdate}
-                onLoadedMetadata={handleLoadedMetadata}
-                onClick={togglePlay}
-              />
-              
-              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-white hover:bg-white/20"
-                    onClick={togglePlay}
-                    data-testid={`button-play-pause-${post.id}`}
-                  >
-                    {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
-                  </Button>
-                  
-                  <input
-                    type="range"
-                    min="0"
-                    max={duration || 0}
-                    value={currentTime}
-                    onChange={handleSeek}
-                    className="flex-1 h-1 bg-white/30 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-moz-range-thumb]:w-3 [&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:border-0"
-                    data-testid={`input-seek-${post.id}`}
-                    onClick={(e) => e.stopPropagation()}
-                  />
-                  
-                  <span className="text-white text-xs font-mono min-w-[80px] text-right" data-testid={`text-time-${post.id}`}>
-                    {formatTime(currentTime)} / {formatTime(duration)}
-                  </span>
-                </div>
+            <Link href={`/post/${post.id}`} data-testid={`link-post-media-${post.id}`}>
+              <div className="relative cursor-pointer">
+                <video
+                  ref={videoRef}
+                  src={post.video}
+                  muted={isMuted}
+                  loop
+                  playsInline
+                  className="w-full object-cover"
+                  data-testid={`video-post-${post.id}`}
+                  onTimeUpdate={handleTimeUpdate}
+                  onLoadedMetadata={handleLoadedMetadata}
+                />
                 
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-white hover:bg-white/20"
-                    onClick={toggleMute}
-                    data-testid={`button-mute-${post.id}`}
-                  >
-                    {isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
-                  </Button>
+                <div 
+                  className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4"
+                  onClick={(e) => e.preventDefault()}
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-white hover:bg-white/20"
+                      onClick={togglePlay}
+                      data-testid={`button-play-pause-${post.id}`}
+                    >
+                      {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
+                    </Button>
+                    
+                    <input
+                      type="range"
+                      min="0"
+                      max={duration || 0}
+                      value={currentTime}
+                      onChange={handleSeek}
+                      className="flex-1 h-1 bg-white/30 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-moz-range-thumb]:w-3 [&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:border-0"
+                      data-testid={`input-seek-${post.id}`}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                    
+                    <span className="text-white text-xs font-mono min-w-[80px] text-right" data-testid={`text-time-${post.id}`}>
+                      {formatTime(currentTime)} / {formatTime(duration)}
+                    </span>
+                  </div>
                   
-                  <input
-                    type="range"
-                    min="0"
-                    max="1"
-                    step="0.1"
-                    value={isMuted ? 0 : volume}
-                    onChange={handleVolumeChange}
-                    className="w-24 h-1 bg-white/30 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-moz-range-thumb]:w-3 [&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:border-0"
-                    data-testid={`input-volume-${post.id}`}
-                    onClick={(e) => e.stopPropagation()}
-                  />
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-white hover:bg-white/20"
+                      onClick={toggleMute}
+                      data-testid={`button-mute-${post.id}`}
+                    >
+                      {isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
+                    </Button>
+                    
+                    <input
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.1"
+                      value={isMuted ? 0 : volume}
+                      onChange={handleVolumeChange}
+                      className="w-24 h-1 bg-white/30 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-moz-range-thumb]:w-3 [&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:border-0"
+                      data-testid={`input-volume-${post.id}`}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  </div>
                 </div>
               </div>
-            </>
+            </Link>
           ) : post.image ? (
             <Link href={`/post/${post.id}`} data-testid={`link-post-media-${post.id}`}>
               <img
