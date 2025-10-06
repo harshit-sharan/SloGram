@@ -23,26 +23,36 @@ function useScrollRestoration() {
   const prevLocationRef = useRef<string>(location);
 
   useEffect(() => {
+    // Disable browser's automatic scroll restoration
+    if ('scrollRestoration' in window.history) {
+      window.history.scrollRestoration = 'manual';
+    }
+
     // Save scroll position of previous location before navigating away
     if (prevLocationRef.current !== location) {
       scrollPositions.current[prevLocationRef.current] = window.scrollY;
     }
 
-    // Restore scroll position or scroll to top
-    const savedPosition = scrollPositions.current[location];
-    
-    if (savedPosition !== undefined) {
-      // This page was visited before, restore scroll position
-      requestAnimationFrame(() => {
+    // Restore scroll position or scroll to top with a slight delay
+    // This ensures the page content has loaded before scrolling
+    const timer = setTimeout(() => {
+      const savedPosition = scrollPositions.current[location];
+      
+      if (savedPosition !== undefined) {
+        // This page was visited before, restore scroll position
         window.scrollTo(0, savedPosition);
-      });
-    } else {
-      // First time visiting this page, scroll to top
-      window.scrollTo(0, 0);
-    }
+      } else {
+        // First time visiting this page, scroll to top
+        window.scrollTo(0, 0);
+      }
+    }, 10);
 
     // Update previous location reference
     prevLocationRef.current = location;
+
+    return () => {
+      clearTimeout(timer);
+    };
   }, [location]);
 }
 
