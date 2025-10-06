@@ -131,6 +131,81 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Explore posts API - posts from users you don't follow
+  app.get("/api/explore-posts", isAuthenticated, async (req: any, res) => {
+    try {
+      const currentUserId = req.user.claims.sub;
+      const limit = parseInt(req.query.limit as string) || 30;
+      const offset = parseInt(req.query.offset as string) || 0;
+      
+      // Get list of users that current user follows
+      const followedUserIds = await storage.getFollowedUserIds(currentUserId);
+      
+      const posts = await storage.getPosts();
+      
+      // Filter posts to show only those NOT from followed users and not from current user
+      const explorePosts = posts.filter(
+        post => !followedUserIds.includes(post.userId) && post.userId !== currentUserId
+      );
+      
+      const postsWithAuthors = await Promise.all(
+        explorePosts.map(async (post) => {
+          const user = await storage.getUser(post.userId);
+          const likesCount = await storage.getLikesByPostId(post.id);
+          const comments = await storage.getCommentsByPostId(post.id);
+          
+          return {
+            ...post,
+            user,
+            _count: {
+              likes: likesCount,
+              comments: comments.length,
+            },
+          };
+        })
+      );
+      
+      // Weighted randomization favoring recent posts
+      const now = Date.now();
+      const postsWithWeights = postsWithAuthors.map(post => {
+        const ageInHours = (now - new Date(post.createdAt).getTime()) / (1000 * 60 * 60);
+        // Exponential decay: newer posts get higher weights
+        // Posts less than 1 hour old get weight ~1.0, 24 hours old get ~0.37, 48 hours get ~0.14
+        const weight = Math.exp(-ageInHours / 24);
+        return { post, weight };
+      });
+      
+      // Weighted shuffle algorithm
+      const shuffled = [];
+      const items = [...postsWithWeights];
+      
+      while (items.length > 0) {
+        const totalWeight = items.reduce((sum, item) => sum + item.weight, 0);
+        let random = Math.random() * totalWeight;
+        
+        let selectedIndex = 0;
+        for (let i = 0; i < items.length; i++) {
+          random -= items[i].weight;
+          if (random <= 0) {
+            selectedIndex = i;
+            break;
+          }
+        }
+        
+        shuffled.push(items[selectedIndex].post);
+        items.splice(selectedIndex, 1);
+      }
+      
+      // Apply pagination
+      const paginatedPosts = shuffled.slice(offset, offset + limit);
+      const hasMore = offset + limit < shuffled.length;
+      
+      res.json({ posts: paginatedPosts, hasMore });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch explore posts" });
+    }
+  });
+
   // Posts API
   app.get("/api/posts", isAuthenticated, async (req, res) => {
     try {

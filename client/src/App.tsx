@@ -8,6 +8,7 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import { Navigation } from "@/components/Navigation";
 import { CreatePostModal } from "@/components/CreatePostModal";
 import Feed from "@/pages/Feed";
+import Explore from "@/pages/Explore";
 import Profile from "@/pages/Profile";
 import Messages from "@/pages/Messages";
 import PostDetail from "@/pages/PostDetail";
@@ -19,6 +20,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Feed} />
+      <Route path="/explore" component={Explore} />
       <Route path="/post/:id" component={PostDetail} />
       <Route path="/profile/:userId" component={Profile} />
       <Route path="/messages" component={Messages} />
