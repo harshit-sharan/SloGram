@@ -40,17 +40,20 @@ export default function Messages() {
 
   // Auto-select conversation from URL parameter
   useEffect(() => {
+    // Only run when conversations are loaded
+    if (isLoading) return;
+    
     const params = new URLSearchParams(location.split('?')[1]);
     const conversationId = params.get('conversation');
     
-    if (conversationId && conversations.length > 0) {
+    if (conversationId) {
       const conversationExists = conversations.find(c => c.conversation.id === conversationId);
       if (conversationExists) {
         setSelectedConversation(conversationId);
         setShouldAutoFocus(true);
       }
     }
-  }, [location, conversations]);
+  }, [location, conversations, isLoading]);
 
   const selected = conversations.find((c) => c.conversation.id === selectedConversation);
 
