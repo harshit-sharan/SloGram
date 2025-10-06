@@ -30,6 +30,7 @@ export default function Messages() {
   const [location] = useLocation();
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
   const [shouldAutoFocus, setShouldAutoFocus] = useState(false);
+  const [hasAutoSelected, setHasAutoSelected] = useState(false);
 
   const { data: conversations = [], isLoading } = useQuery<ConversationWithUser[]>({
     queryKey: ["/api/conversations-with-details", user?.id],
@@ -40,20 +41,21 @@ export default function Messages() {
 
   // Auto-select conversation from URL parameter
   useEffect(() => {
-    // Only run when conversations are loaded
-    if (isLoading) return;
+    // Only run once when conversations are loaded and we haven't auto-selected yet
+    if (isLoading || hasAutoSelected) return;
     
     const params = new URLSearchParams(location.split('?')[1]);
     const conversationId = params.get('conversation');
     
-    if (conversationId) {
+    if (conversationId && conversations.length > 0) {
       const conversationExists = conversations.find(c => c.conversation.id === conversationId);
       if (conversationExists) {
         setSelectedConversation(conversationId);
         setShouldAutoFocus(true);
+        setHasAutoSelected(true);
       }
     }
-  }, [location, conversations, isLoading]);
+  }, [location, conversations, isLoading, hasAutoSelected]);
 
   const selected = conversations.find((c) => c.conversation.id === selectedConversation);
 
@@ -83,6 +85,7 @@ export default function Messages() {
                 onClick={() => {
                   setSelectedConversation(conversation.id);
                   setShouldAutoFocus(false);
+                  setHasAutoSelected(true);
                 }}
                 className={`w-full p-4 flex items-center gap-3 hover-elevate border-b ${
                   selectedConversation === conversation.id ? "bg-muted" : ""

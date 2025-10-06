@@ -85,11 +85,12 @@ export function MessageThread({ conversationId, otherUser, autoFocus = false }: 
   useEffect(() => {
     if (autoFocus && inputRef.current) {
       // Delay focus slightly to ensure component is fully mounted
-      setTimeout(() => {
+      const timer = setTimeout(() => {
         inputRef.current?.focus();
-      }, 100);
+      }, 300);
+      return () => clearTimeout(timer);
     }
-  }, [autoFocus]);
+  }, [autoFocus, conversationId]);
 
   // Refetch messages when receiving WebSocket messages for this conversation
   useEffect(() => {
