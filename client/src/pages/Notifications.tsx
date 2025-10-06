@@ -37,6 +37,7 @@ export default function Notifications() {
   const { data: notifications = [], isLoading } = useQuery<NotificationData[]>({
     queryKey: ["/api/notifications", user?.id],
     enabled: !!user,
+    refetchOnMount: true,
   });
 
   const markAsReadMutation = useMutation({
