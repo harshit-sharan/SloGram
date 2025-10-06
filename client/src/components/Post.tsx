@@ -146,7 +146,7 @@ export function Post({ post }: { post: PostData }) {
   }, [saveData]);
 
   // Fetch follow status
-  const { data: followData } = useQuery<{ following: boolean }>({
+  const { data: followData, isLoading: followLoading } = useQuery<{ following: boolean }>({
     queryKey: ["/api/users", post.author.id, "is-following", user?.id],
     queryFn: async () => {
       const response = await fetch(`/api/users/${post.author.id}/is-following`);
@@ -418,14 +418,15 @@ export function Post({ post }: { post: PostData }) {
             {post.timestamp}
           </p>
         </div>
-        {!isOwnPost && (
+        {!isOwnPost && !followLoading && (
           <Button
             variant={following ? "outline" : "default"}
             size="sm"
             onClick={handleFollow}
+            disabled={followMutation.isPending}
             data-testid={`button-follow-${post.id}`}
           >
-            {following ? "Following" : "Follow"}
+            {followMutation.isPending ? "..." : following ? "Following" : "Follow"}
           </Button>
         )}
         {isOwnPost && (

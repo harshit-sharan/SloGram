@@ -291,48 +291,52 @@ export function Navigation() {
             )}
           </Button>
 
-          {user ? (
+          {user !== undefined && (
             <>
-              <Button
-                variant="ghost"
-                size="icon"
-                asChild
-                data-testid="button-profile"
-              >
-                <Link
-                  href={`/profile/${user.id}`}
-                  onClick={(e) => handleNavigation(`/profile/${user.id}`, e)}
-                >
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage
-                      src={user.profileImageUrl || user.avatar || ""}
-                    />
-                    <AvatarFallback>
-                      {user.firstName?.charAt(0) ||
-                        user.displayName?.charAt(0) ||
-                        "U"}
-                    </AvatarFallback>
-                  </Avatar>
-                </Link>
-              </Button>
+              {user ? (
+                <>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    asChild
+                    data-testid="button-profile"
+                  >
+                    <Link
+                      href={`/profile/${user.id}`}
+                      onClick={(e) => handleNavigation(`/profile/${user.id}`, e)}
+                    >
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage
+                          src={user.profileImageUrl || user.avatar || ""}
+                        />
+                        <AvatarFallback>
+                          {user.firstName?.charAt(0) ||
+                            user.displayName?.charAt(0) ||
+                            "U"}
+                        </AvatarFallback>
+                      </Avatar>
+                    </Link>
+                  </Button>
 
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => logout()}
-                data-testid="button-logout"
-              >
-                <LogOut className="h-5 w-5" />
-              </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => logout()}
+                    data-testid="button-logout"
+                  >
+                    <LogOut className="h-5 w-5" />
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  variant="default"
+                  onClick={() => (window.location.href = "/api/login")}
+                  data-testid="button-login"
+                >
+                  Log In
+                </Button>
+              )}
             </>
-          ) : (
-            <Button
-              variant="default"
-              onClick={() => (window.location.href = "/api/login")}
-              data-testid="button-login"
-            >
-              Log In
-            </Button>
           )}
         </div>
       </div>

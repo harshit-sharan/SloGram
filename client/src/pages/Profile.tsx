@@ -389,15 +389,17 @@ export default function Profile() {
                 </div>
               ) : (
                 <div className="flex gap-2">
-                  <Button
-                    variant={isFollowing ? "secondary" : "default"}
-                    size="sm"
-                    onClick={handleFollowClick}
-                    disabled={followMutation.isPending || followLoading}
-                    data-testid="button-follow"
-                  >
-                    {followMutation.isPending ? "..." : isFollowing ? "Following" : "Follow"}
-                  </Button>
+                  {!followLoading && (
+                    <Button
+                      variant={isFollowing ? "secondary" : "default"}
+                      size="sm"
+                      onClick={handleFollowClick}
+                      disabled={followMutation.isPending}
+                      data-testid="button-follow"
+                    >
+                      {followMutation.isPending ? "..." : isFollowing ? "Following" : "Follow"}
+                    </Button>
+                  )}
                   <Button
                     variant="outline"
                     size="sm"
