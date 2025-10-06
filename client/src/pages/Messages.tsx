@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
-import { MessageCircle } from "lucide-react";
+import { MessageCircle, ArrowLeft } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import { MessageThread } from "@/components/MessageThread";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
@@ -81,7 +82,8 @@ export default function Messages() {
 
   return (
     <div className="h-[calc(100vh-4rem)] flex">
-      <div className="w-full md:w-96 border-r">
+      {/* Conversation List - Hidden on mobile when chat is selected */}
+      <div className={`w-full md:w-96 border-r ${selectedConversation ? 'hidden md:block' : 'block'}`}>
         <div className="p-4 border-b">
           <h2 className="font-serif text-xl font-semibold">Messages</h2>
         </div>
@@ -134,18 +136,37 @@ export default function Messages() {
         </div>
       </div>
 
-      <div className="flex-1 hidden md:flex flex-col">
+      {/* Chat Window - Shows on mobile when conversation is selected */}
+      <div className={`flex-1 flex-col ${selectedConversation ? 'flex' : 'hidden md:flex'}`}>
         {selected ? (
-          <MessageThread
-            conversationId={selected.conversation.id}
-            otherUser={{
-              id: selected.otherUser.id,
-              name: selected.otherUser.displayName || selected.otherUser.username,
-              username: selected.otherUser.username,
-              avatar: selected.otherUser.avatar,
-            }}
-            autoFocus={shouldAutoFocus}
-          />
+          <>
+            {/* Mobile back button */}
+            <div className="md:hidden p-2 border-b flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setSelectedConversation(null)}
+                data-testid="button-back-to-conversations"
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+              <Avatar className="h-8 w-8">
+                <AvatarImage src={selected.otherUser.avatar} />
+                <AvatarFallback>{selected.otherUser.displayName?.charAt(0) || "U"}</AvatarFallback>
+              </Avatar>
+              <span className="font-semibold">{selected.otherUser.displayName}</span>
+            </div>
+            <MessageThread
+              conversationId={selected.conversation.id}
+              otherUser={{
+                id: selected.otherUser.id,
+                name: selected.otherUser.displayName || selected.otherUser.username,
+                username: selected.otherUser.username,
+                avatar: selected.otherUser.avatar,
+              }}
+              autoFocus={shouldAutoFocus}
+            />
+          </>
         ) : (
           <div className="flex-1 flex items-center justify-center text-muted-foreground">
             <div className="text-center">
