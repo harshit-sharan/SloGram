@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -19,40 +19,31 @@ import NotFound from "@/pages/not-found";
 // Hook to manage scroll position restoration
 function useScrollRestoration() {
   const [location] = useLocation();
-  const scrollPositions = useState<Record<string, number>>(() => ({}))[0];
+  const scrollPositions = useRef<Record<string, number>>({});
+  const prevLocationRef = useRef<string>(location);
 
   useEffect(() => {
-    // Save current scroll position before route changes
-    const saveScrollPosition = () => {
-      scrollPositions[location] = window.scrollY;
-    };
+    // Save scroll position of previous location before navigating away
+    if (prevLocationRef.current !== location) {
+      scrollPositions.current[prevLocationRef.current] = window.scrollY;
+    }
 
     // Restore scroll position or scroll to top
-    const restoreScrollPosition = () => {
-      const savedPosition = scrollPositions[location];
-      
-      if (savedPosition !== undefined) {
-        // This page was visited before, restore scroll position
-        setTimeout(() => {
-          window.scrollTo(0, savedPosition);
-        }, 0);
-      } else {
-        // First time visiting this page, scroll to top
-        window.scrollTo(0, 0);
-      }
-    };
-
-    // Save scroll position on route change
-    window.addEventListener('beforeunload', saveScrollPosition);
+    const savedPosition = scrollPositions.current[location];
     
-    // Restore scroll position after route change
-    restoreScrollPosition();
+    if (savedPosition !== undefined) {
+      // This page was visited before, restore scroll position
+      requestAnimationFrame(() => {
+        window.scrollTo(0, savedPosition);
+      });
+    } else {
+      // First time visiting this page, scroll to top
+      window.scrollTo(0, 0);
+    }
 
-    return () => {
-      saveScrollPosition();
-      window.removeEventListener('beforeunload', saveScrollPosition);
-    };
-  }, [location, scrollPositions]);
+    // Update previous location reference
+    prevLocationRef.current = location;
+  }, [location]);
 }
 
 function Router() {
