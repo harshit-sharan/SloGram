@@ -34,7 +34,6 @@ Preferred communication style: Simple, everyday language.
 - Mobile-first responsive design:
   - Logo scales appropriately on mobile (10x10 on mobile, 12x12 on desktop) with object-contain to prevent squishing
   - Reduced icon spacing on mobile (gap-1 on mobile, gap-2 on desktop) for better space utilization
-  - Add post button hidden on mobile devices to streamline navigation bar
 
 ### Backend Architecture
 

@@ -68,7 +68,6 @@ export function Navigation() {
               window.dispatchEvent(new Event("open-create-post"));
             }}
             data-testid="button-create"
-            className="hidden sm:inline-flex"
           >
             <PlusSquare />
           </Button>
