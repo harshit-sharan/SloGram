@@ -36,6 +36,7 @@ export default function Explore() {
   const { data: exploreData, isLoading } = useQuery<{ posts: PostWithAuthor[]; hasMore: boolean }>({
     queryKey: [`/api/explore-posts?limit=${BATCH_SIZE}&offset=${offset}`],
     enabled: !!user,
+    staleTime: 0,
   });
 
   useEffect(() => {
