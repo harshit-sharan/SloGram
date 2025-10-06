@@ -206,12 +206,24 @@ export default function Profile() {
     enabled: !!userId && !isOwnProfile,
   });
 
+  const { data: followers = [] } = useQuery<User[]>({
+    queryKey: ["/api/users", userId, "followers"],
+    enabled: !!userId,
+  });
+
+  const { data: following = [] } = useQuery<User[]>({
+    queryKey: ["/api/users", userId, "following"],
+    enabled: !!userId,
+  });
+
   const followMutation = useMutation({
     mutationFn: async () => {
       return await apiRequest("POST", `/api/users/${userId}/follow`, {});
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/users", userId, "is-following"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/users", userId, "followers"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/users", userId, "following"] });
     },
   });
 
@@ -420,10 +432,10 @@ export default function Profile() {
                 <span className="font-semibold">{posts.length}</span> posts
               </div>
               <div data-testid="text-followers-count">
-                <span className="font-semibold">0</span> followers
+                <span className="font-semibold">{followers.length}</span> followers
               </div>
               <div data-testid="text-following-count">
-                <span className="font-semibold">0</span> following
+                <span className="font-semibold">{following.length}</span> following
               </div>
             </div>
 
