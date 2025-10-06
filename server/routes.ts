@@ -41,6 +41,17 @@ interface ExploreCacheEntry {
 const exploreCache = new Map<string, ExploreCacheEntry>();
 const EXPLORE_CACHE_TTL = 5 * 60 * 1000;
 
+function cleanupExpiredExploreCache() {
+  const now = Date.now();
+  for (const [key, entry] of exploreCache.entries()) {
+    if (now - entry.timestamp >= EXPLORE_CACHE_TTL) {
+      exploreCache.delete(key);
+    }
+  }
+}
+
+setInterval(cleanupExpiredExploreCache, 60 * 1000);
+
 interface MulterRequest extends Request {
   file?: Express.Multer.File;
 }

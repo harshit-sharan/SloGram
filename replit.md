@@ -43,6 +43,8 @@ Preferred communication style: Simple, everyday language.
 - RESTful endpoints for posts, users, likes, comments, saves, and notifications
 - File upload handling via Multer (stored in `/uploads` directory)
 - WebSocket connections for live messaging between users
+- Explore page uses weighted randomization with per-user caching (5-minute TTL) to ensure consistent pagination
+- Periodic cache cleanup (60-second intervals) prevents memory bloat
 
 **Data Layer:**
 - Drizzle ORM for type-safe database operations
