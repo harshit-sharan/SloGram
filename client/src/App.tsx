@@ -21,6 +21,7 @@ function useScrollRestoration() {
   const [location] = useLocation();
   const scrollPositions = useRef<Record<string, number>>({});
   const prevLocationRef = useRef<string>(location);
+  const isRestoringRef = useRef(false);
 
   useEffect(() => {
     // Disable browser's automatic scroll restoration
@@ -29,30 +30,34 @@ function useScrollRestoration() {
     }
 
     // Save scroll position of previous location before navigating away
-    if (prevLocationRef.current !== location) {
+    if (prevLocationRef.current !== location && !isRestoringRef.current) {
       scrollPositions.current[prevLocationRef.current] = window.scrollY;
     }
 
-    // Restore scroll position or scroll to top with a slight delay
-    // This ensures the page content has loaded before scrolling
-    const timer = setTimeout(() => {
-      const savedPosition = scrollPositions.current[location];
+    // Restore scroll position or scroll to top
+    const savedPosition = scrollPositions.current[location];
+    
+    if (savedPosition !== undefined && savedPosition > 0) {
+      // This page was visited before, restore scroll position
+      isRestoringRef.current = true;
       
-      if (savedPosition !== undefined) {
-        // This page was visited before, restore scroll position
-        window.scrollTo(0, savedPosition);
-      } else {
-        // First time visiting this page, scroll to top
-        window.scrollTo(0, 0);
-      }
-    }, 10);
+      // Use multiple animation frames to ensure DOM is fully rendered
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setTimeout(() => {
+            window.scrollTo(0, savedPosition);
+            isRestoringRef.current = false;
+          }, 100);
+        });
+      });
+    } else {
+      // First time visiting this page, scroll to top
+      window.scrollTo(0, 0);
+      isRestoringRef.current = false;
+    }
 
     // Update previous location reference
     prevLocationRef.current = location;
-
-    return () => {
-      clearTimeout(timer);
-    };
   }, [location]);
 }
 
