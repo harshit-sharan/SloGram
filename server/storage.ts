@@ -193,6 +193,20 @@ export class DbStorage implements IStorage {
     await db.update(messages).set({ read: true }).where(eq(messages.id, messageId));
   }
 
+  async markConversationMessagesAsRead(conversationId: string, userId: string): Promise<void> {
+    // Mark all unread messages in this conversation as read where the user is NOT the sender
+    await db
+      .update(messages)
+      .set({ read: true })
+      .where(
+        and(
+          eq(messages.conversationId, conversationId),
+          eq(messages.read, false),
+          sql`${messages.senderId} != ${userId}`
+        )
+      );
+  }
+
   async getUnreadMessageCount(userId: string): Promise<number> {
     // Get all conversations for the user
     const userConversations = await this.getConversationsByUserId(userId);
@@ -202,9 +216,9 @@ export class DbStorage implements IStorage {
       return 0;
     }
     
-    // Count unread messages in those conversations where the user is NOT the sender
+    // Count unique conversations that have unread messages where the user is NOT the sender
     const result = await db
-      .select({ count: sql<number>`count(*)` })
+      .selectDistinct({ conversationId: messages.conversationId })
       .from(messages)
       .where(
         and(
@@ -214,7 +228,7 @@ export class DbStorage implements IStorage {
         )
       );
     
-    return Number(result[0]?.count || 0);
+    return result.length;
   }
 
   async getUnreadMessageCountByConversation(conversationId: string, userId: string): Promise<number> {

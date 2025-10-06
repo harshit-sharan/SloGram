@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { queryClient } from "@/lib/queryClient";
+import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/useAuth";
 
 interface Message {
@@ -91,6 +91,28 @@ export function MessageThread({ conversationId, otherUser, autoFocus = false }: 
       return () => clearTimeout(timer);
     }
   }, [autoFocus, conversationId]);
+
+  // Mark messages as read when conversation is opened
+  useEffect(() => {
+    const markAsRead = async () => {
+      try {
+        await apiRequest("POST", `/api/conversations/${conversationId}/mark-read`, {});
+        // Invalidate unread count and conversations list
+        queryClient.invalidateQueries({
+          queryKey: ["/api/messages", user?.id, "unread-count"],
+        });
+        queryClient.invalidateQueries({
+          queryKey: ["/api/conversations-with-details", user?.id],
+        });
+      } catch (error) {
+        console.error("Failed to mark messages as read:", error);
+      }
+    };
+
+    if (conversationId && user?.id) {
+      markAsRead();
+    }
+  }, [conversationId, user?.id]);
 
   // Refetch messages when receiving WebSocket messages for this conversation
   useEffect(() => {
