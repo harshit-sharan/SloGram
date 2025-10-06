@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Heart, MessageCircle, Share2, Bookmark, MoreVertical, Trash2 } from "lucide-react";
+import { Heart, MessageCircle, Share2, Bookmark, MoreVertical, Trash2, Play, Pause, Volume2, VolumeX } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -65,6 +65,13 @@ export function Post({ post }: { post: PostData }) {
   const [following, setFollowing] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const { toast } = useToast();
+  
+  // Video controls state
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [volume, setVolume] = useState(1);
+  const [isMuted, setIsMuted] = useState(true);
   
   const isOwnPost = user?.id === post.author.id;
 
@@ -298,6 +305,68 @@ export function Post({ post }: { post: PostData }) {
     }
   };
 
+  // Video control handlers
+  const togglePlay = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (videoRef.current) {
+      if (isPlaying) {
+        videoRef.current.pause();
+      } else {
+        videoRef.current.play();
+      }
+      setIsPlaying(!isPlaying);
+    }
+  };
+
+  const handleTimeUpdate = () => {
+    if (videoRef.current) {
+      setCurrentTime(videoRef.current.currentTime);
+    }
+  };
+
+  const handleLoadedMetadata = () => {
+    if (videoRef.current) {
+      setDuration(videoRef.current.duration);
+    }
+  };
+
+  const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const time = parseFloat(e.target.value);
+    if (videoRef.current) {
+      videoRef.current.currentTime = time;
+      setCurrentTime(time);
+    }
+  };
+
+  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newVolume = parseFloat(e.target.value);
+    if (videoRef.current) {
+      videoRef.current.volume = newVolume;
+      setVolume(newVolume);
+      if (newVolume > 0) {
+        setIsMuted(false);
+        videoRef.current.muted = false;
+      }
+    }
+  };
+
+  const toggleMute = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (videoRef.current) {
+      videoRef.current.muted = !isMuted;
+      setIsMuted(!isMuted);
+    }
+  };
+
+  const formatTime = (time: number) => {
+    if (isNaN(time)) return "0:00";
+    const minutes = Math.floor(time / 60);
+    const seconds = Math.floor(time % 60);
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  };
+
   const captionPreview = post.caption.length > 120 
     ? post.caption.substring(0, 120) + "..."
     : post.caption;
@@ -353,30 +422,86 @@ export function Post({ post }: { post: PostData }) {
       </div>
 
       {(post.video || post.image) && (
-        <Link href={`/post/${post.id}`} data-testid={`link-post-media-${post.id}`}>
-          <div 
-            className="relative w-full bg-muted cursor-pointer"
-          >
-            {post.video ? (
+        <div className="relative w-full bg-muted">
+          {post.video ? (
+            <>
               <video
                 ref={videoRef}
                 src={post.video}
-                muted
+                muted={isMuted}
                 loop
                 playsInline
                 className="w-full object-cover"
                 data-testid={`video-post-${post.id}`}
+                onTimeUpdate={handleTimeUpdate}
+                onLoadedMetadata={handleLoadedMetadata}
+                onClick={togglePlay}
               />
-            ) : post.image ? (
+              
+              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-white hover:bg-white/20"
+                    onClick={togglePlay}
+                    data-testid={`button-play-pause-${post.id}`}
+                  >
+                    {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
+                  </Button>
+                  
+                  <input
+                    type="range"
+                    min="0"
+                    max={duration || 0}
+                    value={currentTime}
+                    onChange={handleSeek}
+                    className="flex-1 h-1 bg-white/30 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-moz-range-thumb]:w-3 [&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:border-0"
+                    data-testid={`input-seek-${post.id}`}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                  
+                  <span className="text-white text-xs font-mono min-w-[80px] text-right" data-testid={`text-time-${post.id}`}>
+                    {formatTime(currentTime)} / {formatTime(duration)}
+                  </span>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-white hover:bg-white/20"
+                    onClick={toggleMute}
+                    data-testid={`button-mute-${post.id}`}
+                  >
+                    {isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
+                  </Button>
+                  
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.1"
+                    value={isMuted ? 0 : volume}
+                    onChange={handleVolumeChange}
+                    className="w-24 h-1 bg-white/30 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-moz-range-thumb]:w-3 [&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:border-0"
+                    data-testid={`input-volume-${post.id}`}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                </div>
+              </div>
+            </>
+          ) : post.image ? (
+            <Link href={`/post/${post.id}`} data-testid={`link-post-media-${post.id}`}>
               <img
                 src={post.image}
                 alt="Post content"
-                className="w-full object-cover"
+                className="w-full object-cover cursor-pointer"
                 data-testid={`img-post-${post.id}`}
               />
-            ) : null}
-          </div>
-        </Link>
+            </Link>
+          ) : null}
+        </div>
       )}
 
       <div className="px-4">
