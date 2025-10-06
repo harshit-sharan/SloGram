@@ -66,15 +66,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get list of users that current user follows
       const followedUserIds = await storage.getFollowedUserIds(currentUserId);
       
-      // If not following anyone, return empty array
-      if (followedUserIds.length === 0) {
-        return res.json({ posts: [], hasMore: false });
-      }
-      
       const posts = await storage.getPosts();
       
       // Filter posts to only show those from followed users
-      const followedUsersPosts = posts.filter(post => followedUserIds.includes(post.userId));
+      let followedUsersPosts = posts.filter(post => followedUserIds.includes(post.userId));
+      
+      // If feed is empty (not following anyone or no posts from followed users), 
+      // show random posts from unfollowed users
+      if (followedUsersPosts.length === 0) {
+        followedUsersPosts = posts.filter(
+          post => !followedUserIds.includes(post.userId) && post.userId !== currentUserId
+        );
+      }
       
       const postsWithAuthors = await Promise.all(
         followedUsersPosts.map(async (post) => {
