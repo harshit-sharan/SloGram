@@ -81,13 +81,16 @@ export function VideoPost({ post }: { post: VideoPostData }) {
         </div>
       </div>
 
-      <div className="relative w-full bg-muted">
+      <div 
+        className="relative w-full bg-muted cursor-pointer"
+        onMouseEnter={() => videoRef.current?.play()}
+        onMouseLeave={() => videoRef.current?.pause()}
+      >
         <video
           ref={videoRef}
           src={post.video}
           className="w-full object-cover max-h-96"
           loop
-          autoPlay
           muted={muted}
           playsInline
           data-testid={`video-post-${post.id}`}
