@@ -33,30 +33,6 @@ const upload = multer({
   },
 });
 
-interface CacheEntry {
-  posts: any[];
-  timestamp: number;
-}
-
-const exploreCache = new Map<string, CacheEntry>();
-const feedCache = new Map<string, CacheEntry>();
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
-
-function cleanupExpiredCache() {
-  const now = Date.now();
-  for (const [key, entry] of Array.from(exploreCache.entries())) {
-    if (now - entry.timestamp >= CACHE_TTL) {
-      exploreCache.delete(key);
-    }
-  }
-  for (const [key, entry] of Array.from(feedCache.entries())) {
-    if (now - entry.timestamp >= CACHE_TTL) {
-      feedCache.delete(key);
-    }
-  }
-}
-
-setInterval(cleanupExpiredCache, 60 * 1000);
 
 interface MulterRequest extends Request {
   file?: Express.Multer.File;
@@ -86,87 +62,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const offset = parseInt(req.query.offset as string) || 0;
       
       const now = Date.now();
-      const cacheKey = currentUserId;
       
-      let shuffledPosts: any[];
+      // Get list of users that current user follows
+      const followedUserIds = await storage.getFollowedUserIds(currentUserId);
       
-      // Check if we have cached shuffled posts for this user
-      const cached = feedCache.get(cacheKey);
-      if (cached && now - cached.timestamp < CACHE_TTL) {
-        shuffledPosts = cached.posts;
-      } else {
-        // Get list of users that current user follows
-        const followedUserIds = await storage.getFollowedUserIds(currentUserId);
-        
-        // If not following anyone, return empty array
-        if (followedUserIds.length === 0) {
-          return res.json({ posts: [], hasMore: false });
-        }
-        
-        const posts = await storage.getPosts();
-        
-        // Filter posts to only show those from followed users
-        const followedUsersPosts = posts.filter(post => followedUserIds.includes(post.userId));
-        
-        const postsWithAuthors = await Promise.all(
-          followedUsersPosts.map(async (post) => {
-            const user = await storage.getUser(post.userId);
-            const likesCount = await storage.getLikesByPostId(post.id);
-            const comments = await storage.getCommentsByPostId(post.id);
-            
-            return {
-              ...post,
-              user,
-              _count: {
-                likes: likesCount,
-                comments: comments.length,
-              },
-            };
-          })
-        );
-        
-        // Weighted randomization favoring recent posts
-        const postsWithWeights = postsWithAuthors.map(post => {
-          const ageInHours = (now - new Date(post.createdAt).getTime()) / (1000 * 60 * 60);
-          // Exponential decay: newer posts get higher weights
-          // Posts less than 1 hour old get weight ~1.0, 24 hours old get ~0.37, 48 hours get ~0.14
-          const weight = Math.exp(-ageInHours / 24);
-          return { post, weight };
-        });
-        
-        // Weighted shuffle algorithm
-        const shuffled = [];
-        const items = [...postsWithWeights];
-        
-        while (items.length > 0) {
-          const totalWeight = items.reduce((sum, item) => sum + item.weight, 0);
-          let random = Math.random() * totalWeight;
+      // If not following anyone, return empty array
+      if (followedUserIds.length === 0) {
+        return res.json({ posts: [], hasMore: false });
+      }
+      
+      const posts = await storage.getPosts();
+      
+      // Filter posts to only show those from followed users
+      const followedUsersPosts = posts.filter(post => followedUserIds.includes(post.userId));
+      
+      const postsWithAuthors = await Promise.all(
+        followedUsersPosts.map(async (post) => {
+          const user = await storage.getUser(post.userId);
+          const likesCount = await storage.getLikesByPostId(post.id);
+          const comments = await storage.getCommentsByPostId(post.id);
           
-          let selectedIndex = 0;
-          for (let i = 0; i < items.length; i++) {
-            random -= items[i].weight;
-            if (random <= 0) {
-              selectedIndex = i;
-              break;
-            }
+          return {
+            ...post,
+            user,
+            _count: {
+              likes: likesCount,
+              comments: comments.length,
+            },
+          };
+        })
+      );
+      
+      // Weighted randomization favoring recent posts
+      const postsWithWeights = postsWithAuthors.map(post => {
+        const ageInHours = (now - new Date(post.createdAt).getTime()) / (1000 * 60 * 60);
+        // Exponential decay: newer posts get higher weights
+        // Posts less than 1 hour old get weight ~1.0, 24 hours old get ~0.37, 48 hours get ~0.14
+        const weight = Math.exp(-ageInHours / 24);
+        return { post, weight };
+      });
+      
+      // Weighted shuffle algorithm
+      const shuffled = [];
+      const items = [...postsWithWeights];
+      
+      while (items.length > 0) {
+        const totalWeight = items.reduce((sum, item) => sum + item.weight, 0);
+        let random = Math.random() * totalWeight;
+        
+        let selectedIndex = 0;
+        for (let i = 0; i < items.length; i++) {
+          random -= items[i].weight;
+          if (random <= 0) {
+            selectedIndex = i;
+            break;
           }
-          
-          shuffled.push(items[selectedIndex].post);
-          items.splice(selectedIndex, 1);
         }
         
-        shuffledPosts = shuffled;
-        
-        // Cache the shuffled posts
-        feedCache.set(cacheKey, {
-          posts: shuffledPosts,
-          timestamp: now,
-        });
+        shuffled.push(items[selectedIndex].post);
+        items.splice(selectedIndex, 1);
       }
       
       // Apply pagination
-      const paginatedPosts = shuffledPosts.slice(offset, offset + limit);
-      const hasMore = offset + limit < shuffledPosts.length;
+      const paginatedPosts = shuffled.slice(offset, offset + limit);
+      const hasMore = offset + limit < shuffled.length;
       
       res.json({ posts: paginatedPosts, hasMore });
     } catch (error) {
@@ -182,75 +141,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const offset = parseInt(req.query.offset as string) || 0;
       
       const now = Date.now();
-      const cacheKey = currentUserId;
       
-      let shuffledPosts: any[];
+      const followedUserIds = await storage.getFollowedUserIds(currentUserId);
       
-      const cached = exploreCache.get(cacheKey);
-      if (cached && now - cached.timestamp < CACHE_TTL) {
-        shuffledPosts = cached.posts;
-      } else {
-        const followedUserIds = await storage.getFollowedUserIds(currentUserId);
-        
-        const posts = await storage.getPosts();
-        
-        const explorePosts = posts.filter(
-          post => !followedUserIds.includes(post.userId) && post.userId !== currentUserId
-        );
-        
-        const postsWithAuthors = await Promise.all(
-          explorePosts.map(async (post) => {
-            const user = await storage.getUser(post.userId);
-            const likesCount = await storage.getLikesByPostId(post.id);
-            const comments = await storage.getCommentsByPostId(post.id);
-            
-            return {
-              ...post,
-              user,
-              _count: {
-                likes: likesCount,
-                comments: comments.length,
-              },
-            };
-          })
-        );
-        
-        const postsWithWeights = postsWithAuthors.map(post => {
-          const ageInHours = (now - new Date(post.createdAt).getTime()) / (1000 * 60 * 60);
-          const weight = Math.exp(-ageInHours / 24);
-          return { post, weight };
-        });
-        
-        const shuffled = [];
-        const items = [...postsWithWeights];
-        
-        while (items.length > 0) {
-          const totalWeight = items.reduce((sum, item) => sum + item.weight, 0);
-          let random = Math.random() * totalWeight;
+      const posts = await storage.getPosts();
+      
+      const explorePosts = posts.filter(
+        post => !followedUserIds.includes(post.userId) && post.userId !== currentUserId
+      );
+      
+      const postsWithAuthors = await Promise.all(
+        explorePosts.map(async (post) => {
+          const user = await storage.getUser(post.userId);
+          const likesCount = await storage.getLikesByPostId(post.id);
+          const comments = await storage.getCommentsByPostId(post.id);
           
-          let selectedIndex = 0;
-          for (let i = 0; i < items.length; i++) {
-            random -= items[i].weight;
-            if (random <= 0) {
-              selectedIndex = i;
-              break;
-            }
+          return {
+            ...post,
+            user,
+            _count: {
+              likes: likesCount,
+              comments: comments.length,
+            },
+          };
+        })
+      );
+      
+      const postsWithWeights = postsWithAuthors.map(post => {
+        const ageInHours = (now - new Date(post.createdAt).getTime()) / (1000 * 60 * 60);
+        const weight = Math.exp(-ageInHours / 24);
+        return { post, weight };
+      });
+      
+      const shuffled = [];
+      const items = [...postsWithWeights];
+      
+      while (items.length > 0) {
+        const totalWeight = items.reduce((sum, item) => sum + item.weight, 0);
+        let random = Math.random() * totalWeight;
+        
+        let selectedIndex = 0;
+        for (let i = 0; i < items.length; i++) {
+          random -= items[i].weight;
+          if (random <= 0) {
+            selectedIndex = i;
+            break;
           }
-          
-          shuffled.push(items[selectedIndex].post);
-          items.splice(selectedIndex, 1);
         }
         
-        shuffledPosts = shuffled;
-        
-        exploreCache.set(cacheKey, {
-          posts: shuffledPosts,
-          timestamp: now,
-        });
+        shuffled.push(items[selectedIndex].post);
+        items.splice(selectedIndex, 1);
       }
       
-      const paginatedPosts = shuffledPosts.slice(offset, offset + limit);
-      const hasMore = offset + limit < shuffledPosts.length;
+      const paginatedPosts = shuffled.slice(offset, offset + limit);
+      const hasMore = offset + limit < shuffled.length;
       
       res.json({ posts: paginatedPosts, hasMore });
     } catch (error) {
