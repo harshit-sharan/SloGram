@@ -95,6 +95,33 @@ export function MessageThread({ conversationId, otherUser }: MessageThreadProps)
     }
   }, [lastMessage, conversationId, user?.id, refetch]);
 
+  // Handle scroll to load older messages
+  useEffect(() => {
+    const container = messagesContainerRef.current;
+    if (!container) return;
+
+    const handleScroll = () => {
+      const { scrollTop } = container;
+      
+      // If scrolled near top (within 100px), load more messages
+      if (scrollTop < 100 && hasNextPage && !isFetchingNextPage) {
+        const previousScrollHeight = container.scrollHeight;
+        
+        fetchNextPage().then(() => {
+          // Maintain scroll position after loading older messages
+          requestAnimationFrame(() => {
+            const newScrollHeight = container.scrollHeight;
+            const scrollDiff = newScrollHeight - previousScrollHeight;
+            container.scrollTop = scrollTop + scrollDiff;
+          });
+        });
+      }
+    };
+
+    container.addEventListener('scroll', handleScroll);
+    return () => container.removeEventListener('scroll', handleScroll);
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
   const handleSend = () => {
     if (!newMessage.trim()) return;
 
@@ -106,6 +133,9 @@ export function MessageThread({ conversationId, otherUser }: MessageThreadProps)
     });
 
     setNewMessage("");
+    
+    // Scroll to bottom after sending
+    setTimeout(() => scrollToBottom(), 100);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -132,7 +162,12 @@ export function MessageThread({ conversationId, otherUser }: MessageThreadProps)
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-4 space-y-4">
+        {isFetchingNextPage && (
+          <div className="text-center text-sm text-muted-foreground py-2">
+            Loading older messages...
+          </div>
+        )}
         {messages.map((msg) => (
           <div
             key={msg.id}
