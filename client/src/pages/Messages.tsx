@@ -50,7 +50,8 @@ export default function Messages() {
     
     // Only auto-select if we have a conversation ID and haven't already auto-selected this one
     if (conversationId && conversationId !== autoSelectedId) {
-      const conversationExists = conversations.find(c => c.conversation.id === conversationId);
+      // Normalize IDs to strings for comparison
+      const conversationExists = conversations.find(c => String(c.conversation.id) === conversationId);
       if (conversationExists) {
         setSelectedConversation(conversationId);
         setShouldAutoFocus(true);
@@ -65,7 +66,8 @@ export default function Messages() {
     }
   }, [location, conversations, isLoading, autoSelectedId, refetch]);
 
-  const selected = conversations.find((c) => c.conversation.id === selectedConversation);
+  // Normalize IDs to strings for comparison
+  const selected = conversations.find((c) => String(c.conversation.id) === selectedConversation);
 
   if (isLoading) {
     return (
@@ -91,11 +93,12 @@ export default function Messages() {
               <button
                 key={conversation.id}
                 onClick={() => {
-                  setSelectedConversation(conversation.id);
+                  // Normalize ID to string for consistency
+                  setSelectedConversation(String(conversation.id));
                   setShouldAutoFocus(false);
                 }}
                 className={`w-full p-4 flex items-center gap-3 hover-elevate border-b ${
-                  selectedConversation === conversation.id ? "bg-muted" : ""
+                  String(conversation.id) === selectedConversation ? "bg-muted" : ""
                 }`}
                 data-testid={`conversation-${conversation.id}`}
               >
