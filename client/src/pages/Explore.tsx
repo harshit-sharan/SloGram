@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useEffect, useRef } from "react";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { Link } from "wouter";
 
@@ -25,38 +25,37 @@ interface PostWithAuthor {
 
 export default function Explore() {
   const { user } = useAuth();
-  const [allPosts, setAllPosts] = useState<PostWithAuthor[]>([]);
-  const [offset, setOffset] = useState(0);
-  const [hasMore, setHasMore] = useState(true);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const observerTarget = useRef<HTMLDivElement>(null);
 
   const BATCH_SIZE = 12;
 
-  const { data: exploreData, isLoading } = useQuery<{ posts: PostWithAuthor[]; hasMore: boolean }>({
-    queryKey: [`/api/explore-posts?limit=${BATCH_SIZE}&offset=${offset}`],
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+  } = useInfiniteQuery({
+    queryKey: ["/api/explore-posts"],
+    queryFn: async ({ pageParam = 0 }) => {
+      const res = await fetch(`/api/explore-posts?limit=${BATCH_SIZE}&offset=${pageParam}`, {
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to fetch explore posts");
+      return res.json() as Promise<{ posts: PostWithAuthor[]; hasMore: boolean }>;
+    },
+    getNextPageParam: (lastPage, allPages) => {
+      return lastPage.hasMore ? allPages.length * BATCH_SIZE : undefined;
+    },
     enabled: !!user,
-    staleTime: 0,
+    initialPageParam: 0,
   });
-
-  useEffect(() => {
-    if (exploreData) {
-      if (offset === 0) {
-        setAllPosts(exploreData.posts);
-      } else {
-        setAllPosts(prev => [...prev, ...exploreData.posts]);
-      }
-      setHasMore(exploreData.hasMore);
-      setIsLoadingMore(false);
-    }
-  }, [exploreData, offset]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && hasMore && !isLoading && !isLoadingMore) {
-          setIsLoadingMore(true);
-          setOffset(prev => prev + BATCH_SIZE);
+        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
+          fetchNextPage();
         }
       },
       { threshold: 0.1 }
@@ -67,15 +66,15 @@ export default function Explore() {
     }
 
     return () => observer.disconnect();
-  }, [hasMore, isLoading, isLoadingMore]);
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  const explorePosts = allPosts;
+  const explorePosts = data?.pages.flatMap((page) => page.posts) ?? [];
 
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
       <div className="max-w-5xl mx-auto px-4 pt-6">
 
-        {isLoading && offset === 0 ? (
+        {isLoading ? (
           <div className="text-center py-12">
             <p className="text-muted-foreground">Loading posts...</p>
           </div>
@@ -118,15 +117,15 @@ export default function Explore() {
               ))}
             </div>
             
-            {hasMore && (
+            {hasNextPage && (
               <div ref={observerTarget} className="py-8 text-center">
-                {isLoadingMore && (
+                {isFetchingNextPage && (
                   <p className="text-muted-foreground">Loading more posts...</p>
                 )}
               </div>
             )}
             
-            {!hasMore && explorePosts.length > 0 && (
+            {!hasNextPage && explorePosts.length > 0 && (
               <div className="py-8 text-center">
                 <p className="text-muted-foreground">No more posts to explore</p>
               </div>
