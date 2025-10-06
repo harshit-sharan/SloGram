@@ -24,6 +24,7 @@ interface MessageThreadProps {
     username: string;
     avatar?: string;
   };
+  autoFocus?: boolean;
 }
 
 interface MessagesResponse {
@@ -31,11 +32,12 @@ interface MessagesResponse {
   hasMore: boolean;
 }
 
-export function MessageThread({ conversationId, otherUser }: MessageThreadProps) {
+export function MessageThread({ conversationId, otherUser, autoFocus = false }: MessageThreadProps) {
   const { user } = useAuth();
   const [newMessage, setNewMessage] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const [shouldScrollToBottom, setShouldScrollToBottom] = useState(true);
   const { isConnected, lastMessage, sendMessage } = useWebSocket();
 
@@ -78,6 +80,16 @@ export function MessageThread({ conversationId, otherUser }: MessageThreadProps)
       setShouldScrollToBottom(false);
     }
   }, [messages.length, shouldScrollToBottom]);
+
+  // Auto-focus input when autoFocus prop is true
+  useEffect(() => {
+    if (autoFocus && inputRef.current) {
+      // Delay focus slightly to ensure component is fully mounted
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 100);
+    }
+  }, [autoFocus]);
 
   // Refetch messages when receiving WebSocket messages for this conversation
   useEffect(() => {
@@ -191,6 +203,7 @@ export function MessageThread({ conversationId, otherUser }: MessageThreadProps)
       <div className="border-t p-4">
         <div className="flex gap-2">
           <Input
+            ref={inputRef}
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
             onKeyPress={handleKeyPress}

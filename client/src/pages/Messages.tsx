@@ -29,6 +29,7 @@ export default function Messages() {
   const { user } = useAuth();
   const [location] = useLocation();
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
+  const [shouldAutoFocus, setShouldAutoFocus] = useState(false);
 
   const { data: conversations = [], isLoading } = useQuery<ConversationWithUser[]>({
     queryKey: ["/api/conversations-with-details", user?.id],
@@ -44,6 +45,7 @@ export default function Messages() {
       const conversationExists = conversations.find(c => c.conversation.id === conversationId);
       if (conversationExists) {
         setSelectedConversation(conversationId);
+        setShouldAutoFocus(true);
       }
     }
   }, [location, conversations]);
@@ -73,7 +75,10 @@ export default function Messages() {
             conversations.map(({ conversation, otherUser, lastMessage }) => (
               <button
                 key={conversation.id}
-                onClick={() => setSelectedConversation(conversation.id)}
+                onClick={() => {
+                  setSelectedConversation(conversation.id);
+                  setShouldAutoFocus(false);
+                }}
                 className={`w-full p-4 flex items-center gap-3 hover-elevate border-b ${
                   selectedConversation === conversation.id ? "bg-muted" : ""
                 }`}
@@ -110,6 +115,7 @@ export default function Messages() {
               username: selected.otherUser.username,
               avatar: selected.otherUser.avatar,
             }}
+            autoFocus={shouldAutoFocus}
           />
         ) : (
           <div className="flex-1 flex items-center justify-center text-muted-foreground">
