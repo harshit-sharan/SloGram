@@ -93,7 +93,21 @@ export default function Explore() {
                   href={`/post/${post.id}`}
                   data-testid={`explore-post-${post.id}`}
                 >
-                  <div className="relative aspect-square overflow-hidden bg-muted hover-elevate rounded-sm cursor-pointer">
+                  <div 
+                    className="relative aspect-square overflow-hidden bg-muted hover-elevate rounded-sm cursor-pointer"
+                    onMouseEnter={(e) => {
+                      if (post.type === "video") {
+                        const video = e.currentTarget.querySelector('video');
+                        if (video) video.play();
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (post.type === "video") {
+                        const video = e.currentTarget.querySelector('video');
+                        if (video) video.pause();
+                      }
+                    }}
+                  >
                     {post.type === "image" ? (
                       <img
                         src={post.mediaUrl}
@@ -107,11 +121,9 @@ export default function Explore() {
                         muted
                         loop
                         playsInline
-                        onMouseEnter={(e) => e.currentTarget.play()}
-                        onMouseLeave={(e) => e.currentTarget.pause()}
                       />
                     )}
-                    <div className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors" />
+                    <div className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors pointer-events-none" />
                   </div>
                 </Link>
               ))}
