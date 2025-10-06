@@ -42,24 +42,41 @@ function useScrollRestoration() {
       // This page was visited before, restore scroll position
       isRestoringRef.current = true;
       
-      // Wait longer for content to load before restoring scroll
-      // Use requestIdleCallback if available, otherwise setTimeout
       const restoreScroll = () => {
-        // Check if content has loaded by verifying document height
+        let lastHeight = 0;
+        let stableCount = 0;
+        
         const attemptRestore = (attempts = 0) => {
-          if (attempts > 20) {
-            // Give up after 20 attempts (2 seconds)
+          // For pages with infinite scroll, be much more patient
+          // Give up after 100 attempts (10 seconds) instead of 20 attempts (2 seconds)
+          if (attempts > 100) {
             isRestoringRef.current = false;
             return;
           }
 
-          // If document is tall enough to scroll to saved position, restore it
-          const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
-          if (maxScroll >= savedPosition || attempts > 10) {
-            window.scrollTo(0, savedPosition);
+          const currentHeight = document.documentElement.scrollHeight;
+          const maxScroll = currentHeight - window.innerHeight;
+          
+          // Check if height has stabilized (hasn't changed in 3 consecutive checks)
+          if (currentHeight === lastHeight) {
+            stableCount++;
+          } else {
+            stableCount = 0;
+            lastHeight = currentHeight;
+          }
+          
+          // Restore scroll if:
+          // 1. Document is tall enough to scroll to saved position AND height is stable, OR
+          // 2. We've waited long enough (50+ attempts = 5 seconds) and document is reasonably tall
+          const heightIsStable = stableCount >= 3;
+          const isLongEnough = maxScroll >= savedPosition;
+          const hasWaitedLong = attempts > 50 && maxScroll >= savedPosition * 0.8;
+          
+          if ((isLongEnough && heightIsStable) || hasWaitedLong) {
+            window.scrollTo(0, Math.min(savedPosition, maxScroll));
             isRestoringRef.current = false;
           } else {
-            // Content not loaded yet, try again
+            // Content still loading, try again
             setTimeout(() => attemptRestore(attempts + 1), 100);
           }
         };
@@ -67,7 +84,7 @@ function useScrollRestoration() {
         attemptRestore();
       };
 
-      // Start restoration after a brief delay
+      // Start restoration after a brief delay to let React render
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           setTimeout(restoreScroll, 50);
