@@ -45,30 +45,21 @@ export default function Messages() {
     // Only run when conversations are loaded
     if (isLoading) return;
     
-    const params = new URLSearchParams(location.split('?')[1]);
+    // Use window.location.search to get query parameters (wouter's location doesn't include query string)
+    const params = new URLSearchParams(window.location.search);
     const conversationId = params.get('conversation');
-    
-    console.log('[Messages] Auto-select effect:', {
-      conversationId,
-      autoSelectedId,
-      conversationsCount: conversations.length,
-      conversationIds: conversations.map(c => String(c.conversation.id))
-    });
     
     // Only auto-select if we have a conversation ID and haven't already auto-selected this one
     if (conversationId && conversationId !== autoSelectedId) {
       // Normalize IDs to strings for comparison
       const conversationExists = conversations.find(c => String(c.conversation.id) === conversationId);
-      console.log('[Messages] Conversation exists:', conversationExists ? 'YES' : 'NO');
       
       if (conversationExists) {
-        console.log('[Messages] Auto-selecting conversation:', conversationId);
         setSelectedConversation(conversationId);
         setShouldAutoFocus(true);
         setAutoSelectedId(conversationId);
       } else if (conversations.length > 0) {
         // If conversation not found but we have conversations, force a refetch
-        console.log('[Messages] Conversation not found, will refetch in 500ms');
         setTimeout(() => {
           refetch();
         }, 500);
