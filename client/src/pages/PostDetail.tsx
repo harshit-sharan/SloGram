@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Post, type PostData } from "@/components/Post";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useNavigation } from "@/contexts/NavigationContext";
 
 interface PostWithAuthor {
   id: string;
@@ -39,6 +40,7 @@ function formatTimestamp(dateString: string): string {
 export default function PostDetail() {
   const [, params] = useRoute("/post/:id");
   const [, setLocation] = useLocation();
+  const { previousLocation } = useNavigation();
   const postId = params?.id;
 
   const { data: post, isLoading, error } = useQuery<PostWithAuthor>({
@@ -46,24 +48,17 @@ export default function PostDetail() {
     enabled: !!postId,
   });
 
-  // Determine back button text based on referrer
+  // Determine back button text based on previous location
   const getBackButtonText = (): string => {
-    const referrer = document.referrer;
-    if (!referrer) return "Back";
+    if (!previousLocation) return "Back";
     
-    try {
-      const referrerUrl = new URL(referrer);
-      const referrerPath = referrerUrl.pathname;
-      
-      if (referrerPath === "/") return "Back to Feed";
-      if (referrerPath === "/explore") return "Back to Explore";
-      if (referrerPath.startsWith("/profile/")) return "Back to Profile";
-      if (referrerPath.startsWith("/saved")) return "Back to Saved";
-      
-      return "Back";
-    } catch {
-      return "Back";
-    }
+    if (previousLocation === "/") return "Back to Feed";
+    if (previousLocation === "/explore") return "Back to Explore";
+    if (previousLocation.startsWith("/profile/")) return "Back to Profile";
+    if (previousLocation === "/saved") return "Back to Saved";
+    if (previousLocation === "/notifications") return "Back to Notifications";
+    
+    return "Back";
   };
 
   const handleBack = () => {

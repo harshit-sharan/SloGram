@@ -5,6 +5,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { NavigationProvider } from "@/contexts/NavigationContext";
 import { Navigation } from "@/components/Navigation";
 import { CreatePostModal } from "@/components/CreatePostModal";
 import Feed from "@/pages/Feed";
@@ -96,12 +97,14 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <ThemeProvider>
-          <div className="min-h-screen bg-background">
-            <Navigation />
-            <Router />
-          </div>
-          <CreatePostModal open={createPostOpen} onOpenChange={setCreatePostOpen} />
-          <Toaster />
+          <NavigationProvider>
+            <div className="min-h-screen bg-background">
+              <Navigation />
+              <Router />
+            </div>
+            <CreatePostModal open={createPostOpen} onOpenChange={setCreatePostOpen} />
+            <Toaster />
+          </NavigationProvider>
         </ThemeProvider>
       </TooltipProvider>
     </QueryClientProvider>
