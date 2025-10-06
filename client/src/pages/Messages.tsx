@@ -30,32 +30,40 @@ export default function Messages() {
   const [location] = useLocation();
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
   const [shouldAutoFocus, setShouldAutoFocus] = useState(false);
-  const [hasAutoSelected, setHasAutoSelected] = useState(false);
+  const [autoSelectedId, setAutoSelectedId] = useState<string | null>(null);
 
-  const { data: conversations = [], isLoading } = useQuery<ConversationWithUser[]>({
+  const { data: conversations = [], isLoading, refetch } = useQuery<ConversationWithUser[]>({
     queryKey: ["/api/conversations-with-details", user?.id],
     enabled: !!user,
-    refetchOnMount: true,
+    refetchOnMount: 'always',
     staleTime: 0,
+    gcTime: 0,
   });
 
   // Auto-select conversation from URL parameter
   useEffect(() => {
-    // Only run once when conversations are loaded and we haven't auto-selected yet
-    if (isLoading || hasAutoSelected) return;
+    // Only run when conversations are loaded
+    if (isLoading) return;
     
     const params = new URLSearchParams(location.split('?')[1]);
     const conversationId = params.get('conversation');
     
-    if (conversationId && conversations.length > 0) {
+    // Only auto-select if we have a conversation ID and haven't already auto-selected this one
+    if (conversationId && conversationId !== autoSelectedId) {
       const conversationExists = conversations.find(c => c.conversation.id === conversationId);
       if (conversationExists) {
         setSelectedConversation(conversationId);
         setShouldAutoFocus(true);
-        setHasAutoSelected(true);
+        setAutoSelectedId(conversationId);
+      } else if (conversations.length > 0) {
+        // If conversation not found but we have conversations, force a refetch
+        // This handles the case where the new conversation hasn't been fetched yet
+        setTimeout(() => {
+          refetch();
+        }, 500);
       }
     }
-  }, [location, conversations, isLoading, hasAutoSelected]);
+  }, [location, conversations, isLoading, autoSelectedId, refetch]);
 
   const selected = conversations.find((c) => c.conversation.id === selectedConversation);
 
@@ -85,7 +93,6 @@ export default function Messages() {
                 onClick={() => {
                   setSelectedConversation(conversation.id);
                   setShouldAutoFocus(false);
-                  setHasAutoSelected(true);
                 }}
                 className={`w-full p-4 flex items-center gap-3 hover-elevate border-b ${
                   selectedConversation === conversation.id ? "bg-muted" : ""
