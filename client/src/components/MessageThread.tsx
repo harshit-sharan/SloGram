@@ -4,7 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useWebSocket } from "@/hooks/useWebSocket";
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -26,35 +26,67 @@ interface MessageThreadProps {
   };
 }
 
+interface MessagesResponse {
+  messages: Message[];
+  hasMore: boolean;
+}
+
 export function MessageThread({ conversationId, otherUser }: MessageThreadProps) {
   const { user } = useAuth();
   const [newMessage, setNewMessage] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const [shouldScrollToBottom, setShouldScrollToBottom] = useState(true);
   const { isConnected, lastMessage, sendMessage } = useWebSocket();
 
-  // Fetch messages from database - this is the single source of truth
-  const { data: messages = [], refetch } = useQuery<Message[]>({
+  // Fetch messages with infinite query (reverse pagination)
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    refetch,
+  } = useInfiniteQuery<MessagesResponse>({
     queryKey: ["/api/conversations", conversationId, "messages"],
-    staleTime: 0, // Always fetch fresh data
-    refetchOnMount: true, // Ensure fetch on mount
+    queryFn: async ({ pageParam }) => {
+      const url = `/api/conversations/${conversationId}/messages?limit=20${pageParam ? `&cursor=${pageParam}` : ''}`;
+      const response = await fetch(url);
+      if (!response.ok) throw new Error("Failed to fetch messages");
+      return response.json();
+    },
+    getNextPageParam: (lastPage) => {
+      if (!lastPage.hasMore || lastPage.messages.length === 0) return undefined;
+      // Use the oldest message's createdAt as the cursor
+      return lastPage.messages[lastPage.messages.length - 1].createdAt;
+    },
+    initialPageParam: undefined,
+    staleTime: 0,
+    refetchOnMount: true,
   });
 
+  // Flatten and reverse messages (oldest first at top)
+  const messages = data?.pages.flatMap(page => page.messages).reverse() || [];
+
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
   };
 
-  // Scroll when messages change
+  // Initial scroll to bottom when first messages load
   useEffect(() => {
-    if (messages.length > 0) {
-      scrollToBottom();
+    if (messages.length > 0 && shouldScrollToBottom) {
+      setTimeout(() => scrollToBottom(), 0);
+      setShouldScrollToBottom(false);
     }
-  }, [messages.length]);
+  }, [messages.length, shouldScrollToBottom]);
 
   // Refetch messages when receiving WebSocket messages for this conversation
   useEffect(() => {
     if (lastMessage?.type === "message" && lastMessage.message?.conversationId === conversationId) {
-      // Refetch this conversation's messages
+      // Refetch to get the new message
       refetch();
+      
+      // Scroll to bottom to show new message
+      setTimeout(() => scrollToBottom(), 100);
       
       // Update conversations list to show last message preview
       queryClient.invalidateQueries({
