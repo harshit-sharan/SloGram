@@ -440,14 +440,18 @@ export function Post({ post }: { post: PostData }) {
                 
                 <div 
                   className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4"
-                  onClick={(e) => e.preventDefault()}
+                  onClick={(e) => e.stopPropagation()}
                 >
                   <div className="flex items-center gap-2 mb-2">
                     <Button
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8 text-white hover:bg-white/20"
-                      onClick={togglePlay}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        togglePlay(e);
+                      }}
                       data-testid={`button-play-pause-${post.id}`}
                     >
                       {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
@@ -461,7 +465,10 @@ export function Post({ post }: { post: PostData }) {
                       onChange={handleSeek}
                       className="flex-1 h-1 bg-white/30 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-moz-range-thumb]:w-3 [&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:border-0"
                       data-testid={`input-seek-${post.id}`}
-                      onClick={(e) => e.stopPropagation()}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                      }}
                     />
                     
                     <span className="text-white text-xs font-mono min-w-[80px] text-right" data-testid={`text-time-${post.id}`}>
@@ -474,7 +481,11 @@ export function Post({ post }: { post: PostData }) {
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8 text-white hover:bg-white/20"
-                      onClick={toggleMute}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        toggleMute(e);
+                      }}
                       data-testid={`button-mute-${post.id}`}
                     >
                       {isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
@@ -489,7 +500,10 @@ export function Post({ post }: { post: PostData }) {
                       onChange={handleVolumeChange}
                       className="w-24 h-1 bg-white/30 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-moz-range-thumb]:w-3 [&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:border-0"
                       data-testid={`input-volume-${post.id}`}
-                      onClick={(e) => e.stopPropagation()}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                      }}
                     />
                   </div>
                 </div>
