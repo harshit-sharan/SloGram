@@ -8,6 +8,7 @@ import { Link, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { logout } from "@/lib/authUtils";
+import logoImage from "@assets/Gemini_Generated_Image_ehkq63ehkq63ehkq_1759739641584.png";
 
 interface SearchUser {
   id: string;
@@ -94,9 +95,11 @@ export function Navigation() {
     <nav className="sticky top-0 z-50 border-b bg-background">
       <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
         <Link href="/" onClick={(e) => handleNavigation("/", e)} data-testid="link-home">
-          <h1 className="font-serif text-2xl text-foreground hover-elevate active-elevate-2 rounded-md px-2 py-1">
-            Slogram
-          </h1>
+          <img 
+            src={logoImage} 
+            alt="Logo" 
+            className="h-12 w-12 hover-elevate active-elevate-2 rounded-md"
+          />
         </Link>
 
         {isExplorePage ? (
