@@ -38,7 +38,7 @@ export function Navigation() {
 
   return (
     <nav className="sticky top-0 z-50 border-b bg-background">
-      <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
+      <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between gap-2 sm:gap-4">
         <Link
           href="/"
           onClick={(e) => handleNavigation("/", e)}
@@ -47,13 +47,13 @@ export function Navigation() {
           <img
             src={logoImage}
             alt="Logo"
-            className="h-12 w-12 hover-elevate active-elevate-2 rounded-md"
+            className="h-10 w-10 sm:h-12 sm:w-12 hover-elevate active-elevate-2 rounded-md object-contain flex-shrink-0"
           />
         </Link>
 
         <div className="flex-1" />
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2">
           <Button variant="ghost" size="icon" asChild data-testid="button-home">
             <Link href="/" onClick={(e) => handleNavigation("/", e)}>
               <Home className={location === "/" ? "fill-current" : ""} />
@@ -68,6 +68,7 @@ export function Navigation() {
               window.dispatchEvent(new Event("open-create-post"));
             }}
             data-testid="button-create"
+            className="hidden sm:inline-flex"
           >
             <PlusSquare />
           </Button>
