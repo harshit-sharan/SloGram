@@ -20,23 +20,50 @@ import NotFound from "@/pages/not-found";
 // Hook to manage scroll position restoration
 function useScrollRestoration() {
   const [location] = useLocation();
-  const scrollPositions = useRef<Record<string, number>>({});
   const prevLocationRef = useRef<string>(location);
   const isRestoringRef = useRef(false);
+  const initializedRef = useRef(false);
 
   useEffect(() => {
+    // On first mount, check if this is a page reload
+    if (!initializedRef.current) {
+      initializedRef.current = true;
+      
+      // Check if this is a page reload (not back/forward navigation)
+      const navigationEntries = performance.getEntriesByType('navigation') as PerformanceNavigationTiming[];
+      const isReload = navigationEntries.length > 0 && navigationEntries[0].type === 'reload';
+      
+      if (isReload) {
+        // Clear scroll positions on page reload
+        sessionStorage.removeItem('scrollPositions');
+      }
+    }
+
     // Disable browser's automatic scroll restoration
     if ('scrollRestoration' in window.history) {
       window.history.scrollRestoration = 'manual';
     }
 
+    // Load scroll positions from sessionStorage
+    const getScrollPositions = (): Record<string, number> => {
+      const stored = sessionStorage.getItem('scrollPositions');
+      return stored ? JSON.parse(stored) : {};
+    };
+
+    const saveScrollPositions = (positions: Record<string, number>) => {
+      sessionStorage.setItem('scrollPositions', JSON.stringify(positions));
+    };
+
     // Save scroll position of previous location before navigating away
     if (prevLocationRef.current !== location && !isRestoringRef.current) {
-      scrollPositions.current[prevLocationRef.current] = window.scrollY;
+      const positions = getScrollPositions();
+      positions[prevLocationRef.current] = window.scrollY;
+      saveScrollPositions(positions);
     }
 
     // Restore scroll position or scroll to top
-    const savedPosition = scrollPositions.current[location];
+    const scrollPositions = getScrollPositions();
+    const savedPosition = scrollPositions[location];
     
     if (savedPosition !== undefined && savedPosition > 0) {
       // This page was visited before, restore scroll position
