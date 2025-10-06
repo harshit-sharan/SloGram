@@ -8,6 +8,7 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import { NavigationProvider } from "@/contexts/NavigationContext";
 import { Navigation } from "@/components/Navigation";
 import { CreatePostModal } from "@/components/CreatePostModal";
+import { useAuth } from "@/hooks/useAuth";
 import Feed from "@/pages/Feed";
 import Explore from "@/pages/Explore";
 import Profile from "@/pages/Profile";
@@ -131,6 +132,15 @@ function useScrollRestoration() {
 
 function Router() {
   useScrollRestoration();
+  const { user } = useAuth();
+  const [location, setLocation] = useLocation();
+
+  useEffect(() => {
+    // If user is not logged in and trying to access a protected route, redirect to home
+    if (user === null && location !== "/") {
+      setLocation("/");
+    }
+  }, [user, location, setLocation]);
   
   return (
     <Switch>
