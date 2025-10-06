@@ -31,6 +31,10 @@ Preferred communication style: Simple, everyday language.
 - Zen-like color palette (sage green accent: 160 45% 45%)
 - Typography: Inter for body text, Libre Baskerville for display/headers
 - Content-over-chrome philosophy letting posts breathe
+- Mobile-first responsive design:
+  - Logo scales appropriately on mobile (10x10 on mobile, 12x12 on desktop) with object-contain to prevent squishing
+  - Reduced icon spacing on mobile (gap-1 on mobile, gap-2 on desktop) for better space utilization
+  - Add post button hidden on mobile devices to streamline navigation bar
 
 ### Backend Architecture
 
@@ -60,12 +64,15 @@ Preferred communication style: Simple, everyday language.
 
 **Schema Architecture:**
 - `users`: Profile data (username, displayName, bio, avatar, email, firstName, lastName, profileImageUrl)
+  - New users automatically assigned random zen-themed usernames (e.g., "cosmic_wanderer42") and display names (e.g., "Mindful Spirit")
 - `sessions`: PostgreSQL session storage for Replit Auth (connect-pg-simple)
 - `posts`: Content with media URLs, captions, timestamps, and user references
 - `likes`: Many-to-many relationship between users and posts
 - `comments`: Threaded discussion on posts with user attribution
 - `saves`: Posts saved by users for later viewing
-- `notifications`: User activity alerts (likes, comments) with read status
+- `notifications`: User activity alerts (likes, comments, follows) with read status
+  - Supports three notification types: "like", "comment", "follow"
+  - Follow notifications do not require postId (nullable field)
 - `conversations`: Direct messaging channels between two users
 - `messages`: Message content with read status and timestamps
 - Cascading deletes for data integrity (ON DELETE CASCADE)
