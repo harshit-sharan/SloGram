@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, integer, boolean, jsonb, index } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, integer, boolean, jsonb, index, uniqueIndex } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -67,7 +67,13 @@ export const conversations = pgTable("conversations", {
   user1Id: varchar("user1_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   user2Id: varchar("user2_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   lastMessageAt: timestamp("last_message_at").notNull().defaultNow(),
-});
+}, (table) => ({
+  // Unique constraint to prevent duplicate conversations
+  uniqueUserPair: uniqueIndex("unique_user_pair").on(
+    sql`LEAST(${table.user1Id}, ${table.user2Id})`,
+    sql`GREATEST(${table.user1Id}, ${table.user2Id})`
+  ),
+}));
 
 export const messages = pgTable("messages", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),

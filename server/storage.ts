@@ -234,10 +234,14 @@ export class DbStorage implements IStorage {
   }
 
   async getOrCreateConversation(user1Id: string, user2Id: string): Promise<Conversation> {
+    // Normalize user IDs to prevent duplicates (always store lower ID first)
+    const normalizedUser1Id = user1Id < user2Id ? user1Id : user2Id;
+    const normalizedUser2Id = user1Id < user2Id ? user2Id : user1Id;
+
     const [existing] = await db.select().from(conversations).where(
       or(
-        and(eq(conversations.user1Id, user1Id), eq(conversations.user2Id, user2Id)),
-        and(eq(conversations.user1Id, user2Id), eq(conversations.user2Id, user1Id))
+        and(eq(conversations.user1Id, normalizedUser1Id), eq(conversations.user2Id, normalizedUser2Id)),
+        and(eq(conversations.user1Id, normalizedUser2Id), eq(conversations.user2Id, normalizedUser1Id))
       )
     );
 
@@ -246,8 +250,21 @@ export class DbStorage implements IStorage {
     }
 
     const [newConversation] = await db.insert(conversations)
-      .values({ user1Id, user2Id })
+      .values({ user1Id: normalizedUser1Id, user2Id: normalizedUser2Id })
+      .onConflictDoNothing()
       .returning();
+    
+    // If conflict occurred and no row was returned, fetch the existing conversation
+    if (!newConversation) {
+      const [existingConv] = await db.select().from(conversations).where(
+        or(
+          and(eq(conversations.user1Id, normalizedUser1Id), eq(conversations.user2Id, normalizedUser2Id)),
+          and(eq(conversations.user1Id, normalizedUser2Id), eq(conversations.user2Id, normalizedUser1Id))
+        )
+      );
+      return existingConv;
+    }
+    
     return newConversation;
   }
 
