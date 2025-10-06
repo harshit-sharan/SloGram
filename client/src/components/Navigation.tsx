@@ -1,4 +1,14 @@
-import { Heart, Home, PlusSquare, Search, Moon, Sun, MessageCircle, Bookmark, LogOut } from "lucide-react";
+import {
+  Heart,
+  Home,
+  PlusSquare,
+  Search,
+  Moon,
+  Sun,
+  MessageCircle,
+  Bookmark,
+  LogOut,
+} from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -51,13 +61,18 @@ export function Navigation() {
   });
 
   const { data: searchResults = [] } = useQuery<SearchUser[]>({
-    queryKey: ["/api/users/search?q=" + encodeURIComponent(debouncedSearchQuery)],
+    queryKey: [
+      "/api/users/search?q=" + encodeURIComponent(debouncedSearchQuery),
+    ],
     enabled: debouncedSearchQuery.trim().length > 0 && isExplorePage,
   });
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+      if (
+        searchRef.current &&
+        !searchRef.current.contains(event.target as Node)
+      ) {
         setShowResults(false);
       }
     };
@@ -94,31 +109,40 @@ export function Navigation() {
   return (
     <nav className="sticky top-0 z-50 border-b bg-background">
       <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
-        <Link href="/" onClick={(e) => handleNavigation("/", e)} data-testid="link-home">
-          <img 
-            src={logoImage} 
-            alt="Logo" 
+        <Link
+          href="/"
+          onClick={(e) => handleNavigation("/", e)}
+          data-testid="link-home"
+        >
+          <img
+            src={logoImage}
+            alt="Logo"
             className="h-12 w-12 hover-elevate active-elevate-2 rounded-md"
           />
         </Link>
 
         {isExplorePage ? (
-          <div className="hidden md:flex flex-1 max-w-md relative" ref={searchRef}>
+          <div
+            className="hidden md:flex flex-1 max-w-md relative"
+            ref={searchRef}
+          >
             <div className="relative w-full">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 type="search"
-                placeholder="Search slow living..."
+                placeholder="Explore SloGram..."
                 className="pl-10 bg-muted border-0"
                 data-testid="input-search"
                 value={searchQuery}
                 onChange={handleSearchChange}
-                onFocus={() => searchQuery.trim().length > 0 && setShowResults(true)}
+                onFocus={() =>
+                  searchQuery.trim().length > 0 && setShowResults(true)
+                }
               />
             </div>
 
             {showResults && searchResults.length > 0 && (
-              <div 
+              <div
                 className="absolute top-full mt-2 w-full bg-card border rounded-md shadow-lg overflow-hidden z-50"
                 data-testid="search-results"
               >
@@ -132,11 +156,19 @@ export function Navigation() {
                     <div className="flex items-center gap-3 px-4 py-3 hover-elevate cursor-pointer">
                       <Avatar className="h-10 w-10">
                         <AvatarImage src={searchUser.avatar} />
-                        <AvatarFallback>{searchUser.displayName?.charAt(0) || searchUser.username?.charAt(0) || "U"}</AvatarFallback>
+                        <AvatarFallback>
+                          {searchUser.displayName?.charAt(0) ||
+                            searchUser.username?.charAt(0) ||
+                            "U"}
+                        </AvatarFallback>
                       </Avatar>
                       <div>
-                        <p className="font-semibold text-sm">{searchUser.displayName}</p>
-                        <p className="text-xs text-muted-foreground">@{searchUser.username}</p>
+                        <p className="font-semibold text-sm">
+                          {searchUser.displayName}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          @{searchUser.username}
+                        </p>
                       </div>
                     </div>
                   </Link>
@@ -144,14 +176,18 @@ export function Navigation() {
               </div>
             )}
 
-            {showResults && searchQuery.trim().length > 0 && searchResults.length === 0 && (
-              <div 
-                className="absolute top-full mt-2 w-full bg-card border rounded-md shadow-lg p-4 z-50"
-                data-testid="search-no-results"
-              >
-                <p className="text-sm text-muted-foreground text-center">No users found</p>
-              </div>
-            )}
+            {showResults &&
+              searchQuery.trim().length > 0 &&
+              searchResults.length === 0 && (
+                <div
+                  className="absolute top-full mt-2 w-full bg-card border rounded-md shadow-lg p-4 z-50"
+                  data-testid="search-no-results"
+                >
+                  <p className="text-sm text-muted-foreground text-center">
+                    No users found
+                  </p>
+                </div>
+              )}
           </div>
         ) : (
           <Button
@@ -160,20 +196,20 @@ export function Navigation() {
             asChild
             data-testid="button-search-navigate"
           >
-            <Link href="/explore" onClick={(e) => handleNavigation("/explore", e)}>
+            <Link
+              href="/explore"
+              onClick={(e) => handleNavigation("/explore", e)}
+            >
               <Search className="h-4 w-4 text-muted-foreground" />
-              <span className="text-muted-foreground">Search slow living...</span>
+              <span className="text-muted-foreground">
+                Search slow living...
+              </span>
             </Link>
           </Button>
         )}
 
         <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            asChild
-            data-testid="button-home"
-          >
+          <Button variant="ghost" size="icon" asChild data-testid="button-home">
             <Link href="/" onClick={(e) => handleNavigation("/", e)}>
               <Home className={location === "/" ? "fill-current" : ""} />
             </Link>
@@ -184,7 +220,7 @@ export function Navigation() {
             size="icon"
             onClick={() => {
               console.log("Create post clicked");
-              window.dispatchEvent(new Event('open-create-post'));
+              window.dispatchEvent(new Event("open-create-post"));
             }}
             data-testid="button-create"
           >
@@ -197,8 +233,13 @@ export function Navigation() {
             asChild
             data-testid="button-messages"
           >
-            <Link href="/messages" onClick={(e) => handleNavigation("/messages", e)}>
-              <MessageCircle className={location === "/messages" ? "fill-current" : ""} />
+            <Link
+              href="/messages"
+              onClick={(e) => handleNavigation("/messages", e)}
+            >
+              <MessageCircle
+                className={location === "/messages" ? "fill-current" : ""}
+              />
             </Link>
           </Button>
 
@@ -208,8 +249,14 @@ export function Navigation() {
             asChild
             data-testid="button-notifications"
           >
-            <Link href="/notifications" onClick={(e) => handleNavigation("/notifications", e)} className="relative">
-              <Heart className={location === "/notifications" ? "fill-current" : ""} />
+            <Link
+              href="/notifications"
+              onClick={(e) => handleNavigation("/notifications", e)}
+              className="relative"
+            >
+              <Heart
+                className={location === "/notifications" ? "fill-current" : ""}
+              />
               {unreadCountData && unreadCountData.count > 0 && (
                 <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center font-semibold">
                   {unreadCountData.count > 9 ? "9+" : unreadCountData.count}
@@ -225,7 +272,9 @@ export function Navigation() {
             data-testid="button-saved"
           >
             <Link href="/saved" onClick={(e) => handleNavigation("/saved", e)}>
-              <Bookmark className={location === "/saved" ? "fill-current" : ""} />
+              <Bookmark
+                className={location === "/saved" ? "fill-current" : ""}
+              />
             </Link>
           </Button>
 
@@ -235,7 +284,11 @@ export function Navigation() {
             onClick={toggleTheme}
             data-testid="button-theme-toggle"
           >
-            {theme === "light" ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
+            {theme === "light" ? (
+              <Moon className="h-5 w-5" />
+            ) : (
+              <Sun className="h-5 w-5" />
+            )}
           </Button>
 
           {user ? (
@@ -246,10 +299,19 @@ export function Navigation() {
                 asChild
                 data-testid="button-profile"
               >
-                <Link href={`/profile/${user.id}`} onClick={(e) => handleNavigation(`/profile/${user.id}`, e)}>
+                <Link
+                  href={`/profile/${user.id}`}
+                  onClick={(e) => handleNavigation(`/profile/${user.id}`, e)}
+                >
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src={user.profileImageUrl || user.avatar || ""} />
-                    <AvatarFallback>{user.firstName?.charAt(0) || user.displayName?.charAt(0) || "U"}</AvatarFallback>
+                    <AvatarImage
+                      src={user.profileImageUrl || user.avatar || ""}
+                    />
+                    <AvatarFallback>
+                      {user.firstName?.charAt(0) ||
+                        user.displayName?.charAt(0) ||
+                        "U"}
+                    </AvatarFallback>
                   </Avatar>
                 </Link>
               </Button>
@@ -266,7 +328,7 @@ export function Navigation() {
           ) : (
             <Button
               variant="default"
-              onClick={() => window.location.href = '/api/login'}
+              onClick={() => (window.location.href = "/api/login")}
               data-testid="button-login"
             >
               Log In
