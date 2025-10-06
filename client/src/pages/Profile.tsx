@@ -383,8 +383,10 @@ export default function Profile() {
               {isOwnProfile ? (
                 <div className="flex gap-2">
                   <EditProfileDialog user={user} />
-                  <Button variant="ghost" size="icon" data-testid="button-settings">
-                    <Settings className="h-5 w-5" />
+                  <Button variant="ghost" size="icon" asChild data-testid="button-settings">
+                    <Link href="/settings">
+                      <Settings className="h-5 w-5" />
+                    </Link>
                   </Button>
                 </div>
               ) : (

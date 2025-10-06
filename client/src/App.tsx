@@ -15,6 +15,7 @@ import Messages from "@/pages/Messages";
 import PostDetail from "@/pages/PostDetail";
 import Notifications from "@/pages/Notifications";
 import Saved from "@/pages/Saved";
+import Settings from "@/pages/Settings";
 import NotFound from "@/pages/not-found";
 
 // Hook to manage scroll position restoration
@@ -140,6 +141,7 @@ function Router() {
       <Route path="/messages" component={Messages} />
       <Route path="/notifications" component={Notifications} />
       <Route path="/saved" component={Saved} />
+      <Route path="/settings" component={Settings} />
       <Route component={NotFound} />
     </Switch>
   );

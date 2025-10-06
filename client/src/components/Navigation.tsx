@@ -5,14 +5,12 @@ import {
   Search,
   MessageCircle,
   Bookmark,
-  LogOut,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Link, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
-import { logout } from "@/lib/authUtils";
 import logoImage from "@assets/Gemini_Generated_Image_86ggr486ggr486gg_1759784666715.png";
 
 export function Navigation() {
@@ -181,15 +179,6 @@ export function Navigation() {
                         </AvatarFallback>
                       </Avatar>
                     </Link>
-                  </Button>
-
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => logout()}
-                    data-testid="button-logout"
-                  >
-                    <LogOut className="h-5 w-5" />
                   </Button>
                 </>
               ) : (
