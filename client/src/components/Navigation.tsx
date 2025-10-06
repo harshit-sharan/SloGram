@@ -11,7 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Link, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
-import logoImage from "@assets/Gemini_Generated_Image_86ggr486ggr486gg_1759784666715.png";
+import logoImage from "@assets/slogram-logo.png";
 
 export function Navigation() {
   const { user } = useAuth();
