@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Heart, MessageCircle, Share2, Bookmark, MoreVertical, Trash2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -57,6 +57,7 @@ export interface PostData {
 
 export function Post({ post }: { post: PostData }) {
   const { user } = useAuth();
+  const videoRef = useRef<HTMLVideoElement>(null);
   const [saved, setSaved] = useState(false);
   const [showFullCaption, setShowFullCaption] = useState(false);
   const [showComments, setShowComments] = useState(false);
@@ -353,11 +354,18 @@ export function Post({ post }: { post: PostData }) {
 
       {(post.video || post.image) && (
         <Link href={`/post/${post.id}`} data-testid={`link-post-media-${post.id}`}>
-          <div className="relative w-full bg-muted cursor-pointer">
+          <div 
+            className="relative w-full bg-muted cursor-pointer"
+            onMouseEnter={() => post.video && videoRef.current?.play()}
+            onMouseLeave={() => post.video && videoRef.current?.pause()}
+          >
             {post.video ? (
               <video
+                ref={videoRef}
                 src={post.video}
-                controls
+                muted
+                loop
+                playsInline
                 className="w-full object-cover"
                 data-testid={`video-post-${post.id}`}
               />
