@@ -46,6 +46,26 @@ export default function PostDetail() {
     enabled: !!postId,
   });
 
+  // Determine back button text based on referrer
+  const getBackButtonText = (): string => {
+    const referrer = document.referrer;
+    if (!referrer) return "Back";
+    
+    try {
+      const referrerUrl = new URL(referrer);
+      const referrerPath = referrerUrl.pathname;
+      
+      if (referrerPath === "/") return "Back to Feed";
+      if (referrerPath === "/explore") return "Back to Explore";
+      if (referrerPath.startsWith("/profile/")) return "Back to Profile";
+      if (referrerPath.startsWith("/saved")) return "Back to Saved";
+      
+      return "Back";
+    } catch {
+      return "Back";
+    }
+  };
+
   const handleBack = () => {
     if (window.history.length > 1) {
       window.history.back();
@@ -76,7 +96,7 @@ export default function PostDetail() {
             data-testid="button-back"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
+            {getBackButtonText()}
           </Button>
           <p className="text-center text-muted-foreground">Post not found</p>
         </div>
@@ -111,7 +131,7 @@ export default function PostDetail() {
             data-testid="button-back"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
+            {getBackButtonText()}
           </Button>
         </div>
         <Post post={formattedPost} />
