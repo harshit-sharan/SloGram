@@ -83,8 +83,6 @@ export function VideoPost({ post }: { post: VideoPostData }) {
 
       <div 
         className="relative w-full bg-muted cursor-pointer"
-        onMouseEnter={() => videoRef.current?.play()}
-        onMouseLeave={() => videoRef.current?.pause()}
       >
         <video
           ref={videoRef}

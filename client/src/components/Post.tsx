@@ -356,8 +356,6 @@ export function Post({ post }: { post: PostData }) {
         <Link href={`/post/${post.id}`} data-testid={`link-post-media-${post.id}`}>
           <div 
             className="relative w-full bg-muted cursor-pointer"
-            onMouseEnter={() => post.video && videoRef.current?.play()}
-            onMouseLeave={() => post.video && videoRef.current?.pause()}
           >
             {post.video ? (
               <video
