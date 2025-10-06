@@ -18,7 +18,7 @@ import { Link, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { logout } from "@/lib/authUtils";
-import logoImage from "@assets/ChatGPT Image Oct 6, 2025, 01_44_03 PM_1759783770556.png";
+import logoImage from "@assets/ChatGPT Image Oct 6, 2025, 01_44_03 PM_1759783952742.png";
 
 interface SearchUser {
   id: string;
