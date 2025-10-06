@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { Link } from "wouter";
@@ -21,6 +21,56 @@ interface PostWithAuthor {
     likes: number;
     comments: number;
   };
+}
+
+function ExploreVideoThumbnail({ post }: { post: PostWithAuthor }) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!videoRef.current || !containerRef.current) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            videoRef.current?.play().catch(() => {
+              // Auto-play failed
+            });
+          } else {
+            videoRef.current?.pause();
+          }
+        });
+      },
+      { threshold: 0.5 }
+    );
+
+    observer.observe(containerRef.current);
+
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <Link
+      href={`/post/${post.id}`}
+      data-testid={`explore-post-${post.id}`}
+    >
+      <div 
+        ref={containerRef}
+        className="relative aspect-square overflow-hidden bg-muted hover-elevate rounded-sm cursor-pointer"
+      >
+        <video
+          ref={videoRef}
+          src={post.mediaUrl}
+          className="w-full h-full object-cover"
+          muted
+          loop
+          playsInline
+        />
+        <div className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors pointer-events-none" />
+      </div>
+    </Link>
+  );
 }
 
 export default function Explore() {
@@ -88,44 +138,24 @@ export default function Explore() {
           <>
             <div className="grid grid-cols-3 gap-1 md:gap-2" data-testid="explore-grid">
               {explorePosts.map((post) => (
-                <Link
-                  key={post.id}
-                  href={`/post/${post.id}`}
-                  data-testid={`explore-post-${post.id}`}
-                >
-                  <div 
-                    className="relative aspect-square overflow-hidden bg-muted hover-elevate rounded-sm cursor-pointer"
-                    onMouseEnter={(e) => {
-                      if (post.type === "video") {
-                        const video = e.currentTarget.querySelector('video');
-                        if (video) video.play();
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (post.type === "video") {
-                        const video = e.currentTarget.querySelector('video');
-                        if (video) video.pause();
-                      }
-                    }}
+                post.type === "video" ? (
+                  <ExploreVideoThumbnail key={post.id} post={post} />
+                ) : (
+                  <Link
+                    key={post.id}
+                    href={`/post/${post.id}`}
+                    data-testid={`explore-post-${post.id}`}
                   >
-                    {post.type === "image" ? (
+                    <div className="relative aspect-square overflow-hidden bg-muted hover-elevate rounded-sm cursor-pointer">
                       <img
                         src={post.mediaUrl}
                         alt={post.caption || "Post"}
                         className="w-full h-full object-cover"
                       />
-                    ) : (
-                      <video
-                        src={post.mediaUrl}
-                        className="w-full h-full object-cover"
-                        muted
-                        loop
-                        playsInline
-                      />
-                    )}
-                    <div className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors pointer-events-none" />
-                  </div>
-                </Link>
+                      <div className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors pointer-events-none" />
+                    </div>
+                  </Link>
+                )
               ))}
             </div>
             

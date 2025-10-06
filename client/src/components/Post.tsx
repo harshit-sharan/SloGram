@@ -58,6 +58,7 @@ export interface PostData {
 export function Post({ post }: { post: PostData }) {
   const { user } = useAuth();
   const videoRef = useRef<HTMLVideoElement>(null);
+  const videoContainerRef = useRef<HTMLDivElement>(null);
   const [saved, setSaved] = useState(false);
   const [showFullCaption, setShowFullCaption] = useState(false);
   const [showComments, setShowComments] = useState(false);
@@ -74,6 +75,33 @@ export function Post({ post }: { post: PostData }) {
   const [isMuted, setIsMuted] = useState(true);
   
   const isOwnPost = user?.id === post.author.id;
+
+  // Intersection Observer for auto-play videos when visible
+  useEffect(() => {
+    if (!post.video || !videoRef.current || !videoContainerRef.current) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            videoRef.current?.play().then(() => {
+              setIsPlaying(true);
+            }).catch(() => {
+              // Auto-play failed, likely due to browser policy
+            });
+          } else {
+            videoRef.current?.pause();
+            setIsPlaying(false);
+          }
+        });
+      },
+      { threshold: 0.5 }
+    );
+
+    observer.observe(videoContainerRef.current);
+
+    return () => observer.disconnect();
+  }, [post.video]);
 
   // Fetch initial like status
   const { data: likeData } = useQuery<{ liked: boolean }>({
@@ -425,7 +453,7 @@ export function Post({ post }: { post: PostData }) {
         <div className="relative w-full bg-muted">
           {post.video ? (
             <Link href={`/post/${post.id}`} data-testid={`link-post-media-${post.id}`}>
-              <div className="relative cursor-pointer">
+              <div ref={videoContainerRef} className="relative cursor-pointer">
                 <video
                   ref={videoRef}
                   src={post.video}
