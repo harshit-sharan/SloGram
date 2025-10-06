@@ -34,6 +34,8 @@ export default function Messages() {
   const { data: conversations = [], isLoading } = useQuery<ConversationWithUser[]>({
     queryKey: ["/api/conversations-with-details", user?.id],
     enabled: !!user,
+    refetchOnMount: true,
+    staleTime: 0,
   });
 
   // Auto-select conversation from URL parameter
