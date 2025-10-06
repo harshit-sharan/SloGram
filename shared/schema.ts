@@ -87,9 +87,9 @@ export const messages = pgTable("messages", {
 export const notifications = pgTable("notifications", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  type: text("type").notNull().$type<"like" | "comment">(),
+  type: text("type").notNull().$type<"like" | "comment" | "follow">(),
   actorId: varchar("actor_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  postId: varchar("post_id").notNull().references(() => posts.id, { onDelete: "cascade" }),
+  postId: varchar("post_id").references(() => posts.id, { onDelete: "cascade" }),
   read: boolean("read").notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
