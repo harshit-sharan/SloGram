@@ -57,6 +57,11 @@ export default function Saved() {
                       src={post.mediaUrl}
                       className="w-full h-full object-cover"
                       data-testid={`video-saved-${post.id}`}
+                      muted
+                      loop
+                      playsInline
+                      onMouseEnter={(e) => e.currentTarget.play()}
+                      onMouseLeave={(e) => e.currentTarget.pause()}
                     />
                   ) : (
                     <img

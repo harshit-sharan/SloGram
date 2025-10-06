@@ -105,6 +105,10 @@ export default function Explore() {
                         src={post.mediaUrl}
                         className="w-full h-full object-cover"
                         muted
+                        loop
+                        playsInline
+                        onMouseEnter={(e) => e.currentTarget.play()}
+                        onMouseLeave={(e) => e.currentTarget.pause()}
                       />
                     )}
                     <div className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors" />

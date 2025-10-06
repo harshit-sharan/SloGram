@@ -465,6 +465,11 @@ export default function Profile() {
                       <video
                         src={post.mediaUrl}
                         className="w-full h-full object-cover"
+                        muted
+                        loop
+                        playsInline
+                        onMouseEnter={(e) => e.currentTarget.play()}
+                        onMouseLeave={(e) => e.currentTarget.pause()}
                       />
                     )}
                   </div>
