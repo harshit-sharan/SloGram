@@ -1,7 +1,7 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Heart, MessageCircle } from "lucide-react";
+import { Heart, MessageCircle, UserPlus } from "lucide-react";
 import { Link } from "wouter";
 import { formatDistanceToNow } from "date-fns";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -10,9 +10,9 @@ import { useAuth } from "@/hooks/useAuth";
 interface NotificationData {
   id: string;
   userId: string;
-  type: "like" | "comment";
+  type: "like" | "comment" | "follow";
   actorId: string;
-  postId: string;
+  postId: string | null;
   read: boolean;
   createdAt: string;
   actor: {
@@ -21,7 +21,7 @@ interface NotificationData {
     displayName: string | null;
     avatar: string | null;
   };
-  post: {
+  post?: {
     id: string;
     userId: string;
     type: "image" | "video";
@@ -68,7 +68,7 @@ export default function Notifications() {
     },
   });
 
-  const handleNotificationClick = (notificationId: string, postId: string) => {
+  const handleNotificationClick = (notificationId: string) => {
     if (!notifications.find(n => n.id === notificationId)?.read) {
       markAsReadMutation.mutate(notificationId);
     }
@@ -104,60 +104,77 @@ export default function Notifications() {
             No notifications yet
           </div>
         ) : (
-          notifications.map((notification) => (
-            <Link
-              key={notification.id}
-              href={`/post/${notification.postId}`}
-              onClick={() => handleNotificationClick(notification.id, notification.postId)}
-            >
-              <div
-                className={`px-4 py-4 flex items-start gap-3 hover-elevate cursor-pointer ${
-                  !notification.read ? "bg-accent/20" : ""
-                }`}
-                data-testid={`notification-${notification.id}`}
+          notifications.map((notification) => {
+            const isFollowNotification = notification.type === "follow";
+            const linkHref = isFollowNotification 
+              ? `/profile/${notification.actorId}` 
+              : `/post/${notification.postId}`;
+            
+            return (
+              <Link
+                key={notification.id}
+                href={linkHref}
+                onClick={() => handleNotificationClick(notification.id)}
               >
-                <Avatar className="h-10 w-10">
-                  <AvatarImage src={notification.actor.avatar || undefined} />
-                  <AvatarFallback>
-                    {(notification.actor.displayName || notification.actor.username).charAt(0)}
-                  </AvatarFallback>
-                </Avatar>
+                <div
+                  className={`px-4 py-4 flex items-start gap-3 hover-elevate cursor-pointer ${
+                    !notification.read ? "bg-accent/20" : ""
+                  }`}
+                  data-testid={`notification-${notification.id}`}
+                >
+                  <Avatar className="h-10 w-10">
+                    <AvatarImage src={notification.actor.avatar || undefined} />
+                    <AvatarFallback>
+                      {(notification.actor.displayName || notification.actor.username).charAt(0)}
+                    </AvatarFallback>
+                  </Avatar>
 
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm">
-                    <span className="font-semibold">
-                      {notification.actor.displayName || notification.actor.username}
-                    </span>
-                    {notification.type === "like" ? " liked your post" : " commented on your post"}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
-                  </p>
-                </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm">
+                      <span className="font-semibold">
+                        {notification.actor.displayName || notification.actor.username}
+                      </span>
+                      {notification.type === "like" 
+                        ? " liked your post" 
+                        : notification.type === "comment"
+                        ? " commented on your post"
+                        : " started following you"}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
+                    </p>
+                  </div>
 
-                <div className="flex items-center gap-2">
-                  {notification.type === "like" ? (
-                    <Heart className="h-5 w-5 fill-current text-destructive" />
-                  ) : (
-                    <MessageCircle className="h-5 w-5 text-primary" />
-                  )}
-                  {notification.post.type === "image" ? (
-                    <img
-                      src={notification.post.mediaUrl}
-                      alt="Post"
-                      className="h-12 w-12 object-cover rounded"
-                    />
-                  ) : (
-                    <video
-                      src={notification.post.mediaUrl}
-                      className="h-12 w-12 object-cover rounded"
-                      muted
-                    />
-                  )}
+                  <div className="flex items-center gap-2">
+                    {notification.type === "like" ? (
+                      <Heart className="h-5 w-5 fill-current text-destructive" />
+                    ) : notification.type === "comment" ? (
+                      <MessageCircle className="h-5 w-5 text-primary" />
+                    ) : (
+                      <UserPlus className="h-5 w-5 text-primary" />
+                    )}
+                    {notification.post && (
+                      <>
+                        {notification.post.type === "image" ? (
+                          <img
+                            src={notification.post.mediaUrl}
+                            alt="Post"
+                            className="h-12 w-12 object-cover rounded"
+                          />
+                        ) : (
+                          <video
+                            src={notification.post.mediaUrl}
+                            className="h-12 w-12 object-cover rounded"
+                            muted
+                          />
+                        )}
+                      </>
+                    )}
+                  </div>
                 </div>
-              </div>
-            </Link>
-          ))
+              </Link>
+            );
+          })
         )}
       </div>
     </div>

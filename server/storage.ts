@@ -45,8 +45,8 @@ export interface IStorage {
   getSavedPostsByUserId(userId: string): Promise<Array<Post & { savedAt: Date }>>;
   
   // Notifications
-  createNotification(notification: { userId: string; type: "like" | "comment"; actorId: string; postId: string }): Promise<Notification>;
-  getNotificationsByUserId(userId: string): Promise<Array<Notification & { actor: User; post: Post }>>;
+  createNotification(notification: { userId: string; type: "like" | "comment" | "follow"; actorId: string; postId?: string }): Promise<Notification>;
+  getNotificationsByUserId(userId: string): Promise<Array<Notification & { actor: User; post?: Post }>>;
   markNotificationAsRead(notificationId: string): Promise<void>;
   markAllNotificationsAsRead(userId: string): Promise<void>;
   getUnreadNotificationCount(userId: string): Promise<number>;
@@ -380,12 +380,12 @@ export class DbStorage implements IStorage {
     }));
   }
 
-  async createNotification(notification: { userId: string; type: "like" | "comment"; actorId: string; postId: string }): Promise<Notification> {
+  async createNotification(notification: { userId: string; type: "like" | "comment" | "follow"; actorId: string; postId?: string }): Promise<Notification> {
     const [newNotification] = await db.insert(notifications).values(notification).returning();
     return newNotification;
   }
 
-  async getNotificationsByUserId(userId: string): Promise<Array<Notification & { actor: User; post: Post }>> {
+  async getNotificationsByUserId(userId: string): Promise<Array<Notification & { actor: User; post?: Post }>> {
     const result = await db
       .select({
         id: notifications.id,
@@ -412,11 +412,11 @@ export class DbStorage implements IStorage {
       })
       .from(notifications)
       .innerJoin(users, eq(notifications.actorId, users.id))
-      .innerJoin(posts, eq(notifications.postId, posts.id))
+      .leftJoin(posts, eq(notifications.postId, posts.id))
       .where(eq(notifications.userId, userId))
       .orderBy(desc(notifications.createdAt));
     
-    return result as Array<Notification & { actor: User; post: Post }>;
+    return result as Array<Notification & { actor: User; post?: Post }>;
   }
 
   async markNotificationAsRead(notificationId: string): Promise<void> {

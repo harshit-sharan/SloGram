@@ -417,6 +417,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const isFollowing = await storage.toggleFollow(currentUserId, targetUserId);
+      
+      if (isFollowing) {
+        await storage.createNotification({
+          userId: targetUserId,
+          type: "follow",
+          actorId: currentUserId,
+        });
+      }
+      
       res.json({ following: isFollowing });
     } catch (error) {
       console.error("Error toggling follow:", error);
