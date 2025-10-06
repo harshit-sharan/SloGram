@@ -190,13 +190,6 @@ export function Post({ post }: { post: PostData }) {
       queryClient.invalidateQueries({
         queryKey: ["/api/posts", post.id, "liked", user?.id],
       });
-      // Invalidate posts queries to update like count
-      queryClient.invalidateQueries({
-        queryKey: ["/api/posts-with-authors"],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ["/api/posts"],
-      });
     },
     onError: () => {
       // Revert on error
@@ -246,9 +239,6 @@ export function Post({ post }: { post: PostData }) {
       queryClient.invalidateQueries({
         queryKey: ["/api/posts", post.id, "comments"],
       });
-      queryClient.invalidateQueries({
-        queryKey: ["/api/posts-with-authors"],
-      });
     },
   });
 
@@ -270,9 +260,6 @@ export function Post({ post }: { post: PostData }) {
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ["/api/users", post.author.id, "is-following", user?.id],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ["/api/posts-with-authors"],
       });
     },
     onError: () => {
