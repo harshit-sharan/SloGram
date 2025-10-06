@@ -54,16 +54,61 @@ function updateUserSession(
   user.expires_at = user.claims?.exp;
 }
 
+const adjectives = [
+  "cosmic", "stellar", "lunar", "solar", "mystic", "ethereal", "celestial", "radiant",
+  "serene", "tranquil", "zen", "peaceful", "mindful", "vibrant", "luminous", "glowing",
+  "dreamy", "whimsical", "enchanted", "majestic", "graceful", "elegant", "poetic"
+];
+
+const nouns = [
+  "wanderer", "dreamer", "seeker", "sage", "phoenix", "lotus", "willow", "breeze",
+  "ocean", "mountain", "star", "moon", "river", "forest", "meadow", "dawn",
+  "twilight", "horizon", "journey", "oasis", "haven", "sanctuary", "spirit"
+];
+
+const displayPrefixes = [
+  "Mindful", "Peaceful", "Zen", "Calm", "Serene", "Gentle", "Quiet", "Still",
+  "Tranquil", "Balanced", "Centered", "Flowing", "Present", "Aware"
+];
+
+const displaySuffixes = [
+  "Soul", "Spirit", "Heart", "Being", "Essence", "Traveler", "Wanderer", "Seeker",
+  "Dreamer", "Explorer", "Observer", "Witness", "Guide"
+];
+
+function generateRandomUsername(): string {
+  const adjective = adjectives[Math.floor(Math.random() * adjectives.length)];
+  const noun = nouns[Math.floor(Math.random() * nouns.length)];
+  const number = Math.floor(Math.random() * 999);
+  return `${adjective}_${noun}${number}`;
+}
+
+function generateRandomDisplayName(): string {
+  const prefix = displayPrefixes[Math.floor(Math.random() * displayPrefixes.length)];
+  const suffix = displaySuffixes[Math.floor(Math.random() * displaySuffixes.length)];
+  return `${prefix} ${suffix}`;
+}
+
 async function upsertUser(
   claims: any,
 ) {
-  await storage.upsertUser({
-    id: claims["sub"],
+  const userId = claims["sub"];
+  const existingUser = await storage.getUser(userId);
+  
+  const userData: any = {
+    id: userId,
     email: claims["email"],
     firstName: claims["first_name"],
     lastName: claims["last_name"],
     profileImageUrl: claims["profile_image_url"],
-  });
+  };
+  
+  if (!existingUser) {
+    userData.username = generateRandomUsername();
+    userData.displayName = generateRandomDisplayName();
+  }
+  
+  await storage.upsertUser(userData);
 }
 
 export async function setupAuth(app: Express) {
