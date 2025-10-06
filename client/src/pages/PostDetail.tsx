@@ -1,9 +1,6 @@
-import { useRoute, useLocation } from "wouter";
+import { useRoute } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Post, type PostData } from "@/components/Post";
-import { ArrowLeft } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { useNavigation } from "@/contexts/NavigationContext";
 
 interface PostWithAuthor {
   id: string;
@@ -39,35 +36,12 @@ function formatTimestamp(dateString: string): string {
 
 export default function PostDetail() {
   const [, params] = useRoute("/post/:id");
-  const [, setLocation] = useLocation();
-  const { previousLocation } = useNavigation();
   const postId = params?.id;
 
   const { data: post, isLoading, error } = useQuery<PostWithAuthor>({
     queryKey: [`/api/posts/${postId}`],
     enabled: !!postId,
   });
-
-  // Determine back button text based on previous location
-  const getBackButtonText = (): string => {
-    if (!previousLocation) return "Back";
-    
-    if (previousLocation === "/") return "Back to Feed";
-    if (previousLocation === "/explore") return "Back to Explore";
-    if (previousLocation.startsWith("/profile/")) return "Back to Profile";
-    if (previousLocation === "/saved") return "Back to Saved";
-    if (previousLocation === "/notifications") return "Back to Notifications";
-    
-    return "Back";
-  };
-
-  const handleBack = () => {
-    if (window.history.length > 1) {
-      window.history.back();
-    } else {
-      setLocation('/');
-    }
-  };
 
   if (isLoading) {
     return (
@@ -83,16 +57,6 @@ export default function PostDetail() {
     return (
       <div className="min-h-screen bg-background">
         <div className="max-w-2xl mx-auto pt-6 px-4">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="mb-4" 
-            onClick={handleBack}
-            data-testid="button-back"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            {getBackButtonText()}
-          </Button>
           <p className="text-center text-muted-foreground">Post not found</p>
         </div>
       </div>
@@ -118,17 +82,6 @@ export default function PostDetail() {
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
       <div className="max-w-2xl mx-auto pt-6">
-        <div className="px-4 mb-4">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={handleBack}
-            data-testid="button-back"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            {getBackButtonText()}
-          </Button>
-        </div>
         <Post post={formattedPost} />
       </div>
     </div>
