@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { X, Image as ImageIcon, Video } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -10,9 +10,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useMutation } from "@tanstack/react-query";
-import { queryClient } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { ObjectUploader } from "@/components/ObjectUploader";
+import type { UploadResult } from "@uppy/core";
 
 export function CreatePostModal({
   open,
@@ -23,24 +25,36 @@ export function CreatePostModal({
 }) {
   const { user } = useAuth();
   const [caption, setCaption] = useState("");
-  const [selectedMedia, setSelectedMedia] = useState<{ file: File; url: string; type: "image" | "video" } | null>(null);
-  const imageInputRef = useRef<HTMLInputElement>(null);
-  const videoInputRef = useRef<HTMLInputElement>(null);
+  const [uploadedMediaURL, setUploadedMediaURL] = useState<string | null>(null);
+  const [mediaType, setMediaType] = useState<"image" | "video" | null>(null);
   const { toast } = useToast();
 
-  const createPostMutation = useMutation({
-    mutationFn: async (postData: { userId: string; type: "image" | "video"; file: File; caption: string }) => {
-      const formData = new FormData();
-      formData.append("userId", postData.userId);
-      formData.append("type", postData.type);
-      formData.append("media", postData.file);
-      formData.append("caption", postData.caption);
-      
-      const response = await fetch("/api/posts", {
-        method: "POST",
-        body: formData,
+  const setPostMediaMutation = useMutation({
+    mutationFn: async (mediaURL: string) => {
+      const response = await apiRequest("PUT", `/api/post-media`, {
+        mediaURL,
       });
-      if (!response.ok) throw new Error("Failed to create post");
+      return response.json();
+    },
+    onSuccess: (data) => {
+      setUploadedMediaURL(data.objectPath);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to process media",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const createPostMutation = useMutation({
+    mutationFn: async (postData: { type: "image" | "video"; mediaUrl: string; caption: string }) => {
+      const response = await apiRequest("POST", "/api/posts", {
+        type: postData.type,
+        mediaUrl: postData.mediaUrl,
+        caption: postData.caption,
+      });
       return response.json();
     },
     onSuccess: () => {
@@ -49,11 +63,9 @@ export function CreatePostModal({
         title: "Post shared!",
         description: "Your slow living moment has been shared.",
       });
-      if (selectedMedia) {
-        URL.revokeObjectURL(selectedMedia.url);
-      }
       setCaption("");
-      setSelectedMedia(null);
+      setUploadedMediaURL(null);
+      setMediaType(null);
       onOpenChange(false);
     },
     onError: () => {
@@ -65,64 +77,54 @@ export function CreatePostModal({
     },
   });
 
-  const handleImageSelect = () => {
-    imageInputRef.current?.click();
+  const handleGetUploadParameters = async () => {
+    const response = await apiRequest("POST", "/api/objects/upload", {});
+    const data = await response.json();
+    return {
+      method: "PUT" as const,
+      url: data.uploadURL,
+    };
   };
 
-  const handleVideoSelect = () => {
-    videoInputRef.current?.click();
-  };
-
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file && file.type.startsWith("image/")) {
-      if (selectedMedia) {
-        URL.revokeObjectURL(selectedMedia.url);
+  const handleImageUploadComplete = (result: UploadResult<Record<string, unknown>, Record<string, unknown>>) => {
+    if (result.successful && result.successful.length > 0) {
+      const uploadURL = result.successful[0].uploadURL;
+      if (uploadURL) {
+        setMediaType("image");
+        setPostMediaMutation.mutate(uploadURL);
       }
-      const url = URL.createObjectURL(file);
-      setSelectedMedia({ file, url, type: "image" });
-    }
-    if (imageInputRef.current) {
-      imageInputRef.current.value = "";
     }
   };
 
-  const handleVideoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file && file.type.startsWith("video/")) {
-      if (selectedMedia) {
-        URL.revokeObjectURL(selectedMedia.url);
+  const handleVideoUploadComplete = (result: UploadResult<Record<string, unknown>, Record<string, unknown>>) => {
+    if (result.successful && result.successful.length > 0) {
+      const uploadURL = result.successful[0].uploadURL;
+      if (uploadURL) {
+        setMediaType("video");
+        setPostMediaMutation.mutate(uploadURL);
       }
-      const url = URL.createObjectURL(file);
-      setSelectedMedia({ file, url, type: "video" });
-    }
-    if (videoInputRef.current) {
-      videoInputRef.current.value = "";
     }
   };
 
   const handleRemoveMedia = () => {
-    if (selectedMedia) {
-      URL.revokeObjectURL(selectedMedia.url);
-      setSelectedMedia(null);
-    }
+    setUploadedMediaURL(null);
+    setMediaType(null);
   };
 
   const handlePost = () => {
-    if (!selectedMedia || !user) return;
+    if (!uploadedMediaURL || !user || !mediaType) return;
     
     createPostMutation.mutate({
-      userId: user.id,
-      type: selectedMedia.type,
-      file: selectedMedia.file,
+      type: mediaType,
+      mediaUrl: uploadedMediaURL,
       caption: caption.trim(),
     });
   };
 
   const handleOpenChange = (newOpen: boolean) => {
-    if (!newOpen && selectedMedia) {
-      URL.revokeObjectURL(selectedMedia.url);
-      setSelectedMedia(null);
+    if (!newOpen) {
+      setUploadedMediaURL(null);
+      setMediaType(null);
       setCaption("");
     }
     onOpenChange(newOpen);
@@ -150,35 +152,18 @@ export function CreatePostModal({
             />
           </div>
 
-          <input
-            ref={imageInputRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={handleImageChange}
-            data-testid="input-image-file"
-          />
-          <input
-            ref={videoInputRef}
-            type="file"
-            accept="video/*"
-            className="hidden"
-            onChange={handleVideoChange}
-            data-testid="input-video-file"
-          />
-
-          {selectedMedia ? (
+          {uploadedMediaURL ? (
             <div className="relative rounded-md overflow-hidden bg-muted">
-              {selectedMedia.type === "image" ? (
+              {mediaType === "image" ? (
                 <img
-                  src={selectedMedia.url}
+                  src={uploadedMediaURL}
                   alt="Selected"
                   className="w-full object-cover max-h-96"
                   data-testid="img-preview"
                 />
               ) : (
                 <video
-                  src={selectedMedia.url}
+                  src={uploadedMediaURL}
                   className="w-full object-cover max-h-96"
                   controls
                   data-testid="video-preview"
@@ -196,22 +181,26 @@ export function CreatePostModal({
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-4">
-              <button
-                onClick={handleImageSelect}
-                className="p-8 border-2 border-dashed rounded-md hover-elevate flex flex-col items-center gap-2 text-muted-foreground"
-                data-testid="button-select-image"
+              <ObjectUploader
+                maxNumberOfFiles={1}
+                maxFileSize={50 * 1024 * 1024}
+                onGetUploadParameters={handleGetUploadParameters}
+                onComplete={handleImageUploadComplete}
+                buttonClassName="p-8 border-2 border-dashed rounded-md hover-elevate flex flex-col items-center gap-2 text-muted-foreground w-full"
               >
                 <ImageIcon className="h-8 w-8" />
                 <span>Add photo</span>
-              </button>
-              <button
-                onClick={handleVideoSelect}
-                className="p-8 border-2 border-dashed rounded-md hover-elevate flex flex-col items-center gap-2 text-muted-foreground"
-                data-testid="button-select-video"
+              </ObjectUploader>
+              <ObjectUploader
+                maxNumberOfFiles={1}
+                maxFileSize={50 * 1024 * 1024}
+                onGetUploadParameters={handleGetUploadParameters}
+                onComplete={handleVideoUploadComplete}
+                buttonClassName="p-8 border-2 border-dashed rounded-md hover-elevate flex flex-col items-center gap-2 text-muted-foreground w-full"
               >
                 <Video className="h-8 w-8" />
                 <span>Add video</span>
-              </button>
+              </ObjectUploader>
             </div>
           )}
 
@@ -225,7 +214,7 @@ export function CreatePostModal({
             </Button>
             <Button
               onClick={handlePost}
-              disabled={!caption.trim() || !selectedMedia || createPostMutation.isPending}
+              disabled={!caption.trim() || !uploadedMediaURL || createPostMutation.isPending}
               data-testid="button-share"
             >
               {createPostMutation.isPending ? "Sharing..." : "Share"}

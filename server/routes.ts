@@ -318,14 +318,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/posts", isAuthenticated, upload.single("media"), async (req: any, res) => {
+  app.post("/api/posts", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const mediaUrl = req.file ? `/uploads/${req.file.filename}` : req.body.mediaUrl;
       const postData = insertPostSchema.parse({
         userId,
         type: req.body.type,
-        mediaUrl,
+        mediaUrl: req.body.mediaUrl,
         caption: req.body.caption,
       });
       const post = await storage.createPost(postData);

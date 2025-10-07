@@ -190,7 +190,6 @@ export default function Profile() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const userId = params?.userId || "";
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [drawerType, setDrawerType] = useState<"followers" | "following" | null>(null);
 
   const isOwnProfile = userId === currentUser?.id;
