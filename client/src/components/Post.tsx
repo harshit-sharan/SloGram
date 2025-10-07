@@ -340,7 +340,7 @@ export function Post({ post }: { post: PostData }) {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: `${post.author.displayName}'s post`,
+          title: `${post.author.name}'s post`,
           text: post.caption || "Check out this post on Slogram",
           url: postUrl,
         });
