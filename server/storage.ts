@@ -2,6 +2,7 @@ import { type User, type InsertUser, type UpsertUser, type Post, type InsertPost
 import { db } from "./db";
 import { users, posts, messages, conversations, comments, likes, saves, notifications, follows } from "@shared/schema";
 import { eq, and, or, desc, ilike, inArray, sql } from "drizzle-orm";
+import { encryptMessage, decryptMessage } from "./encryption";
 
 export interface IStorage {
   // Users
@@ -130,20 +131,36 @@ export class DbStorage implements IStorage {
   }
 
   async createMessage(message: InsertMessage): Promise<Message> {
-    const [newMessage] = await db.insert(messages).values(message).returning();
+    // Encrypt the message text before storing
+    const encryptedText = encryptMessage(message.text);
+    
+    const [newMessage] = await db.insert(messages).values({
+      ...message,
+      text: encryptedText
+    }).returning();
     
     // Update conversation's lastMessageAt
     await db.update(conversations)
       .set({ lastMessageAt: new Date() })
       .where(eq(conversations.id, message.conversationId));
     
-    return newMessage;
+    // Decrypt the text before returning
+    return {
+      ...newMessage,
+      text: message.text // Return the original plain text
+    };
   }
 
   async getMessagesByConversationId(conversationId: string): Promise<Message[]> {
-    return db.select().from(messages)
+    const encryptedMessages = await db.select().from(messages)
       .where(eq(messages.conversationId, conversationId))
       .orderBy(messages.createdAt);
+    
+    // Decrypt all messages before returning
+    return encryptedMessages.map(msg => ({
+      ...msg,
+      text: decryptMessage(msg.text)
+    }));
   }
 
   async getMessagesByConversationIdPaginated(
@@ -173,8 +190,14 @@ export class DbStorage implements IStorage {
       const hasMore = result.length > limit;
       const messagesToReturn = hasMore ? result.slice(0, -1) : result;
       
+      // Decrypt all messages before returning
+      const decryptedMessages = messagesToReturn.map(msg => ({
+        ...msg,
+        text: decryptMessage(msg.text)
+      }));
+      
       return {
-        messages: messagesToReturn,
+        messages: decryptedMessages,
         hasMore,
       };
     }
@@ -183,8 +206,14 @@ export class DbStorage implements IStorage {
     const hasMore = result.length > limit;
     const messagesToReturn = hasMore ? result.slice(0, -1) : result;
     
+    // Decrypt all messages before returning
+    const decryptedMessages = messagesToReturn.map(msg => ({
+      ...msg,
+      text: decryptMessage(msg.text)
+    }));
+    
     return {
-      messages: messagesToReturn,
+      messages: decryptedMessages,
       hasMore,
     };
   }
