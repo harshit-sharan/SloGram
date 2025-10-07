@@ -180,7 +180,8 @@ export function CreatePostModal({
               maxFileSize={50 * 1024 * 1024}
               onGetUploadParameters={handleGetUploadParameters}
               onComplete={handleMediaUploadComplete}
-              buttonClassName="w-full p-12 border-2 border-dashed rounded-lg hover-elevate active-elevate-2 transition-all group cursor-pointer"
+              buttonClassName="w-full p-12 border-2 border-dashed rounded-lg no-default-hover-elevate no-default-active-elevate hover-elevate active-elevate-2 transition-all group cursor-pointer bg-transparent"
+              buttonVariant="ghost"
             >
               <div className="flex flex-col items-center gap-4 text-muted-foreground pointer-events-none">
                 <div className="relative">
