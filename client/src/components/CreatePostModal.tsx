@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { X, Image as ImageIcon, Video } from "lucide-react";
+import { X, ImageIcon, Video, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -86,21 +86,16 @@ export function CreatePostModal({
     };
   };
 
-  const handleImageUploadComplete = (result: UploadResult<Record<string, unknown>, Record<string, unknown>>) => {
+  const handleMediaUploadComplete = (result: UploadResult<Record<string, unknown>, Record<string, unknown>>) => {
     if (result.successful && result.successful.length > 0) {
       const uploadURL = result.successful[0].uploadURL;
+      const file = result.successful[0];
+      
       if (uploadURL) {
-        setMediaType("image");
-        setPostMediaMutation.mutate(uploadURL);
-      }
-    }
-  };
-
-  const handleVideoUploadComplete = (result: UploadResult<Record<string, unknown>, Record<string, unknown>>) => {
-    if (result.successful && result.successful.length > 0) {
-      const uploadURL = result.successful[0].uploadURL;
-      if (uploadURL) {
-        setMediaType("video");
+        // Determine media type from file mime type
+        const mimeType = file.type || "";
+        const isVideo = mimeType.startsWith("video/");
+        setMediaType(isVideo ? "video" : "image");
         setPostMediaMutation.mutate(uploadURL);
       }
     }
@@ -153,7 +148,7 @@ export function CreatePostModal({
           </div>
 
           {uploadedMediaURL ? (
-            <div className="relative rounded-md overflow-hidden bg-muted">
+            <div className="relative rounded-lg overflow-hidden bg-muted">
               {mediaType === "image" ? (
                 <img
                   src={uploadedMediaURL}
@@ -172,7 +167,7 @@ export function CreatePostModal({
               <Button
                 variant="ghost"
                 size="icon"
-                className="absolute top-2 right-2 bg-background/80 backdrop-blur"
+                className="absolute top-2 right-2 bg-background/80 backdrop-blur hover:bg-background/90"
                 onClick={handleRemoveMedia}
                 data-testid="button-remove-media"
               >
@@ -180,31 +175,46 @@ export function CreatePostModal({
               </Button>
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-4">
-              <ObjectUploader
-                maxNumberOfFiles={1}
-                maxFileSize={50 * 1024 * 1024}
-                onGetUploadParameters={handleGetUploadParameters}
-                onComplete={handleImageUploadComplete}
-                buttonClassName="p-8 border-2 border-dashed rounded-md hover-elevate flex flex-col items-center gap-2 text-muted-foreground w-full"
-              >
-                <ImageIcon className="h-8 w-8" />
-                <span>Add photo</span>
-              </ObjectUploader>
-              <ObjectUploader
-                maxNumberOfFiles={1}
-                maxFileSize={50 * 1024 * 1024}
-                onGetUploadParameters={handleGetUploadParameters}
-                onComplete={handleVideoUploadComplete}
-                buttonClassName="p-8 border-2 border-dashed rounded-md hover-elevate flex flex-col items-center gap-2 text-muted-foreground w-full"
-              >
-                <Video className="h-8 w-8" />
-                <span>Add video</span>
-              </ObjectUploader>
-            </div>
+            <ObjectUploader
+              maxNumberOfFiles={1}
+              maxFileSize={50 * 1024 * 1024}
+              onGetUploadParameters={handleGetUploadParameters}
+              onComplete={handleMediaUploadComplete}
+              buttonClassName="w-full p-12 border-2 border-dashed rounded-lg hover-elevate active-elevate-2 transition-all group"
+            >
+              <div className="flex flex-col items-center gap-4 text-muted-foreground">
+                <div className="relative">
+                  <div className="absolute inset-0 bg-primary/10 rounded-full blur-xl group-hover:bg-primary/20 transition-colors" />
+                  <div className="relative flex items-center justify-center w-16 h-16 rounded-full bg-muted">
+                    <Upload className="h-8 w-8 text-primary" />
+                  </div>
+                </div>
+                
+                <div className="text-center space-y-2">
+                  <p className="text-base font-medium text-foreground">
+                    Drag and drop or click to upload
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Photos and videos up to 50MB
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-6 mt-2">
+                  <div className="flex items-center gap-2">
+                    <ImageIcon className="h-5 w-5 text-primary" />
+                    <span className="text-sm">Images</span>
+                  </div>
+                  <div className="h-4 w-px bg-border" />
+                  <div className="flex items-center gap-2">
+                    <Video className="h-5 w-5 text-primary" />
+                    <span className="text-sm">Videos</span>
+                  </div>
+                </div>
+              </div>
+            </ObjectUploader>
           )}
 
-          <div className="flex justify-end gap-2">
+          <div className="flex justify-end gap-2 pt-2">
             <Button
               variant="outline"
               onClick={() => handleOpenChange(false)}
