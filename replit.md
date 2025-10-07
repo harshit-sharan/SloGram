@@ -117,3 +117,8 @@ Preferred communication style: Simple, everyday language.
 - WebSocket upgrade handler validates session before establishing connection
 - No client-provided user IDs trusted - all derived from authenticated session
 - IDOR vulnerabilities prevented via server-side authorization checks
+- End-to-end message encryption using AES-256-GCM algorithm
+  - All direct messages encrypted before storage in database
+  - Encryption key stored securely in MESSAGE_ENCRYPTION_KEY environment variable
+  - Backward compatibility maintained for legacy plaintext messages
+  - Messages automatically decrypted when retrieved for display
