@@ -66,11 +66,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     const userId = req.user?.claims?.sub;
+    const uploadURL = req.body.profileImageURL;
 
     try {
+      // Parse and validate the URL structure
+      let parsedURL: URL;
+      try {
+        parsedURL = new URL(uploadURL);
+      } catch {
+        return res.status(400).json({ error: "Invalid upload URL format" });
+      }
+
+      // Validate hostname is Google Cloud Storage
+      if (!parsedURL.hostname.includes('storage.googleapis.com')) {
+        return res.status(400).json({ error: "Invalid upload URL - must be from Google Cloud Storage" });
+      }
+
+      // Validate bucket name matches exactly
+      const bucketName = process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID;
+      if (!bucketName) {
+        return res.status(500).json({ error: "Server configuration error" });
+      }
+
+      const pathParts = parsedURL.pathname.split('/').filter(p => p);
+      if (pathParts.length < 1 || pathParts[0] !== bucketName) {
+        return res.status(400).json({ error: "Invalid upload URL - incorrect bucket" });
+      }
+
+      // Validate that the object is in the private directory
+      const privateDir = process.env.PRIVATE_OBJECT_DIR || ".private";
+      if (pathParts.length < 2 || pathParts[1] !== privateDir) {
+        return res.status(400).json({ error: "Invalid upload URL - must be from private directory" });
+      }
+
       const objectStorageService = new ObjectStorageService();
+      const normalizedPath = objectStorageService.normalizeObjectEntityPath(uploadURL);
+      
+      // Check existing ACL to ensure object has no owner or is owned by current user
+      if (normalizedPath.startsWith("/objects/")) {
+        const objectFile = await objectStorageService.getObjectEntityFile(normalizedPath);
+        
+        // Get existing ACL policy
+        const { getObjectAclPolicy } = await import("./objectAcl");
+        const existingAcl = await getObjectAclPolicy(objectFile);
+        
+        // If object has an owner and it's not the current user, reject
+        if (existingAcl.owner && existingAcl.owner !== userId) {
+          return res.status(403).json({ error: "Cannot modify object owned by another user" });
+        }
+      }
+
       const objectPath = await objectStorageService.trySetObjectEntityAclPolicy(
-        req.body.profileImageURL,
+        uploadURL,
         {
           owner: userId,
           visibility: "public", // Profile images are public
@@ -106,11 +153,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     const userId = req.user?.claims?.sub;
+    const uploadURL = req.body.mediaURL;
 
     try {
+      // Parse and validate the URL structure
+      let parsedURL: URL;
+      try {
+        parsedURL = new URL(uploadURL);
+      } catch {
+        return res.status(400).json({ error: "Invalid upload URL format" });
+      }
+
+      // Validate hostname is Google Cloud Storage
+      if (!parsedURL.hostname.includes('storage.googleapis.com')) {
+        return res.status(400).json({ error: "Invalid upload URL - must be from Google Cloud Storage" });
+      }
+
+      // Validate bucket name matches exactly
+      const bucketName = process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID;
+      if (!bucketName) {
+        return res.status(500).json({ error: "Server configuration error" });
+      }
+
+      const pathParts = parsedURL.pathname.split('/').filter(p => p);
+      if (pathParts.length < 1 || pathParts[0] !== bucketName) {
+        return res.status(400).json({ error: "Invalid upload URL - incorrect bucket" });
+      }
+
+      // Validate that the object is in the private directory
+      const privateDir = process.env.PRIVATE_OBJECT_DIR || ".private";
+      if (pathParts.length < 2 || pathParts[1] !== privateDir) {
+        return res.status(400).json({ error: "Invalid upload URL - must be from private directory" });
+      }
+
       const objectStorageService = new ObjectStorageService();
+      const normalizedPath = objectStorageService.normalizeObjectEntityPath(uploadURL);
+      
+      // Check existing ACL to ensure object has no owner or is owned by current user
+      if (normalizedPath.startsWith("/objects/")) {
+        const objectFile = await objectStorageService.getObjectEntityFile(normalizedPath);
+        
+        // Get existing ACL policy
+        const { getObjectAclPolicy } = await import("./objectAcl");
+        const existingAcl = await getObjectAclPolicy(objectFile);
+        
+        // If object has an owner and it's not the current user, reject
+        if (existingAcl.owner && existingAcl.owner !== userId) {
+          return res.status(403).json({ error: "Cannot modify object owned by another user" });
+        }
+      }
+
       const objectPath = await objectStorageService.trySetObjectEntityAclPolicy(
-        req.body.mediaURL,
+        uploadURL,
         {
           owner: userId,
           visibility: "public", // Post media is public
