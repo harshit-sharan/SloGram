@@ -38,18 +38,30 @@ export function encryptMessage(text: string): string {
 }
 
 export function decryptMessage(encryptedText: string): string {
-  const key = getEncryptionKey();
-  const combined = Buffer.from(encryptedText, 'base64');
-  
-  const iv = combined.subarray(0, IV_LENGTH);
-  const authTag = combined.subarray(combined.length - TAG_LENGTH);
-  const encrypted = combined.subarray(IV_LENGTH, combined.length - TAG_LENGTH);
-  
-  const decipher = crypto.createDecipheriv(ALGORITHM, key, iv);
-  decipher.setAuthTag(authTag);
-  
-  let decrypted = decipher.update(encrypted.toString('hex'), 'hex', 'utf8');
-  decrypted += decipher.final('utf8');
-  
-  return decrypted;
+  try {
+    const key = getEncryptionKey();
+    const combined = Buffer.from(encryptedText, 'base64');
+    
+    // Check if the text looks like it could be encrypted (proper length)
+    if (combined.length < IV_LENGTH + TAG_LENGTH) {
+      // Too short to be encrypted, return as-is (backward compatibility)
+      return encryptedText;
+    }
+    
+    const iv = combined.subarray(0, IV_LENGTH);
+    const authTag = combined.subarray(combined.length - TAG_LENGTH);
+    const encrypted = combined.subarray(IV_LENGTH, combined.length - TAG_LENGTH);
+    
+    const decipher = crypto.createDecipheriv(ALGORITHM, key, iv);
+    decipher.setAuthTag(authTag);
+    
+    let decrypted = decipher.update(encrypted.toString('hex'), 'hex', 'utf8');
+    decrypted += decipher.final('utf8');
+    
+    return decrypted;
+  } catch (error) {
+    // If decryption fails, assume it's plain text (backward compatibility)
+    // This handles messages that were stored before encryption was implemented
+    return encryptedText;
+  }
 }
