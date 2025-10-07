@@ -94,7 +94,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Validate that the object is in the private directory
-      const privateDir = process.env.PRIVATE_OBJECT_DIR || ".private";
+      // Extract just the directory name from the full path (e.g., ".private" from "/bucket/.private")
+      const privateDirPath = process.env.PRIVATE_OBJECT_DIR || ".private";
+      const privateDir = privateDirPath.split('/').filter(p => p).pop() || ".private";
       if (pathParts.length < 2 || pathParts[1] !== privateDir) {
         return res.status(400).json({ error: "Invalid upload URL - must be from private directory" });
       }
@@ -111,7 +113,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const existingAcl = await getObjectAclPolicy(objectFile);
         
         // If object has an owner and it's not the current user, reject
-        if (existingAcl.owner && existingAcl.owner !== userId) {
+        if (existingAcl && existingAcl.owner && existingAcl.owner !== userId) {
           return res.status(403).json({ error: "Cannot modify object owned by another user" });
         }
       }
@@ -181,7 +183,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Validate that the object is in the private directory
-      const privateDir = process.env.PRIVATE_OBJECT_DIR || ".private";
+      // Extract just the directory name from the full path (e.g., ".private" from "/bucket/.private")
+      const privateDirPath = process.env.PRIVATE_OBJECT_DIR || ".private";
+      const privateDir = privateDirPath.split('/').filter(p => p).pop() || ".private";
       if (pathParts.length < 2 || pathParts[1] !== privateDir) {
         return res.status(400).json({ error: "Invalid upload URL - must be from private directory" });
       }
@@ -198,7 +202,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const existingAcl = await getObjectAclPolicy(objectFile);
         
         // If object has an owner and it's not the current user, reject
-        if (existingAcl.owner && existingAcl.owner !== userId) {
+        if (existingAcl && existingAcl.owner && existingAcl.owner !== userId) {
           return res.status(403).json({ error: "Cannot modify object owned by another user" });
         }
       }
