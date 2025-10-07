@@ -26,8 +26,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { updateUserProfileSchema, type UpdateUserProfile } from "@shared/schema";
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { UserListDrawer } from "@/components/UserListDrawer";
+import { ObjectUploader } from "@/components/ObjectUploader";
+import type { UploadResult } from "@uppy/core";
 
 interface User {
   id: string;
@@ -250,21 +252,10 @@ export default function Profile() {
   });
 
   const uploadProfilePictureMutation = useMutation({
-    mutationFn: async (file: File) => {
-      const formData = new FormData();
-      formData.append("profilePicture", file);
-      
-      const response = await fetch(`/api/users/${userId}/profile-picture`, {
-        method: "POST",
-        body: formData,
-        credentials: "include",
+    mutationFn: async (profileImageURL: string) => {
+      const response = await apiRequest("PUT", `/api/profile-images`, {
+        profileImageURL,
       });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to upload profile picture");
-      }
-      
       return response.json();
     },
     onSuccess: () => {
@@ -274,10 +265,6 @@ export default function Profile() {
         title: "Profile picture updated",
         description: "Your profile picture has been updated successfully",
       });
-      // Reset file input
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
     },
     onError: (error: Error) => {
       toast({
@@ -285,10 +272,6 @@ export default function Profile() {
         description: error.message,
         variant: "destructive",
       });
-      // Reset file input
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
     },
   });
 
@@ -302,36 +285,21 @@ export default function Profile() {
     messageMutation.mutate();
   };
 
-  const handleAvatarClick = () => {
-    if (isOwnProfile) {
-      fileInputRef.current?.click();
-    }
+  const handleGetUploadParameters = async () => {
+    const response = await apiRequest("POST", "/api/objects/upload", {});
+    const data = await response.json();
+    return {
+      method: "PUT" as const,
+      url: data.uploadURL,
+    };
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      // Validate file type
-      if (!file.type.startsWith("image/")) {
-        toast({
-          title: "Invalid file type",
-          description: "Please select an image file",
-          variant: "destructive",
-        });
-        return;
+  const handleUploadComplete = (result: UploadResult<Record<string, unknown>, Record<string, unknown>>) => {
+    if (result.successful && result.successful.length > 0) {
+      const uploadURL = result.successful[0].uploadURL;
+      if (uploadURL) {
+        uploadProfilePictureMutation.mutate(uploadURL);
       }
-      
-      // Validate file size (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        toast({
-          title: "File too large",
-          description: "Please select an image smaller than 5MB",
-          variant: "destructive",
-        });
-        return;
-      }
-      
-      uploadProfilePictureMutation.mutate(file);
     }
   };
 
@@ -361,8 +329,7 @@ export default function Profile() {
         <div className="flex flex-col md:flex-row gap-8 md:gap-12 items-center md:items-start mb-8">
           <div className="relative group">
             <Avatar 
-              className={`h-32 w-32 ${isOwnProfile ? 'cursor-pointer' : ''}`}
-              onClick={handleAvatarClick}
+              className="h-32 w-32"
               data-testid="img-avatar-profile"
             >
               <AvatarImage src={user.profileImageUrl || user.avatar} />
@@ -371,22 +338,18 @@ export default function Profile() {
               </AvatarFallback>
             </Avatar>
             {isOwnProfile && (
-              <div 
-                className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-                onClick={handleAvatarClick}
-                data-testid="overlay-change-picture"
-              >
-                <Camera className="h-8 w-8 text-white" />
+              <div className="absolute inset-0 rounded-full flex items-center justify-center">
+                <ObjectUploader
+                  maxNumberOfFiles={1}
+                  maxFileSize={5 * 1024 * 1024}
+                  onGetUploadParameters={handleGetUploadParameters}
+                  onComplete={handleUploadComplete}
+                  buttonClassName="w-full h-full rounded-full bg-black/50 hover:bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <Camera className="h-8 w-8 text-white" />
+                </ObjectUploader>
               </div>
             )}
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleFileChange}
-              className="hidden"
-              data-testid="input-profile-picture"
-            />
           </div>
 
           <div className="flex-1 text-center md:text-left">
