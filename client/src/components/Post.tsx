@@ -335,18 +335,41 @@ export function Post({ post }: { post: PostData }) {
 
   const handleShare = async () => {
     const postUrl = `${window.location.origin}/post/${post.id}`;
-    try {
-      await navigator.clipboard.writeText(postUrl);
-      toast({
-        title: "Link copied!",
-        description: "Post link has been copied to your clipboard",
-      });
-    } catch (error) {
-      toast({
-        title: "Failed to copy",
-        description: "Could not copy link to clipboard",
-        variant: "destructive",
-      });
+    
+    // Try to use native share on mobile devices
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `${post.author.displayName}'s post`,
+          text: post.caption || "Check out this post on Slogram",
+          url: postUrl,
+        });
+      } catch (error: any) {
+        // User cancelled the share or it failed
+        // Only show error if it's not a user cancellation
+        if (error.name !== 'AbortError') {
+          toast({
+            title: "Failed to share",
+            description: "Could not open share options",
+            variant: "destructive",
+          });
+        }
+      }
+    } else {
+      // Fallback to clipboard for desktop
+      try {
+        await navigator.clipboard.writeText(postUrl);
+        toast({
+          title: "Link copied!",
+          description: "Post link has been copied to your clipboard",
+        });
+      } catch (error) {
+        toast({
+          title: "Failed to copy",
+          description: "Could not copy link to clipboard",
+          variant: "destructive",
+        });
+      }
     }
   };
 
