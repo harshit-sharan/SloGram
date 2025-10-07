@@ -8,8 +8,8 @@ import type { UploadResult } from "@uppy/core";
 import { Button } from "@/components/ui/button";
 
 // Import Uppy styles
-import "@uppy/core/dist/style.min.css";
-import "@uppy/dashboard/dist/style.min.css";
+import "@uppy/core/css/style.css";
+import "@uppy/dashboard/css/style.css";
 
 interface ObjectUploaderProps {
   maxNumberOfFiles?: number;
