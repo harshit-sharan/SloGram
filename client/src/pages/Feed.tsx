@@ -49,28 +49,23 @@ export default function Feed() {
   const { user, isLoading: isAuthLoading } = useAuth();
   const loadMoreRef = useRef<HTMLDivElement>(null);
 
-  const {
-    data,
-    isLoading,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-  } = useInfiniteQuery({
-    queryKey: ["/api/posts-with-authors"],
-    queryFn: async ({ pageParam = 0 }) => {
-      const response = await fetch(
-        `/api/posts-with-authors?limit=10&offset=${pageParam}`
-      );
-      if (!response.ok) throw new Error("Failed to fetch posts");
-      return response.json();
-    },
-    getNextPageParam: (lastPage, allPages) => {
-      if (!lastPage.hasMore) return undefined;
-      return allPages.reduce((total, page) => total + page.posts.length, 0);
-    },
-    initialPageParam: 0,
-    enabled: !!user,
-  });
+  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
+    useInfiniteQuery({
+      queryKey: ["/api/posts-with-authors"],
+      queryFn: async ({ pageParam = 0 }) => {
+        const response = await fetch(
+          `/api/posts-with-authors?limit=10&offset=${pageParam}`,
+        );
+        if (!response.ok) throw new Error("Failed to fetch posts");
+        return response.json();
+      },
+      getNextPageParam: (lastPage, allPages) => {
+        if (!lastPage.hasMore) return undefined;
+        return allPages.reduce((total, page) => total + page.posts.length, 0);
+      },
+      initialPageParam: 0,
+      enabled: !!user,
+    });
 
   // Infinite scroll observer
   useEffect(() => {
@@ -82,7 +77,7 @@ export default function Feed() {
           fetchNextPage();
         }
       },
-      { threshold: 0.1 }
+      { threshold: 0.1 },
     );
 
     observer.observe(loadMoreRef.current);
@@ -95,29 +90,32 @@ export default function Feed() {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Dialog open={true}>
-          <DialogContent 
-            className="sm:max-w-md" 
+          <DialogContent
+            className="sm:max-w-md"
             data-testid="dialog-login-required"
             onInteractOutside={(e) => e.preventDefault()}
             onEscapeKeyDown={(e) => e.preventDefault()}
           >
             <DialogHeader>
-              <DialogTitle className="font-serif text-2xl text-center">Welcome to Slogram</DialogTitle>
+              <DialogTitle className="font-serif text-2xl text-center">
+                Welcome to Slogram
+              </DialogTitle>
               <DialogDescription className="text-center pt-2">
-                A mindful space for slow living and intentional sharing.
-                Please log in to continue.
+                A mindful space for slow living and intentional sharing. Please
+                log in to continue.
               </DialogDescription>
             </DialogHeader>
             <div className="flex flex-col gap-4 pt-4">
               <Button
-                onClick={() => window.location.href = '/api/login'}
+                onClick={() => (window.location.href = "/api/login")}
                 className="w-full"
                 data-testid="button-login-dialog"
               >
                 Log in with Replit
               </Button>
               <p className="text-xs text-muted-foreground text-center">
-                By logging in, you agree to our terms of service and privacy policy.
+                By logging in, you agree to our terms of service and privacy
+                policy.
               </p>
             </div>
           </DialogContent>
@@ -159,7 +157,10 @@ export default function Feed() {
     <div className="min-h-screen bg-background pb-20 md:pb-0">
       <div className="max-w-2xl mx-auto pt-6">
         {formattedPosts.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 px-4" data-testid="empty-feed">
+          <div
+            className="flex flex-col items-center justify-center py-12 px-4"
+            data-testid="empty-feed"
+          >
             <p className="text-center text-muted-foreground">
               Your feed is empty. Follow other users to see their posts here.
             </p>
@@ -169,7 +170,7 @@ export default function Feed() {
             {formattedPosts.map((post) => (
               <Post key={post.id} post={post} />
             ))}
-            
+
             {hasNextPage && (
               <div
                 ref={loadMoreRef}
@@ -184,15 +185,6 @@ export default function Feed() {
           </>
         )}
       </div>
-
-      <Button
-        size="icon"
-        className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg md:hidden"
-        onClick={() => window.dispatchEvent(new Event('open-create-post'))}
-        data-testid="button-create-mobile"
-      >
-        <PlusSquare className="h-6 w-6" />
-      </Button>
     </div>
   );
 }
