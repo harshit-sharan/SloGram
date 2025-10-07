@@ -250,6 +250,13 @@ export function Post({ post }: { post: PostData }) {
         queryKey: ["/api/posts", post.id, "comments"],
       });
     },
+    onError: (error: any) => {
+      toast({
+        title: "Comment failed",
+        description: error.message || "Your comment could not be posted. Please try again.",
+        variant: "destructive",
+      });
+    },
   });
 
   const handleCommentSubmit = (e: React.FormEvent) => {

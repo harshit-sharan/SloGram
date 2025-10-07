@@ -7,6 +7,7 @@ import multer from "multer";
 import { insertPostSchema, insertMessageSchema, updateUserProfileSchema, users } from "@shared/schema";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
+import { containsProfanity, getProfanityError } from "./profanity-filter";
 
 const upload = multer({ 
   dest: "uploads/",
@@ -555,10 +556,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/posts/:postId/comments", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
+      const commentText = req.body.text;
+      
+      // Validate comment text is not empty
+      if (!commentText || typeof commentText !== 'string' || commentText.trim().length === 0) {
+        return res.status(400).json({ error: "Comment cannot be empty" });
+      }
+      
+      // Check for profanity
+      if (containsProfanity(commentText)) {
+        return res.status(400).json({ error: getProfanityError() });
+      }
+      
       const comment = await storage.createComment({
         userId,
         postId: req.params.postId,
-        text: req.body.text,
+        text: commentText,
       });
       
       // Create notification for comment
