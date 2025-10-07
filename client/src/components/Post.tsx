@@ -24,6 +24,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { UserListDrawer } from "@/components/UserListDrawer";
 
 interface CommentWithUser {
   id: string;
@@ -65,6 +66,7 @@ export function Post({ post }: { post: PostData }) {
   const [commentText, setCommentText] = useState("");
   const [following, setFollowing] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showLikersDrawer, setShowLikersDrawer] = useState(false);
   const { toast } = useToast();
   
   // Video controls state
@@ -180,6 +182,17 @@ export function Post({ post }: { post: PostData }) {
       return response.json();
     },
     enabled: showComments,
+  });
+
+  // Fetch users who liked the post
+  const { data: likers = [] } = useQuery<any[]>({
+    queryKey: ["/api/posts", post.id, "likers"],
+    queryFn: async () => {
+      const response = await fetch(`/api/posts/${post.id}/likers`);
+      if (!response.ok) throw new Error("Failed to fetch likers");
+      return response.json();
+    },
+    enabled: showLikersDrawer,
   });
 
   // Mutation to toggle like
@@ -593,9 +606,15 @@ export function Post({ post }: { post: PostData }) {
           </Button>
         </div>
 
-        <p className="font-semibold text-sm mb-2" data-testid={`text-likes-${post.id}`}>
-          {likeCount} {likeCount === 1 ? 'like' : 'likes'}
-        </p>
+        <button
+          onClick={() => setShowLikersDrawer(true)}
+          className="font-semibold text-sm mb-2 hover:opacity-70 transition-opacity"
+          data-testid={`button-show-likers-${post.id}`}
+        >
+          <span data-testid={`text-likes-${post.id}`}>
+            {likeCount} {likeCount === 1 ? 'like' : 'likes'}
+          </span>
+        </button>
 
         <div className="text-sm">
           <span className="font-serif font-semibold mr-2">{post.author.username}</span>
@@ -687,6 +706,15 @@ export function Post({ post }: { post: PostData }) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <UserListDrawer
+        open={showLikersDrawer}
+        onOpenChange={setShowLikersDrawer}
+        title="Likes"
+        users={likers}
+        type="likers"
+        postId={post.id}
+      />
     </article>
   );
 }

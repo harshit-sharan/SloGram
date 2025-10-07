@@ -39,6 +39,7 @@ export interface IStorage {
   toggleLike(userId: string, postId: string): Promise<boolean>;
   getLikesByPostId(postId: string): Promise<number>;
   isPostLikedByUser(userId: string, postId: string): Promise<boolean>;
+  getUsersWhoLikedPost(postId: string, currentUserId?: string): Promise<Array<User & { isFollowing: boolean }>>;
   
   // Saves
   toggleSave(userId: string, postId: string): Promise<boolean>;
@@ -56,8 +57,8 @@ export interface IStorage {
   toggleFollow(followerId: string, followingId: string): Promise<boolean>;
   isFollowing(followerId: string, followingId: string): Promise<boolean>;
   getFollowedUserIds(userId: string): Promise<string[]>;
-  getFollowers(userId: string): Promise<User[]>;
-  getFollowing(userId: string): Promise<User[]>;
+  getFollowers(userId: string, currentUserId?: string): Promise<Array<User & { isFollowing: boolean }>>;
+  getFollowing(userId: string, currentUserId?: string): Promise<Array<User & { isFollowing: boolean }>>;
 }
 
 export class DbStorage implements IStorage {
@@ -371,6 +372,34 @@ export class DbStorage implements IStorage {
     return !!existing;
   }
 
+  async getUsersWhoLikedPost(postId: string, currentUserId?: string): Promise<Array<User & { isFollowing: boolean }>> {
+    const result = await db
+      .select({
+        id: users.id,
+        username: users.username,
+        displayName: users.displayName,
+        email: users.email,
+        bio: users.bio,
+        avatar: users.avatar,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        profileImageUrl: users.profileImageUrl,
+        isFollowing: sql<boolean>`CASE WHEN ${follows.followerId} IS NOT NULL THEN true ELSE false END`,
+      })
+      .from(likes)
+      .innerJoin(users, eq(likes.userId, users.id))
+      .leftJoin(
+        follows,
+        currentUserId 
+          ? and(eq(follows.followerId, currentUserId), eq(follows.followingId, users.id))
+          : sql`false`
+      )
+      .where(eq(likes.postId, postId))
+      .orderBy(desc(likes.createdAt));
+    
+    return result as Array<User & { isFollowing: boolean }>;
+  }
+
   async toggleSave(userId: string, postId: string): Promise<boolean> {
     const [existing] = await db.select().from(saves).where(
       and(eq(saves.userId, userId), eq(saves.postId, postId))
@@ -496,7 +525,8 @@ export class DbStorage implements IStorage {
     return result.map(row => row.followingId);
   }
 
-  async getFollowers(userId: string): Promise<User[]> {
+  async getFollowers(userId: string, currentUserId?: string): Promise<Array<User & { isFollowing: boolean }>> {
+    const followsAlias = sql.identifier('f2');
     const result = await db
       .select({
         id: users.id,
@@ -511,14 +541,22 @@ export class DbStorage implements IStorage {
         password: users.password,
         createdAt: users.createdAt,
         updatedAt: users.updatedAt,
+        isFollowing: sql<boolean>`CASE WHEN ${followsAlias}."follower_id" IS NOT NULL THEN true ELSE false END`,
       })
       .from(follows)
       .innerJoin(users, eq(follows.followerId, users.id))
+      .leftJoin(
+        sql`${sql.identifier('follows')} AS ${followsAlias}`,
+        currentUserId 
+          ? sql`${followsAlias}."follower_id" = ${currentUserId} AND ${followsAlias}."following_id" = ${users.id}`
+          : sql`false`
+      )
       .where(eq(follows.followingId, userId));
-    return result as User[];
+    return result as Array<User & { isFollowing: boolean }>;
   }
 
-  async getFollowing(userId: string): Promise<User[]> {
+  async getFollowing(userId: string, currentUserId?: string): Promise<Array<User & { isFollowing: boolean }>> {
+    const followsAlias = sql.identifier('f2');
     const result = await db
       .select({
         id: users.id,
@@ -533,11 +571,18 @@ export class DbStorage implements IStorage {
         password: users.password,
         createdAt: users.createdAt,
         updatedAt: users.updatedAt,
+        isFollowing: sql<boolean>`CASE WHEN ${followsAlias}."follower_id" IS NOT NULL THEN true ELSE false END`,
       })
       .from(follows)
       .innerJoin(users, eq(follows.followingId, users.id))
+      .leftJoin(
+        sql`${sql.identifier('follows')} AS ${followsAlias}`,
+        currentUserId 
+          ? sql`${followsAlias}."follower_id" = ${currentUserId} AND ${followsAlias}."following_id" = ${users.id}`
+          : sql`false`
+      )
       .where(eq(follows.followerId, userId));
-    return result as User[];
+    return result as Array<User & { isFollowing: boolean }>;
   }
 }
 

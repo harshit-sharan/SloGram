@@ -448,18 +448,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/users/:userId/followers", isAuthenticated, async (req, res) => {
+  app.get("/api/users/:userId/followers", isAuthenticated, async (req: any, res) => {
     try {
-      const followers = await storage.getFollowers(req.params.userId);
+      const currentUserId = req.user.claims.sub;
+      const followers = await storage.getFollowers(req.params.userId, currentUserId);
       res.json(followers);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch followers" });
     }
   });
 
-  app.get("/api/users/:userId/following", isAuthenticated, async (req, res) => {
+  app.get("/api/users/:userId/following", isAuthenticated, async (req: any, res) => {
     try {
-      const following = await storage.getFollowing(req.params.userId);
+      const currentUserId = req.user.claims.sub;
+      const following = await storage.getFollowing(req.params.userId, currentUserId);
       res.json(following);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch following" });
@@ -513,6 +515,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ liked });
     } catch (error) {
       res.status(500).json({ error: "Failed to check like status" });
+    }
+  });
+
+  app.get("/api/posts/:postId/likers", isAuthenticated, async (req: any, res) => {
+    try {
+      const currentUserId = req.user.claims.sub;
+      const users = await storage.getUsersWhoLikedPost(req.params.postId, currentUserId);
+      res.json(users);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch users who liked post" });
     }
   });
 

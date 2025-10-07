@@ -27,6 +27,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { updateUserProfileSchema, type UpdateUserProfile } from "@shared/schema";
 import { useState, useRef } from "react";
+import { UserListDrawer } from "@/components/UserListDrawer";
 
 interface User {
   id: string;
@@ -188,6 +189,7 @@ export default function Profile() {
   const { toast } = useToast();
   const userId = params?.userId || "";
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [drawerType, setDrawerType] = useState<"followers" | "following" | null>(null);
 
   const isOwnProfile = userId === currentUser?.id;
 
@@ -431,12 +433,24 @@ export default function Profile() {
               <div data-testid="text-posts-count">
                 <span className="font-semibold">{posts.length}</span> posts
               </div>
-              <div data-testid="text-followers-count">
-                <span className="font-semibold">{followers.length}</span> followers
-              </div>
-              <div data-testid="text-following-count">
-                <span className="font-semibold">{following.length}</span> following
-              </div>
+              <button
+                onClick={() => setDrawerType("followers")}
+                className="hover:opacity-70 transition-opacity"
+                data-testid="button-show-followers"
+              >
+                <div data-testid="text-followers-count">
+                  <span className="font-semibold">{followers.length}</span> followers
+                </div>
+              </button>
+              <button
+                onClick={() => setDrawerType("following")}
+                className="hover:opacity-70 transition-opacity"
+                data-testid="button-show-following"
+              >
+                <div data-testid="text-following-count">
+                  <span className="font-semibold">{following.length}</span> following
+                </div>
+              </button>
             </div>
 
             <div>
@@ -495,6 +509,24 @@ export default function Profile() {
           )}
         </div>
       </div>
+
+      <UserListDrawer
+        open={drawerType === "followers"}
+        onOpenChange={(open) => !open && setDrawerType(null)}
+        title="Followers"
+        users={followers}
+        type="followers"
+        sourceUserId={userId}
+      />
+
+      <UserListDrawer
+        open={drawerType === "following"}
+        onOpenChange={(open) => !open && setDrawerType(null)}
+        title="Following"
+        users={following}
+        type="following"
+        sourceUserId={userId}
+      />
     </div>
   );
 }
