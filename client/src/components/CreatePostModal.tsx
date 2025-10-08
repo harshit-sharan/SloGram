@@ -49,7 +49,11 @@ export function CreatePostModal({
   });
 
   const createMomentMutation = useMutation({
-    mutationFn: async (momentData: { type: "image" | "video"; mediaUrl: string; caption: string }) => {
+    mutationFn: async (momentData: {
+      type: "image" | "video";
+      mediaUrl: string;
+      caption: string;
+    }) => {
       const response = await apiRequest("POST", "/api/moments", {
         type: momentData.type,
         mediaUrl: momentData.mediaUrl,
@@ -58,10 +62,12 @@ export function CreatePostModal({
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/moments-with-authors"] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/moments-with-authors"],
+      });
       toast({
         title: "Moment shared!",
-        description: "Your slow living moment has been shared.",
+        description: "Your mindful moment has been shared.",
       });
       setCaption("");
       setUploadedMediaURL(null);
@@ -86,11 +92,13 @@ export function CreatePostModal({
     };
   };
 
-  const handleMediaUploadComplete = (result: UploadResult<Record<string, unknown>, Record<string, unknown>>) => {
+  const handleMediaUploadComplete = (
+    result: UploadResult<Record<string, unknown>, Record<string, unknown>>,
+  ) => {
     if (result.successful && result.successful.length > 0) {
       const uploadURL = result.successful[0].uploadURL;
       const file = result.successful[0];
-      
+
       if (uploadURL) {
         // Determine media type from file mime type
         const mimeType = file.type || "";
@@ -108,7 +116,7 @@ export function CreatePostModal({
 
   const handlePost = () => {
     if (!uploadedMediaURL || !user || !mediaType) return;
-    
+
     createMomentMutation.mutate({
       type: mediaType,
       mediaUrl: uploadedMediaURL,
@@ -129,17 +137,23 @@ export function CreatePostModal({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-2xl" data-testid="modal-create-moment">
         <DialogHeader>
-          <DialogTitle className="font-serif text-xl">Create new moment</DialogTitle>
+          <DialogTitle className="font-serif text-xl">
+            Create new moment
+          </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
           <div className="flex items-start gap-3">
             <Avatar className="h-10 w-10">
               <AvatarImage src={user?.profileImageUrl || ""} />
-              <AvatarFallback>{user?.firstName?.charAt(0) || user?.displayName?.charAt(0) || "U"}</AvatarFallback>
+              <AvatarFallback>
+                {user?.firstName?.charAt(0) ||
+                  user?.displayName?.charAt(0) ||
+                  "U"}
+              </AvatarFallback>
             </Avatar>
             <Textarea
-              placeholder="Share your slow living moment..."
+              placeholder="Share your mindful moment..."
               value={caption}
               onChange={(e) => setCaption(e.target.value)}
               className="flex-1 min-h-24 resize-none border-0 focus-visible:ring-0 text-base"
@@ -190,7 +204,7 @@ export function CreatePostModal({
                     <Upload className="h-8 w-8 text-primary" />
                   </div>
                 </div>
-                
+
                 <div className="text-center space-y-2">
                   <p className="text-base font-medium text-foreground">
                     Drag and drop or click to upload
@@ -225,7 +239,11 @@ export function CreatePostModal({
             </Button>
             <Button
               onClick={handlePost}
-              disabled={!caption.trim() || !uploadedMediaURL || createMomentMutation.isPending}
+              disabled={
+                !caption.trim() ||
+                !uploadedMediaURL ||
+                createMomentMutation.isPending
+              }
               data-testid="button-share"
             >
               {createMomentMutation.isPending ? "Sharing..." : "Share"}
