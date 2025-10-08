@@ -1,6 +1,6 @@
-import { type User, type InsertUser, type UpsertUser, type Post, type InsertPost, type Message, type InsertMessage, type Conversation, type Comment, type Notification, type Follow } from "@shared/schema";
+import { type User, type InsertUser, type UpsertUser, type Moment, type InsertMoment, type Note, type InsertNote, type Conversation, type Reflect, type Whisper, type Follow } from "@shared/schema";
 import { db } from "./db";
-import { users, posts, messages, conversations, comments, savors, saves, notifications, follows } from "@shared/schema";
+import { users, moments, notes, conversations, reflects, savors, keeps, whispers, follows } from "@shared/schema";
 import { eq, and, or, desc, ilike, inArray, sql } from "drizzle-orm";
 import { encryptMessage, decryptMessage } from "./encryption";
 
@@ -12,46 +12,46 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   upsertUser(user: UpsertUser): Promise<User>;
   
-  // Posts
-  createPost(post: InsertPost): Promise<Post>;
-  getPosts(): Promise<Post[]>;
-  getPost(postId: string): Promise<Post | undefined>;
-  getPostsByUserId(userId: string): Promise<Post[]>;
-  deletePost(postId: string): Promise<void>;
+  // Moments
+  createMoment(moment: InsertMoment): Promise<Moment>;
+  getMoments(): Promise<Moment[]>;
+  getMoment(momentId: string): Promise<Moment | undefined>;
+  getMomentsByUserId(userId: string): Promise<Moment[]>;
+  deleteMoment(momentId: string): Promise<void>;
   
-  // Messages
-  createMessage(message: InsertMessage): Promise<Message>;
-  getMessagesByConversationId(conversationId: string): Promise<Message[]>;
-  getMessagesByConversationIdPaginated(conversationId: string, limit: number, cursor?: string): Promise<{ messages: Message[]; hasMore: boolean }>;
-  markMessageAsRead(messageId: string): Promise<void>;
-  getUnreadMessageCount(userId: string): Promise<number>;
-  getUnreadMessageCountByConversation(conversationId: string, userId: string): Promise<number>;
+  // Notes
+  createNote(note: InsertNote): Promise<Note>;
+  getNotesByConversationId(conversationId: string): Promise<Note[]>;
+  getNotesByConversationIdPaginated(conversationId: string, limit: number, cursor?: string): Promise<{ notes: Note[]; hasMore: boolean }>;
+  markNoteAsRead(noteId: string): Promise<void>;
+  getUnreadNoteCount(userId: string): Promise<number>;
+  getUnreadNoteCountByConversation(conversationId: string, userId: string): Promise<number>;
   
   // Conversations
   getOrCreateConversation(user1Id: string, user2Id: string): Promise<Conversation>;
   getConversationsByUserId(userId: string): Promise<Conversation[]>;
   
-  // Comments
-  createComment(comment: { userId: string; postId: string; text: string }): Promise<Comment>;
-  getCommentsByPostId(postId: string): Promise<Array<Comment & { user: User }>>;
+  // Reflects
+  createReflect(reflect: { userId: string; momentId: string; text: string }): Promise<Reflect>;
+  getReflectsByMomentId(momentId: string): Promise<Array<Reflect & { user: User }>>;
   
   // Savors
-  toggleSavor(userId: string, postId: string): Promise<boolean>;
-  getSavorsByPostId(postId: string): Promise<number>;
-  isPostSavoredByUser(userId: string, postId: string): Promise<boolean>;
-  getUsersWhoSavoredPost(postId: string, currentUserId?: string): Promise<Array<User & { isFollowing: boolean }>>;
+  toggleSavor(userId: string, momentId: string): Promise<boolean>;
+  getSavorsByMomentId(momentId: string): Promise<number>;
+  isMomentSavoredByUser(userId: string, momentId: string): Promise<boolean>;
+  getUsersWhoSavoredMoment(momentId: string, currentUserId?: string): Promise<Array<User & { isFollowing: boolean }>>;
   
-  // Saves
-  toggleSave(userId: string, postId: string): Promise<boolean>;
-  isPostSavedByUser(userId: string, postId: string): Promise<boolean>;
-  getSavedPostsByUserId(userId: string): Promise<Array<Post & { savedAt: Date }>>;
+  // Keeps
+  toggleKeep(userId: string, momentId: string): Promise<boolean>;
+  isMomentKeptByUser(userId: string, momentId: string): Promise<boolean>;
+  getKeptMomentsByUserId(userId: string): Promise<Array<Moment & { keptAt: Date }>>;
   
-  // Notifications
-  createNotification(notification: { userId: string; type: "savor" | "comment" | "follow"; actorId: string; postId?: string }): Promise<Notification>;
-  getNotificationsByUserId(userId: string): Promise<Array<Notification & { actor: User; post?: Post }>>;
-  markNotificationAsRead(notificationId: string): Promise<void>;
-  markAllNotificationsAsRead(userId: string): Promise<void>;
-  getUnreadNotificationCount(userId: string): Promise<number>;
+  // Whispers
+  createWhisper(whisper: { userId: string; type: "savor" | "reflect" | "follow"; actorId: string; momentId?: string }): Promise<Whisper>;
+  getWhispersByUserId(userId: string): Promise<Array<Whisper & { actor: User; moment?: Moment }>>;
+  markWhisperAsRead(whisperId: string): Promise<void>;
+  markAllWhispersAsRead(userId: string): Promise<void>;
+  getUnreadWhisperCount(userId: string): Promise<number>;
   
   // Follows
   toggleFollow(followerId: string, followingId: string): Promise<boolean>;
@@ -102,142 +102,142 @@ export class DbStorage implements IStorage {
     return user;
   }
 
-  async createPost(post: InsertPost): Promise<Post> {
-    const [newPost] = await db.insert(posts).values({
-      ...post,
-      type: post.type as "image" | "video"
+  async createMoment(moment: InsertMoment): Promise<Moment> {
+    const [newMoment] = await db.insert(moments).values({
+      ...moment,
+      type: moment.type as "image" | "video"
     }).returning();
-    return newPost;
+    return newMoment;
   }
 
-  async getPosts(): Promise<Post[]> {
-    return db.select().from(posts).orderBy(desc(posts.createdAt));
+  async getMoments(): Promise<Moment[]> {
+    return db.select().from(moments).orderBy(desc(moments.createdAt));
   }
 
-  async getPost(postId: string): Promise<Post | undefined> {
-    const [post] = await db.select().from(posts).where(eq(posts.id, postId));
-    return post;
+  async getMoment(momentId: string): Promise<Moment | undefined> {
+    const [moment] = await db.select().from(moments).where(eq(moments.id, momentId));
+    return moment;
   }
 
-  async getPostsByUserId(userId: string): Promise<Post[]> {
-    return db.select().from(posts).where(eq(posts.userId, userId)).orderBy(desc(posts.createdAt));
+  async getMomentsByUserId(userId: string): Promise<Moment[]> {
+    return db.select().from(moments).where(eq(moments.userId, userId)).orderBy(desc(moments.createdAt));
   }
 
-  async deletePost(postId: string): Promise<void> {
-    await db.delete(savors).where(eq(savors.postId, postId));
-    await db.delete(saves).where(eq(saves.postId, postId));
-    await db.delete(comments).where(eq(comments.postId, postId));
-    await db.delete(notifications).where(eq(notifications.postId, postId));
-    await db.delete(posts).where(eq(posts.id, postId));
+  async deleteMoment(momentId: string): Promise<void> {
+    await db.delete(savors).where(eq(savors.momentId, momentId));
+    await db.delete(keeps).where(eq(keeps.momentId, momentId));
+    await db.delete(reflects).where(eq(reflects.momentId, momentId));
+    await db.delete(whispers).where(eq(whispers.momentId, momentId));
+    await db.delete(moments).where(eq(moments.id, momentId));
   }
 
-  async createMessage(message: InsertMessage): Promise<Message> {
-    // Encrypt the message text before storing
-    const encryptedText = encryptMessage(message.text);
+  async createNote(note: InsertNote): Promise<Note> {
+    // Encrypt the note text before storing
+    const encryptedText = encryptMessage(note.text);
     
-    const [newMessage] = await db.insert(messages).values({
-      ...message,
+    const [newNote] = await db.insert(notes).values({
+      ...note,
       text: encryptedText
     }).returning();
     
     // Update conversation's lastMessageAt
     await db.update(conversations)
       .set({ lastMessageAt: new Date() })
-      .where(eq(conversations.id, message.conversationId));
+      .where(eq(conversations.id, note.conversationId));
     
     // Decrypt the text before returning
     return {
-      ...newMessage,
-      text: message.text // Return the original plain text
+      ...newNote,
+      text: note.text // Return the original plain text
     };
   }
 
-  async getMessagesByConversationId(conversationId: string): Promise<Message[]> {
-    const encryptedMessages = await db.select().from(messages)
-      .where(eq(messages.conversationId, conversationId))
-      .orderBy(messages.createdAt);
+  async getNotesByConversationId(conversationId: string): Promise<Note[]> {
+    const encryptedNotes = await db.select().from(notes)
+      .where(eq(notes.conversationId, conversationId))
+      .orderBy(notes.createdAt);
     
-    // Decrypt all messages before returning
-    return encryptedMessages.map(msg => ({
-      ...msg,
-      text: decryptMessage(msg.text)
+    // Decrypt all notes before returning
+    return encryptedNotes.map(note => ({
+      ...note,
+      text: decryptMessage(note.text)
     }));
   }
 
-  async getMessagesByConversationIdPaginated(
+  async getNotesByConversationIdPaginated(
     conversationId: string, 
     limit: number = 20, 
     cursor?: string
-  ): Promise<{ messages: Message[]; hasMore: boolean }> {
-    // Build the query - fetch messages in descending order (newest first)
-    let query = db.select().from(messages)
-      .where(eq(messages.conversationId, conversationId))
-      .orderBy(desc(messages.createdAt))
+  ): Promise<{ notes: Note[]; hasMore: boolean }> {
+    // Build the query - fetch notes in descending order (newest first)
+    let query = db.select().from(notes)
+      .where(eq(notes.conversationId, conversationId))
+      .orderBy(desc(notes.createdAt))
       .limit(limit + 1); // Fetch one extra to check if there are more
     
-    // If cursor is provided, only fetch messages older than the cursor
+    // If cursor is provided, only fetch notes older than the cursor
     if (cursor) {
-      const result = await db.select().from(messages)
+      const result = await db.select().from(notes)
         .where(
           and(
-            eq(messages.conversationId, conversationId),
-            // Only get messages older than cursor (createdAt < cursor)
-            sql`${messages.createdAt} < ${new Date(cursor)}`
+            eq(notes.conversationId, conversationId),
+            // Only get notes older than cursor (createdAt < cursor)
+            sql`${notes.createdAt} < ${new Date(cursor)}`
           )
         )
-        .orderBy(desc(messages.createdAt))
+        .orderBy(desc(notes.createdAt))
         .limit(limit + 1);
       
       const hasMore = result.length > limit;
-      const messagesToReturn = hasMore ? result.slice(0, -1) : result;
+      const notesToReturn = hasMore ? result.slice(0, -1) : result;
       
-      // Decrypt all messages before returning
-      const decryptedMessages = messagesToReturn.map(msg => ({
-        ...msg,
-        text: decryptMessage(msg.text)
+      // Decrypt all notes before returning
+      const decryptedNotes = notesToReturn.map(note => ({
+        ...note,
+        text: decryptMessage(note.text)
       }));
       
       return {
-        messages: decryptedMessages,
+        notes: decryptedNotes,
         hasMore,
       };
     }
     
     const result = await query;
     const hasMore = result.length > limit;
-    const messagesToReturn = hasMore ? result.slice(0, -1) : result;
+    const notesToReturn = hasMore ? result.slice(0, -1) : result;
     
-    // Decrypt all messages before returning
-    const decryptedMessages = messagesToReturn.map(msg => ({
-      ...msg,
-      text: decryptMessage(msg.text)
+    // Decrypt all notes before returning
+    const decryptedNotes = notesToReturn.map(note => ({
+      ...note,
+      text: decryptMessage(note.text)
     }));
     
     return {
-      messages: decryptedMessages,
+      notes: decryptedNotes,
       hasMore,
     };
   }
 
-  async markMessageAsRead(messageId: string): Promise<void> {
-    await db.update(messages).set({ read: true }).where(eq(messages.id, messageId));
+  async markNoteAsRead(noteId: string): Promise<void> {
+    await db.update(notes).set({ read: true }).where(eq(notes.id, noteId));
   }
 
-  async markConversationMessagesAsRead(conversationId: string, userId: string): Promise<void> {
-    // Mark all unread messages in this conversation as read where the user is NOT the sender
+  async markConversationNotesAsRead(conversationId: string, userId: string): Promise<void> {
+    // Mark all unread notes in this conversation as read where the user is NOT the sender
     await db
-      .update(messages)
+      .update(notes)
       .set({ read: true })
       .where(
         and(
-          eq(messages.conversationId, conversationId),
-          eq(messages.read, false),
-          sql`${messages.senderId} != ${userId}`
+          eq(notes.conversationId, conversationId),
+          eq(notes.read, false),
+          sql`${notes.senderId} != ${userId}`
         )
       );
   }
 
-  async getUnreadMessageCount(userId: string): Promise<number> {
+  async getUnreadNoteCount(userId: string): Promise<number> {
     // Get all conversations for the user
     const userConversations = await this.getConversationsByUserId(userId);
     const conversationIds = userConversations.map(c => c.id);
@@ -246,31 +246,31 @@ export class DbStorage implements IStorage {
       return 0;
     }
     
-    // Count unique conversations that have unread messages where the user is NOT the sender
+    // Count unique conversations that have unread notes where the user is NOT the sender
     const result = await db
-      .selectDistinct({ conversationId: messages.conversationId })
-      .from(messages)
+      .selectDistinct({ conversationId: notes.conversationId })
+      .from(notes)
       .where(
         and(
-          inArray(messages.conversationId, conversationIds),
-          eq(messages.read, false),
-          sql`${messages.senderId} != ${userId}`
+          inArray(notes.conversationId, conversationIds),
+          eq(notes.read, false),
+          sql`${notes.senderId} != ${userId}`
         )
       );
     
     return result.length;
   }
 
-  async getUnreadMessageCountByConversation(conversationId: string, userId: string): Promise<number> {
-    // Count unread messages in this conversation where the user is NOT the sender
+  async getUnreadNoteCountByConversation(conversationId: string, userId: string): Promise<number> {
+    // Count unread notes in this conversation where the user is NOT the sender
     const result = await db
       .select({ count: sql<number>`count(*)` })
-      .from(messages)
+      .from(notes)
       .where(
         and(
-          eq(messages.conversationId, conversationId),
-          eq(messages.read, false),
-          sql`${messages.senderId} != ${userId}`
+          eq(notes.conversationId, conversationId),
+          eq(notes.read, false),
+          sql`${notes.senderId} != ${userId}`
         )
       );
     
@@ -318,19 +318,19 @@ export class DbStorage implements IStorage {
     ).orderBy(desc(conversations.lastMessageAt));
   }
 
-  async createComment(comment: { userId: string; postId: string; text: string }): Promise<Comment> {
-    const [newComment] = await db.insert(comments).values(comment).returning();
-    return newComment;
+  async createReflect(reflect: { userId: string; momentId: string; text: string }): Promise<Reflect> {
+    const [newReflect] = await db.insert(reflects).values(reflect).returning();
+    return newReflect;
   }
 
-  async getCommentsByPostId(postId: string): Promise<Array<Comment & { user: User }>> {
+  async getReflectsByMomentId(momentId: string): Promise<Array<Reflect & { user: User }>> {
     const result = await db
       .select({
-        id: comments.id,
-        userId: comments.userId,
-        postId: comments.postId,
-        text: comments.text,
-        createdAt: comments.createdAt,
+        id: reflects.id,
+        userId: reflects.userId,
+        momentId: reflects.momentId,
+        text: reflects.text,
+        createdAt: reflects.createdAt,
         user: {
           id: users.id,
           username: users.username,
@@ -338,48 +338,48 @@ export class DbStorage implements IStorage {
           avatar: users.avatar,
         },
       })
-      .from(comments)
-      .innerJoin(users, eq(comments.userId, users.id))
-      .where(eq(comments.postId, postId))
-      .orderBy(comments.createdAt);
+      .from(reflects)
+      .innerJoin(users, eq(reflects.userId, users.id))
+      .where(eq(reflects.momentId, momentId))
+      .orderBy(reflects.createdAt);
     
-    return result as Array<Comment & { user: User }>;
+    return result as Array<Reflect & { user: User }>;
   }
 
-  async toggleSavor(userId: string, postId: string): Promise<boolean> {
+  async toggleSavor(userId: string, momentId: string): Promise<boolean> {
     const [existing] = await db.select().from(savors).where(
-      and(eq(savors.userId, userId), eq(savors.postId, postId))
+      and(eq(savors.userId, userId), eq(savors.momentId, momentId))
     );
 
     if (existing) {
       await db.delete(savors).where(eq(savors.id, existing.id));
       return false;
     } else {
-      await db.insert(savors).values({ userId, postId });
+      await db.insert(savors).values({ userId, momentId });
       return true;
     }
   }
 
-  async getSavorsByPostId(postId: string): Promise<number> {
-    const result = await db.select().from(savors).where(eq(savors.postId, postId));
+  async getSavorsByMomentId(momentId: string): Promise<number> {
+    const result = await db.select().from(savors).where(eq(savors.momentId, momentId));
     return result.length;
   }
 
-  async isPostSavoredByUser(userId: string, postId: string): Promise<boolean> {
+  async isMomentSavoredByUser(userId: string, momentId: string): Promise<boolean> {
     const [existing] = await db.select().from(savors).where(
-      and(eq(savors.userId, userId), eq(savors.postId, postId))
+      and(eq(savors.userId, userId), eq(savors.momentId, momentId))
     );
     return !!existing;
   }
 
-  async getUsersWhoSavoredPost(postId: string, currentUserId?: string): Promise<Array<User & { isFollowing: boolean }>> {
+  async getUsersWhoSavoredMoment(momentId: string, currentUserId?: string): Promise<Array<User & { isFollowing: boolean }>> {
     const result = await db
       .select({
         id: users.id,
         username: users.username,
         displayName: users.displayName,
         email: users.email,
-        bio: users.bio,
+        story: users.story,
         avatar: users.avatar,
         firstName: users.firstName,
         lastName: users.lastName,
@@ -394,100 +394,100 @@ export class DbStorage implements IStorage {
           ? and(eq(follows.followerId, currentUserId), eq(follows.followingId, users.id))
           : sql`false`
       )
-      .where(eq(savors.postId, postId))
+      .where(eq(savors.momentId, momentId))
       .orderBy(desc(savors.createdAt));
     
     return result as Array<User & { isFollowing: boolean }>;
   }
 
-  async toggleSave(userId: string, postId: string): Promise<boolean> {
-    const [existing] = await db.select().from(saves).where(
-      and(eq(saves.userId, userId), eq(saves.postId, postId))
+  async toggleKeep(userId: string, momentId: string): Promise<boolean> {
+    const [existing] = await db.select().from(keeps).where(
+      and(eq(keeps.userId, userId), eq(keeps.momentId, momentId))
     );
 
     if (existing) {
-      await db.delete(saves).where(eq(saves.id, existing.id));
+      await db.delete(keeps).where(eq(keeps.id, existing.id));
       return false;
     } else {
-      await db.insert(saves).values({ userId, postId });
+      await db.insert(keeps).values({ userId, momentId });
       return true;
     }
   }
 
-  async isPostSavedByUser(userId: string, postId: string): Promise<boolean> {
-    const [existing] = await db.select().from(saves).where(
-      and(eq(saves.userId, userId), eq(saves.postId, postId))
+  async isMomentKeptByUser(userId: string, momentId: string): Promise<boolean> {
+    const [existing] = await db.select().from(keeps).where(
+      and(eq(keeps.userId, userId), eq(keeps.momentId, momentId))
     );
     return !!existing;
   }
 
-  async getSavedPostsByUserId(userId: string): Promise<Array<Post & { savedAt: Date }>> {
-    const savedPosts = await db
+  async getKeptMomentsByUserId(userId: string): Promise<Array<Moment & { keptAt: Date }>> {
+    const keptMoments = await db
       .select({
-        post: posts,
-        savedAt: saves.createdAt,
+        moment: moments,
+        keptAt: keeps.createdAt,
       })
-      .from(saves)
-      .innerJoin(posts, eq(saves.postId, posts.id))
-      .where(eq(saves.userId, userId))
-      .orderBy(desc(saves.createdAt));
+      .from(keeps)
+      .innerJoin(moments, eq(keeps.momentId, moments.id))
+      .where(eq(keeps.userId, userId))
+      .orderBy(desc(keeps.createdAt));
 
-    return savedPosts.map(({ post, savedAt }) => ({
-      ...post,
-      savedAt,
+    return keptMoments.map(({ moment, keptAt }) => ({
+      ...moment,
+      keptAt,
     }));
   }
 
-  async createNotification(notification: { userId: string; type: "savor" | "comment" | "follow"; actorId: string; postId?: string }): Promise<Notification> {
-    const [newNotification] = await db.insert(notifications).values(notification).returning();
-    return newNotification;
+  async createWhisper(whisper: { userId: string; type: "savor" | "reflect" | "follow"; actorId: string; momentId?: string }): Promise<Whisper> {
+    const [newWhisper] = await db.insert(whispers).values(whisper).returning();
+    return newWhisper;
   }
 
-  async getNotificationsByUserId(userId: string): Promise<Array<Notification & { actor: User; post?: Post }>> {
+  async getWhispersByUserId(userId: string): Promise<Array<Whisper & { actor: User; moment?: Moment }>> {
     const result = await db
       .select({
-        id: notifications.id,
-        userId: notifications.userId,
-        type: notifications.type,
-        actorId: notifications.actorId,
-        postId: notifications.postId,
-        read: notifications.read,
-        createdAt: notifications.createdAt,
+        id: whispers.id,
+        userId: whispers.userId,
+        type: whispers.type,
+        actorId: whispers.actorId,
+        momentId: whispers.momentId,
+        read: whispers.read,
+        createdAt: whispers.createdAt,
         actor: {
           id: users.id,
           username: users.username,
           displayName: users.displayName,
           avatar: users.avatar,
         },
-        post: {
-          id: posts.id,
-          userId: posts.userId,
-          type: posts.type,
-          mediaUrl: posts.mediaUrl,
-          caption: posts.caption,
-          createdAt: posts.createdAt,
+        moment: {
+          id: moments.id,
+          userId: moments.userId,
+          type: moments.type,
+          mediaUrl: moments.mediaUrl,
+          caption: moments.caption,
+          createdAt: moments.createdAt,
         },
       })
-      .from(notifications)
-      .innerJoin(users, eq(notifications.actorId, users.id))
-      .leftJoin(posts, eq(notifications.postId, posts.id))
-      .where(eq(notifications.userId, userId))
-      .orderBy(desc(notifications.createdAt));
+      .from(whispers)
+      .innerJoin(users, eq(whispers.actorId, users.id))
+      .leftJoin(moments, eq(whispers.momentId, moments.id))
+      .where(eq(whispers.userId, userId))
+      .orderBy(desc(whispers.createdAt));
     
-    return result as Array<Notification & { actor: User; post?: Post }>;
+    return result as Array<Whisper & { actor: User; moment?: Moment }>;
   }
 
-  async markNotificationAsRead(notificationId: string): Promise<void> {
-    await db.update(notifications).set({ read: true }).where(eq(notifications.id, notificationId));
+  async markWhisperAsRead(whisperId: string): Promise<void> {
+    await db.update(whispers).set({ read: true }).where(eq(whispers.id, whisperId));
   }
 
-  async markAllNotificationsAsRead(userId: string): Promise<void> {
-    await db.update(notifications).set({ read: true }).where(eq(notifications.userId, userId));
+  async markAllWhispersAsRead(userId: string): Promise<void> {
+    await db.update(whispers).set({ read: true }).where(eq(whispers.userId, userId));
   }
 
-  async getUnreadNotificationCount(userId: string): Promise<number> {
-    const result = await db.select().from(notifications).where(
-      and(eq(notifications.userId, userId), eq(notifications.read, false))
+  async getUnreadWhisperCount(userId: string): Promise<number> {
+    const result = await db.select().from(whispers).where(
+      and(eq(whispers.userId, userId), eq(whispers.read, false))
     );
     return result.length;
   }
@@ -533,7 +533,7 @@ export class DbStorage implements IStorage {
         username: users.username,
         displayName: users.displayName,
         avatar: users.avatar,
-        bio: users.bio,
+        story: users.story,
         email: users.email,
         firstName: users.firstName,
         lastName: users.lastName,
@@ -563,7 +563,7 @@ export class DbStorage implements IStorage {
         username: users.username,
         displayName: users.displayName,
         avatar: users.avatar,
-        bio: users.bio,
+        story: users.story,
         email: users.email,
         firstName: users.firstName,
         lastName: users.lastName,
