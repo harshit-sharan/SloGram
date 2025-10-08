@@ -51,7 +51,7 @@ export function MessageThread({ conversationId, otherUser, autoFocus = false }: 
   } = useInfiniteQuery<NotesResponse>({
     queryKey: ["/api/conversations", conversationId, "notes"],
     queryFn: async ({ pageParam }) => {
-      const url = `/api/conversations/${conversationId}/notes?limit=20${pageParam ? `&cursor=${pageParam}` : ''}`;
+      const url = `/api/conversations/${conversationId}/messages?limit=20${pageParam ? `&cursor=${pageParam}` : ''}`;
       const response = await fetch(url);
       if (!response.ok) throw new Error("Failed to fetch notes");
       return response.json();
