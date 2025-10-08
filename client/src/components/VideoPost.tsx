@@ -20,7 +20,7 @@ export interface VideoPostData {
 
 export function VideoPost({ post }: { post: VideoPostData }) {
   const [savored, setSavored] = useState(false);
-  const [saved, setSaved] = useState(false);
+  const [kept, setKept] = useState(false);
   const [muted, setMuted] = useState(true);
   const [showFullCaption, setShowFullCaption] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -31,9 +31,9 @@ export function VideoPost({ post }: { post: VideoPostData }) {
     console.log(`Post ${post.id} ${savored ? "unsavored" : "savored"}`);
   };
 
-  const handleSave = () => {
-    setSaved(!saved);
-    console.log(`Post ${post.id} ${saved ? "unsaved" : "saved"}`);
+  const handleKeep = () => {
+    setKept(!kept);
+    console.log(`Post ${post.id} ${kept ? "unkept" : "kept"}`);
   };
 
   const toggleMute = () => {
@@ -135,10 +135,10 @@ export function VideoPost({ post }: { post: VideoPostData }) {
           <Button
             variant="ghost"
             size="icon"
-            onClick={handleSave}
-            data-testid={`button-save-${post.id}`}
+            onClick={handleKeep}
+            data-testid={`button-keep-${post.id}`}
           >
-            <Bookmark className={saved ? "fill-current" : ""} />
+            <Bookmark className={kept ? "fill-current" : ""} />
           </Button>
         </div>
 
