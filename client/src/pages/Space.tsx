@@ -230,7 +230,7 @@ export default function Profile() {
     },
   });
 
-  const messageMutation = useMutation({
+  const conversationMutation = useMutation({
     mutationFn: async () => {
       const response = await apiRequest("POST", `/api/conversations`, {
         otherUserId: userId,
@@ -239,7 +239,7 @@ export default function Profile() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/conversations-with-details", currentUser?.id] });
-      setLocation(`/messages?conversation=${data.id}`);
+      setLocation(`/conversations?conversation=${data.id}`);
     },
     onError: () => {
       toast({
@@ -280,8 +280,8 @@ export default function Profile() {
     followMutation.mutate();
   };
 
-  const handleMessageClick = () => {
-    messageMutation.mutate();
+  const handleConversationClick = () => {
+    conversationMutation.mutate();
   };
 
   const handleGetUploadParameters = async () => {
@@ -381,9 +381,9 @@ export default function Profile() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={handleMessageClick}
-                    disabled={messageMutation.isPending}
-                    data-testid="button-message"
+                    onClick={handleConversationClick}
+                    disabled={conversationMutation.isPending}
+                    data-testid="button-conversation"
                   >
                     <MessageCircle className="h-4 w-4" />
                   </Button>
