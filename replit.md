@@ -125,6 +125,16 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### October 8, 2025 - Terminology Consistency Updates
+- **Fixed kept moments feature**: Migrated all "save/saved" terminology to "keep/kept" throughout the application
+  - Updated backend endpoints: `/api/save` → `/api/keeps`, `/api/saved-posts` → `/api/keeps`
+  - Updated frontend state management in Post and VideoPost components: `saved/setSaved` → `kept/setKept`
+  - Updated UI labels and data-testid attributes: `button-save` → `button-keep`
+  - Fixed "saved is not defined" error in VideoPost component
+- **Fixed reflect feature**: Updated all "comment" references to "reflect" in backend APIs and frontend components
+  - Backend endpoint: `/api/moments/:momentId/reflects`
+  - Updated profanity filter to use "reflection" terminology
+
 ### October 8, 2025 - Routing Fixes
 - **Fixed Space page routing issue**: Corrected Space component to use `/space/:userId` route pattern (was using incorrect `/profile/:userId`)
 - **Fixed WebSocket note handling**: Aligned backend WebSocket handler to use `type: 'note'` matching frontend (was using `type: 'message'`)
