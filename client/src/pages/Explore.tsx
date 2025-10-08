@@ -68,7 +68,7 @@ function ExploreVideoThumbnail({ post }: { post: PostWithAuthor }) {
           }
         });
       },
-      { threshold: 0.5 }
+      { threshold: 0.5 },
     );
 
     observer.observe(containerRef.current);
@@ -77,11 +77,8 @@ function ExploreVideoThumbnail({ post }: { post: PostWithAuthor }) {
   }, []);
 
   return (
-    <Link
-      href={`/post/${post.id}`}
-      data-testid={`explore-post-${post.id}`}
-    >
-      <div 
+    <Link href={`/post/${post.id}`} data-testid={`explore-post-${post.id}`}>
+      <div
         ref={containerRef}
         className="relative aspect-square overflow-hidden bg-muted hover-elevate rounded-sm cursor-pointer"
       >
@@ -117,27 +114,28 @@ export default function Explore() {
     enabled: debouncedSearchQuery.trim().length > 0,
   });
 
-  const {
-    data,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-    isLoading,
-  } = useInfiniteQuery({
-    queryKey: ["/api/explore-posts"],
-    queryFn: async ({ pageParam = 0 }) => {
-      const res = await fetch(`/api/explore-posts?limit=${BATCH_SIZE}&offset=${pageParam}`, {
-        credentials: "include",
-      });
-      if (!res.ok) throw new Error("Failed to fetch explore posts");
-      return res.json() as Promise<{ posts: PostWithAuthor[]; hasMore: boolean }>;
-    },
-    getNextPageParam: (lastPage, allPages) => {
-      return lastPage.hasMore ? allPages.length * BATCH_SIZE : undefined;
-    },
-    enabled: !!user,
-    initialPageParam: 0,
-  });
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
+    useInfiniteQuery({
+      queryKey: ["/api/explore-posts"],
+      queryFn: async ({ pageParam = 0 }) => {
+        const res = await fetch(
+          `/api/explore-posts?limit=${BATCH_SIZE}&offset=${pageParam}`,
+          {
+            credentials: "include",
+          },
+        );
+        if (!res.ok) throw new Error("Failed to fetch explore posts");
+        return res.json() as Promise<{
+          posts: PostWithAuthor[];
+          hasMore: boolean;
+        }>;
+      },
+      getNextPageParam: (lastPage, allPages) => {
+        return lastPage.hasMore ? allPages.length * BATCH_SIZE : undefined;
+      },
+      enabled: !!user,
+      initialPageParam: 0,
+    });
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -146,7 +144,7 @@ export default function Explore() {
           fetchNextPage();
         }
       },
-      { threshold: 0.1 }
+      { threshold: 0.1 },
     );
 
     if (observerTarget.current) {
@@ -191,7 +189,7 @@ export default function Explore() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               type="search"
-              placeholder="Search users on SloGram..."
+              placeholder="Search friends on Slogram..."
               className="pl-10 bg-muted border-0"
               data-testid="input-search"
               value={searchQuery}
@@ -263,8 +261,11 @@ export default function Explore() {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-3 gap-1 md:gap-2" data-testid="explore-grid">
-              {explorePosts.map((post) => (
+            <div
+              className="grid grid-cols-3 gap-1 md:gap-2"
+              data-testid="explore-grid"
+            >
+              {explorePosts.map((post) =>
                 post.type === "video" ? (
                   <ExploreVideoThumbnail key={post.id} post={post} />
                 ) : (
@@ -282,10 +283,10 @@ export default function Explore() {
                       <div className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors pointer-events-none" />
                     </div>
                   </Link>
-                )
-              ))}
+                ),
+              )}
             </div>
-            
+
             {hasNextPage && (
               <div ref={observerTarget} className="py-8 text-center">
                 {isFetchingNextPage && (
@@ -293,10 +294,12 @@ export default function Explore() {
                 )}
               </div>
             )}
-            
+
             {!hasNextPage && explorePosts.length > 0 && (
               <div className="py-8 text-center">
-                <p className="text-muted-foreground">No more posts to explore</p>
+                <p className="text-muted-foreground">
+                  No more posts to explore
+                </p>
               </div>
             )}
           </>
