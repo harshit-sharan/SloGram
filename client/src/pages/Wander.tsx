@@ -189,7 +189,7 @@ export default function Explore() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               type="search"
-              placeholder="Search friends on Slogram..."
+              placeholder="Search community on Slogram..."
               className="pl-10 bg-muted border-0"
               data-testid="input-search"
               value={searchQuery}
@@ -290,7 +290,9 @@ export default function Explore() {
             {hasNextPage && (
               <div ref={observerTarget} className="py-8 text-center">
                 {isFetchingNextPage && (
-                  <p className="text-muted-foreground">Loading more moments...</p>
+                  <p className="text-muted-foreground">
+                    Loading more moments...
+                  </p>
                 )}
               </div>
             )}

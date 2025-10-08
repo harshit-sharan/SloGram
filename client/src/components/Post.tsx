@@ -1,5 +1,16 @@
 import { useState, useEffect, useRef } from "react";
-import { Heart, MessageCircle, Share2, Bookmark, MoreVertical, Trash2, Play, Pause, Volume2, VolumeX } from "lucide-react";
+import {
+  Heart,
+  MessageCircle,
+  Share2,
+  Bookmark,
+  MoreVertical,
+  Trash2,
+  Play,
+  Pause,
+  Volume2,
+  VolumeX,
+} from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -68,14 +79,14 @@ export function Post({ post }: { post: PostData }) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showSavorersDrawer, setShowSavorersDrawer] = useState(false);
   const { toast } = useToast();
-  
+
   // Video controls state
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(1);
   const [isMuted, setIsMuted] = useState(true);
-  
+
   const isOwnPost = user?.id === post.author.id;
 
   // Intersection Observer for auto-play videos when visible
@@ -86,18 +97,21 @@ export function Post({ post }: { post: PostData }) {
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
-            videoRef.current?.play().then(() => {
-              setIsPlaying(true);
-            }).catch(() => {
-              // Auto-play failed, likely due to browser policy
-            });
+            videoRef.current
+              ?.play()
+              .then(() => {
+                setIsPlaying(true);
+              })
+              .catch(() => {
+                // Auto-play failed, likely due to browser policy
+              });
           } else {
             videoRef.current?.pause();
             setIsPlaying(false);
           }
         });
       },
-      { threshold: 0.5 }
+      { threshold: 0.5 },
     );
 
     observer.observe(videoContainerRef.current);
@@ -109,7 +123,9 @@ export function Post({ post }: { post: PostData }) {
   const { data: savorData } = useQuery<{ savored: boolean }>({
     queryKey: ["/api/moments", post.id, "savored", user?.id],
     queryFn: async () => {
-      const response = await fetch(`/api/moments/${post.id}/savored?userId=${user?.id}`);
+      const response = await fetch(
+        `/api/moments/${post.id}/savored?userId=${user?.id}`,
+      );
       if (!response.ok) throw new Error("Failed to fetch savor status");
       return response.json();
     },
@@ -137,7 +153,9 @@ export function Post({ post }: { post: PostData }) {
   const { data: keepData } = useQuery<{ kept: boolean }>({
     queryKey: ["/api/moments", post.id, "kept", user?.id],
     queryFn: async () => {
-      const response = await fetch(`/api/moments/${post.id}/kept?userId=${user?.id}`);
+      const response = await fetch(
+        `/api/moments/${post.id}/kept?userId=${user?.id}`,
+      );
       if (!response.ok) throw new Error("Failed to fetch keep status");
       return response.json();
     },
@@ -154,7 +172,9 @@ export function Post({ post }: { post: PostData }) {
   }, [keepData]);
 
   // Fetch follow status
-  const { data: followData, isLoading: followLoading } = useQuery<{ following: boolean }>({
+  const { data: followData, isLoading: followLoading } = useQuery<{
+    following: boolean;
+  }>({
     queryKey: ["/api/users", post.author.id, "is-following", user?.id],
     queryFn: async () => {
       const response = await fetch(`/api/users/${post.author.id}/is-following`);
@@ -198,14 +218,16 @@ export function Post({ post }: { post: PostData }) {
   // Mutation to toggle savor
   const savorMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest("POST", `/api/moments/${post.id}/savor`, { userId: user?.id });
+      return apiRequest("POST", `/api/moments/${post.id}/savor`, {
+        userId: user?.id,
+      });
     },
     onMutate: async () => {
       // Optimistically update the UI
       const newSavoredState = !savored;
       setSavored(newSavoredState);
       // Update savor count optimistically
-      setSavorCount(prev => newSavoredState ? prev + 1 : prev - 1);
+      setSavorCount((prev) => (newSavoredState ? prev + 1 : prev - 1));
     },
     onSuccess: () => {
       // Invalidate and refetch savor status
@@ -227,7 +249,9 @@ export function Post({ post }: { post: PostData }) {
   // Mutation to toggle keep
   const keepMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest("POST", `/api/moments/${post.id}/keep`, { userId: user?.id });
+      return apiRequest("POST", `/api/moments/${post.id}/keep`, {
+        userId: user?.id,
+      });
     },
     onMutate: async () => {
       // Optimistically update the UI
@@ -266,7 +290,9 @@ export function Post({ post }: { post: PostData }) {
     onError: (error: any) => {
       toast({
         title: "Reflect failed",
-        description: error.message || "Your reflection could not be posted. Please try again.",
+        description:
+          error.message ||
+          "Your reflection could not be posted. Please try again.",
         variant: "destructive",
       });
     },
@@ -312,8 +338,12 @@ export function Post({ post }: { post: PostData }) {
       return apiRequest("DELETE", `/api/moments/${post.id}`, {});
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/moments-with-authors"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/moments/user", post.author.id] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/moments-with-authors"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/moments/user", post.author.id],
+      });
       toast({
         title: "Moment deleted",
         description: "Your moment has been deleted successfully",
@@ -335,7 +365,7 @@ export function Post({ post }: { post: PostData }) {
 
   const handleShare = async () => {
     const momentUrl = `${window.location.origin}/moment/${post.id}`;
-    
+
     // Try to use native share on mobile devices
     if (navigator.share) {
       try {
@@ -347,7 +377,7 @@ export function Post({ post }: { post: PostData }) {
       } catch (error: any) {
         // User cancelled the share or it failed
         // Only show error if it's not a user cancellation
-        if (error.name !== 'AbortError') {
+        if (error.name !== "AbortError") {
           toast({
             title: "Failed to share",
             description: "Could not open share options",
@@ -432,29 +462,46 @@ export function Post({ post }: { post: PostData }) {
     if (isNaN(time)) return "0:00";
     const minutes = Math.floor(time / 60);
     const seconds = Math.floor(time % 60);
-    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    return `${minutes}:${seconds.toString().padStart(2, "0")}`;
   };
 
-  const captionPreview = post.caption.length > 120 
-    ? post.caption.substring(0, 120) + "..."
-    : post.caption;
+  const captionPreview =
+    post.caption.length > 120
+      ? post.caption.substring(0, 120) + "..."
+      : post.caption;
 
   return (
-    <article className="pb-6 border-b last:border-0" data-testid={`post-${post.id}`}>
+    <article
+      className="pb-6 border-b last:border-0"
+      data-testid={`post-${post.id}`}
+    >
       <div className="flex items-center gap-3 px-4 py-3">
-        <Link href={`/space/${post.author.id}`} data-testid={`link-author-avatar-${post.id}`}>
+        <Link
+          href={`/space/${post.author.id}`}
+          data-testid={`link-author-avatar-${post.id}`}
+        >
           <Avatar className="h-10 w-10 cursor-pointer hover-elevate">
             <AvatarImage src={post.author?.avatar} />
-            <AvatarFallback>{post.author?.name?.charAt(0) || post.author?.username?.charAt(0) || "U"}</AvatarFallback>
+            <AvatarFallback>
+              {post.author?.name?.charAt(0) ||
+                post.author?.username?.charAt(0) ||
+                "U"}
+            </AvatarFallback>
           </Avatar>
         </Link>
         <div className="flex-1">
-          <Link href={`/space/${post.author.id}`} data-testid={`link-author-name-${post.id}`}>
+          <Link
+            href={`/space/${post.author.id}`}
+            data-testid={`link-author-name-${post.id}`}
+          >
             <p className="font-serif font-semibold text-foreground cursor-pointer hover-elevate inline-block rounded px-1">
               {post.author.name}
             </p>
           </Link>
-          <p className="text-xs text-muted-foreground" data-testid={`text-timestamp-${post.id}`}>
+          <p
+            className="text-xs text-muted-foreground"
+            data-testid={`text-timestamp-${post.id}`}
+          >
             {post.timestamp}
           </p>
         </div>
@@ -466,13 +513,21 @@ export function Post({ post }: { post: PostData }) {
             disabled={followMutation.isPending}
             data-testid={`button-follow-${post.id}`}
           >
-            {followMutation.isPending ? "..." : following ? "Following" : "Follow"}
+            {followMutation.isPending
+              ? "..."
+              : following
+                ? "Following"
+                : "Follow"}
           </Button>
         )}
         {isOwnPost && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" data-testid={`button-menu-${post.id}`}>
+              <Button
+                variant="ghost"
+                size="icon"
+                data-testid={`button-menu-${post.id}`}
+              >
                 <MoreVertical className="h-5 w-5" />
               </Button>
             </DropdownMenuTrigger>
@@ -493,7 +548,10 @@ export function Post({ post }: { post: PostData }) {
       {(post.video || post.image) && (
         <div className="relative w-full bg-muted">
           {post.video ? (
-            <Link href={`/moment/${post.id}`} data-testid={`link-post-media-${post.id}`}>
+            <Link
+              href={`/moment/${post.id}`}
+              data-testid={`link-post-media-${post.id}`}
+            >
               <div ref={videoContainerRef} className="relative cursor-pointer">
                 <video
                   ref={videoRef}
@@ -506,8 +564,8 @@ export function Post({ post }: { post: PostData }) {
                   onTimeUpdate={handleTimeUpdate}
                   onLoadedMetadata={handleLoadedMetadata}
                 />
-                
-                <div 
+
+                <div
                   className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4"
                   onClick={(e) => e.stopPropagation()}
                 >
@@ -523,9 +581,13 @@ export function Post({ post }: { post: PostData }) {
                       }}
                       data-testid={`button-play-pause-${post.id}`}
                     >
-                      {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
+                      {isPlaying ? (
+                        <Pause className="h-5 w-5" />
+                      ) : (
+                        <Play className="h-5 w-5" />
+                      )}
                     </Button>
-                    
+
                     <input
                       type="range"
                       min="0"
@@ -539,12 +601,15 @@ export function Post({ post }: { post: PostData }) {
                         e.preventDefault();
                       }}
                     />
-                    
-                    <span className="text-white text-xs font-mono min-w-[80px] text-right" data-testid={`text-time-${post.id}`}>
+
+                    <span
+                      className="text-white text-xs font-mono min-w-[80px] text-right"
+                      data-testid={`text-time-${post.id}`}
+                    >
                       {formatTime(currentTime)} / {formatTime(duration)}
                     </span>
                   </div>
-                  
+
                   <div className="flex items-center gap-2">
                     <Button
                       variant="ghost"
@@ -557,9 +622,13 @@ export function Post({ post }: { post: PostData }) {
                       }}
                       data-testid={`button-mute-${post.id}`}
                     >
-                      {isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
+                      {isMuted ? (
+                        <VolumeX className="h-5 w-5" />
+                      ) : (
+                        <Volume2 className="h-5 w-5" />
+                      )}
                     </Button>
-                    
+
                     <input
                       type="range"
                       min="0"
@@ -579,7 +648,10 @@ export function Post({ post }: { post: PostData }) {
               </div>
             </Link>
           ) : post.image ? (
-            <Link href={`/moment/${post.id}`} data-testid={`link-post-media-${post.id}`}>
+            <Link
+              href={`/moment/${post.id}`}
+              data-testid={`link-post-media-${post.id}`}
+            >
               <img
                 src={post.image}
                 alt="Post content"
@@ -600,7 +672,9 @@ export function Post({ post }: { post: PostData }) {
               onClick={handleSavor}
               data-testid={`button-savor-${post.id}`}
             >
-              <Heart className={savored ? "fill-current text-destructive" : ""} />
+              <Heart
+                className={savored ? "fill-current text-destructive" : ""}
+              />
             </Button>
             <Button
               variant="ghost"
@@ -635,13 +709,18 @@ export function Post({ post }: { post: PostData }) {
           data-testid={`button-show-savorers-${post.id}`}
         >
           <span data-testid={`text-savors-${post.id}`}>
-            {savorCount} {savorCount === 1 ? 'savor' : 'savors'}
+            {savorCount} {savorCount === 1 ? "savor" : "savors"}
           </span>
         </button>
 
         <div className="text-sm">
-          <span className="font-serif font-semibold mr-2">{post.author.username}</span>
-          <span className="text-foreground" data-testid={`text-caption-${post.id}`}>
+          <span className="font-serif font-semibold mr-2">
+            {post.author.username}
+          </span>
+          <span
+            className="text-foreground"
+            data-testid={`text-caption-${post.id}`}
+          >
             {showFullCaption ? post.caption : captionPreview}
           </span>
           {post.caption.length > 120 && (
@@ -661,25 +740,40 @@ export function Post({ post }: { post: PostData }) {
             onClick={() => setShowComments(true)}
             data-testid={`button-view-reflects-${post.id}`}
           >
-            View all {post.reflects} reflection{post.reflects !== 1 ? 's' : ''}
+            View all {post.reflects} reflection{post.reflects !== 1 ? "s" : ""}
           </button>
         )}
 
         {showComments && (
-          <div className="mt-4 space-y-3" data-testid={`reflects-section-${post.id}`}>
+          <div
+            className="mt-4 space-y-3"
+            data-testid={`reflects-section-${post.id}`}
+          >
             {reflects.map((reflect) => (
-              <div key={reflect.id} className="flex gap-2" data-testid={`reflect-${reflect.id}`}>
+              <div
+                key={reflect.id}
+                className="flex gap-2"
+                data-testid={`reflect-${reflect.id}`}
+              >
                 <Avatar className="h-6 w-6 flex-shrink-0">
                   <AvatarImage src={reflect.user.avatar || undefined} />
                   <AvatarFallback>
-                    {(reflect.user.displayName || reflect.user.username)?.charAt(0) || "U"}
+                    {(
+                      reflect.user.displayName || reflect.user.username
+                    )?.charAt(0) || "U"}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 text-sm">
-                  <span className="font-serif font-semibold mr-2" data-testid={`reflect-author-${reflect.id}`}>
+                  <span
+                    className="font-serif font-semibold mr-2"
+                    data-testid={`reflect-author-${reflect.id}`}
+                  >
                     {reflect.user.username}
                   </span>
-                  <span className="text-foreground" data-testid={`reflect-text-${reflect.id}`}>
+                  <span
+                    className="text-foreground"
+                    data-testid={`reflect-text-${reflect.id}`}
+                  >
                     {reflect.text}
                   </span>
                 </div>
@@ -702,7 +796,7 @@ export function Post({ post }: { post: PostData }) {
                 disabled={!commentText.trim() || reflectMutation.isPending}
                 data-testid={`button-submit-reflect-${post.id}`}
               >
-                Share
+                Reflect
               </Button>
             </form>
           </div>
@@ -714,11 +808,14 @@ export function Post({ post }: { post: PostData }) {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Post</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this post? This action cannot be undone.
+              Are you sure you want to delete this post? This action cannot be
+              undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel data-testid="button-cancel-delete">Cancel</AlertDialogCancel>
+            <AlertDialogCancel data-testid="button-cancel-delete">
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
