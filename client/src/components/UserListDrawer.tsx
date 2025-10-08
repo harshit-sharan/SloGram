@@ -141,7 +141,7 @@ export function UserListDrawer({
                     data-testid={`user-item-${user.id}`}
                   >
                     <Link
-                      href={`/profile/${user.id}`}
+                      href={`/space/${user.id}`}
                       className="flex items-center gap-3 flex-1 min-w-0"
                       onClick={() => onOpenChange(false)}
                     >

@@ -442,14 +442,14 @@ export function Post({ post }: { post: PostData }) {
   return (
     <article className="pb-6 border-b last:border-0" data-testid={`post-${post.id}`}>
       <div className="flex items-center gap-3 px-4 py-3">
-        <Link href={`/profile/${post.author.id}`} data-testid={`link-author-avatar-${post.id}`}>
+        <Link href={`/space/${post.author.id}`} data-testid={`link-author-avatar-${post.id}`}>
           <Avatar className="h-10 w-10 cursor-pointer hover-elevate">
             <AvatarImage src={post.author?.avatar} />
             <AvatarFallback>{post.author?.name?.charAt(0) || post.author?.username?.charAt(0) || "U"}</AvatarFallback>
           </Avatar>
         </Link>
         <div className="flex-1">
-          <Link href={`/profile/${post.author.id}`} data-testid={`link-author-name-${post.id}`}>
+          <Link href={`/space/${post.author.id}`} data-testid={`link-author-name-${post.id}`}>
             <p className="font-serif font-semibold text-foreground cursor-pointer hover-elevate inline-block rounded px-1">
               {post.author.name}
             </p>

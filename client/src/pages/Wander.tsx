@@ -208,7 +208,7 @@ export default function Explore() {
               {searchResults.map((searchUser) => (
                 <Link
                   key={searchUser.id}
-                  href={`/profile/${searchUser.id}`}
+                  href={`/space/${searchUser.id}`}
                   onClick={handleResultClick}
                   data-testid={`search-result-${searchUser.id}`}
                 >

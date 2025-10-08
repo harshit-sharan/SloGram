@@ -122,3 +122,14 @@ Preferred communication style: Simple, everyday language.
   - Encryption key stored securely in MESSAGE_ENCRYPTION_KEY environment variable
   - Backward compatibility maintained for legacy plaintext notes
   - Notes automatically decrypted when retrieved for display
+
+## Recent Changes
+
+### October 8, 2025 - Routing Fixes
+- **Fixed Space page routing issue**: Corrected Space component to use `/space/:userId` route pattern (was using incorrect `/profile/:userId`)
+- **Fixed WebSocket note handling**: Aligned backend WebSocket handler to use `type: 'note'` matching frontend (was using `type: 'message'`)
+- **Updated all user profile links**: Changed all navigation links from `/profile/` to `/space/` across:
+  - Post component (author name and avatar links)
+  - Whispers page (follow whisper links)
+  - Wander page (search result links)
+  - UserListDrawer component (user list links)
