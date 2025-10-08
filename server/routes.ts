@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated, getSession } from "./replitAuth";
-import { insertPostSchema, insertMessageSchema, updateUserProfileSchema, users } from "@shared/schema";
+import { insertMomentSchema, insertNoteSchema, updateUserProfileSchema, users } from "@shared/schema";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
 import { containsProfanity, getProfanityError } from "./profanity-filter";
@@ -225,7 +225,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Posts API with author details and counts
-  app.get("/api/posts-with-authors", isAuthenticated, async (req: any, res) => {
+  app.get("/api/moments-with-authors", isAuthenticated, async (req: any, res) => {
     try {
       const currentUserId = req.user.claims.sub;
       const limit = parseInt(req.query.limit as string) || 10;
@@ -236,7 +236,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get list of users that current user follows
       const followedUserIds = await storage.getFollowedUserIds(currentUserId);
       
-      const posts = await storage.getPosts();
+      const posts = await storage.getMoments();
       
       // Filter posts to only show those from followed users
       let followedUsersPosts = posts.filter(post => followedUserIds.includes(post.userId));
@@ -252,8 +252,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const postsWithAuthors = await Promise.all(
         followedUsersPosts.map(async (post) => {
           const user = await storage.getUser(post.userId);
-          const savorsCount = await storage.getSavorsByPostId(post.id);
-          const comments = await storage.getCommentsByPostId(post.id);
+          const savorsCount = await storage.getSavorsByMomentId(post.id);
+          const comments = await storage.getReflectsByMomentId(post.id);
           
           return {
             ...post,
@@ -317,7 +317,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const followedUserIds = await storage.getFollowedUserIds(currentUserId);
       
-      const posts = await storage.getPosts();
+      const posts = await storage.getMoments();
       
       const explorePosts = posts.filter(
         post => !followedUserIds.includes(post.userId) && post.userId !== currentUserId
@@ -326,8 +326,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const postsWithAuthors = await Promise.all(
         explorePosts.map(async (post) => {
           const user = await storage.getUser(post.userId);
-          const savorsCount = await storage.getSavorsByPostId(post.id);
-          const comments = await storage.getCommentsByPostId(post.id);
+          const savorsCount = await storage.getSavorsByMomentId(post.id);
+          const comments = await storage.getReflectsByMomentId(post.id);
           
           return {
             ...post,
@@ -376,25 +376,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Posts API
-  app.get("/api/posts", isAuthenticated, async (req, res) => {
+  app.get("/api/moments", isAuthenticated, async (req, res) => {
     try {
-      const posts = await storage.getPosts();
+      const posts = await storage.getMoments();
       res.json(posts);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch posts" });
     }
   });
 
-  app.post("/api/posts", isAuthenticated, async (req: any, res) => {
+  app.post("/api/moments", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const postData = insertPostSchema.parse({
+      const postData = insertMomentSchema.parse({
         userId,
         type: req.body.type,
         mediaUrl: req.body.mediaUrl,
         caption: req.body.caption,
       });
-      const post = await storage.createPost(postData);
+      const post = await storage.createMoment(postData);
       res.json(post);
     } catch (error) {
       res.status(400).json({ error: "Invalid post data" });
@@ -402,18 +402,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
 
-  app.get("/api/posts/:postId", isAuthenticated, async (req, res) => {
+  app.get("/api/moments/:momentId", isAuthenticated, async (req, res) => {
     try {
-      const posts = await storage.getPosts();
-      const post = posts.find(p => p.id === req.params.postId);
+      const posts = await storage.getMoments();
+      const post = posts.find(p => p.id === req.params.momentId);
       
       if (!post) {
         return res.status(404).json({ error: "Post not found" });
       }
       
       const user = await storage.getUser(post.userId);
-      const savorsCount = await storage.getSavorsByPostId(post.id);
-      const comments = await storage.getCommentsByPostId(post.id);
+      const savorsCount = await storage.getSavorsByMomentId(post.id);
+      const comments = await storage.getReflectsByMomentId(post.id);
       
       res.json({
         ...post,
@@ -428,12 +428,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/posts/:postId", isAuthenticated, async (req: any, res) => {
+  app.delete("/api/moments/:momentId", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const postId = req.params.postId;
+      const postId = req.params.momentId;
       
-      const post = await storage.getPost(postId);
+      const post = await storage.getMoment(postId);
       
       if (!post) {
         return res.status(404).json({ error: "Post not found" });
@@ -443,7 +443,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: "You can only delete your own posts" });
       }
       
-      await storage.deletePost(postId);
+      await storage.deleteMoment(postId);
       
       res.json({ message: "Post deleted successfully" });
     } catch (error) {
@@ -518,9 +518,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/posts/user/:userId", isAuthenticated, async (req, res) => {
+  app.get("/api/moments/user/:userId", isAuthenticated, async (req, res) => {
     try {
-      const posts = await storage.getPostsByUserId(req.params.userId);
+      const posts = await storage.getMomentsByUserId(req.params.userId);
       res.json(posts);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch user posts" });
@@ -540,7 +540,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const isFollowing = await storage.toggleFollow(currentUserId, targetUserId);
       
       if (isFollowing) {
-        await storage.createNotification({
+        await storage.createWhisper({
           userId: targetUserId,
           type: "follow",
           actorId: currentUserId,
@@ -589,22 +589,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Savors API
-  app.post("/api/posts/:postId/savor", isAuthenticated, async (req: any, res) => {
+  app.post("/api/moments/:momentId/savor", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const savored = await storage.toggleSavor(userId, req.params.postId);
+      const savored = await storage.toggleSavor(userId, req.params.momentId);
       
       // Create notification if savored (not if unsavored)
       if (savored) {
-        const post = await storage.getPost(req.params.postId);
+        const post = await storage.getMoment(req.params.momentId);
         
         // Only create notification if it's not the post owner savoring their own post
         if (post && post.userId !== userId) {
-          await storage.createNotification({
+          await storage.createWhisper({
             userId: post.userId,
             type: "savor",
             actorId: userId,
-            postId: req.params.postId,
+            momentId: req.params.momentId,
           });
         }
       }
@@ -615,19 +615,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/posts/:postId/savors", isAuthenticated, async (req, res) => {
+  app.get("/api/moments/:momentId/savors", isAuthenticated, async (req, res) => {
     try {
-      const count = await storage.getSavorsByPostId(req.params.postId);
+      const count = await storage.getSavorsByMomentId(req.params.momentId);
       res.json({ count });
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch savors" });
     }
   });
 
-  app.get("/api/posts/:postId/savored", isAuthenticated, async (req: any, res) => {
+  app.get("/api/moments/:momentId/savored", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const savored = await storage.isPostSavoredByUser(userId, req.params.postId);
+      const savored = await storage.isMomentSavoredByUser(userId, req.params.momentId);
       // Disable HTTP caching for savor status
       res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
       res.setHeader('Pragma', 'no-cache');
@@ -638,10 +638,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/posts/:postId/savorers", isAuthenticated, async (req: any, res) => {
+  app.get("/api/moments/:momentId/savorers", isAuthenticated, async (req: any, res) => {
     try {
       const currentUserId = req.user.claims.sub;
-      const users = await storage.getUsersWhoSavoredPost(req.params.postId, currentUserId);
+      const users = await storage.getUsersWhoSavoredMoment(req.params.momentId, currentUserId);
       res.json(users);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch users who savored post" });
@@ -649,20 +649,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Saves API
-  app.post("/api/posts/:postId/save", isAuthenticated, async (req: any, res) => {
+  app.post("/api/moments/:momentId/save", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const saved = await storage.toggleSave(userId, req.params.postId);
+      const saved = await storage.toggleKeep(userId, req.params.momentId);
       res.json({ saved });
     } catch (error) {
       res.status(500).json({ error: "Failed to toggle save" });
     }
   });
 
-  app.get("/api/posts/:postId/saved", isAuthenticated, async (req: any, res) => {
+  app.get("/api/moments/:momentId/saved", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const saved = await storage.isPostSavedByUser(userId, req.params.postId);
+      const saved = await storage.isMomentKeptByUser(userId, req.params.momentId);
       // Disable HTTP caching for save status
       res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
       res.setHeader('Pragma', 'no-cache');
@@ -676,7 +676,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/saved-posts", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const savedPosts = await storage.getSavedPostsByUserId(userId);
+      const savedPosts = await storage.getKeptMomentsByUserId(userId);
       res.json(savedPosts);
     } catch (error) {
       console.error("Failed to fetch saved posts:", error);
@@ -685,7 +685,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Comments API
-  app.post("/api/posts/:postId/comments", isAuthenticated, async (req: any, res) => {
+  app.post("/api/moments/:momentId/comments", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const commentText = req.body.text;
@@ -700,22 +700,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: getProfanityError() });
       }
       
-      const comment = await storage.createComment({
+      const comment = await storage.createReflect({
         userId,
-        postId: req.params.postId,
+        momentId: req.params.momentId,
         text: commentText,
       });
       
       // Create notification for comment
-      const post = await storage.getPost(req.params.postId);
+      const post = await storage.getMoment(req.params.momentId);
       
       // Only create notification if it's not the post owner commenting on their own post
       if (post && post.userId !== userId) {
-        await storage.createNotification({
+        await storage.createWhisper({
           userId: post.userId,
-          type: "comment",
+          type: "reflect",
           actorId: userId,
-          postId: req.params.postId,
+          momentId: req.params.momentId,
         });
       }
       
@@ -725,9 +725,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/posts/:postId/comments", isAuthenticated, async (req, res) => {
+  app.get("/api/moments/:momentId/comments", isAuthenticated, async (req, res) => {
     try {
-      const comments = await storage.getCommentsByPostId(req.params.postId);
+      const comments = await storage.getReflectsByMomentId(req.params.momentId);
       res.json(comments);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch comments" });
@@ -735,39 +735,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Notifications API
-  app.get("/api/notifications/:userId", isAuthenticated, async (req: any, res) => {
+  app.get("/api/whispers/:userId", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const notifications = await storage.getNotificationsByUserId(userId);
+      const notifications = await storage.getWhispersByUserId(userId);
       res.json(notifications);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch notifications" });
     }
   });
 
-  app.get("/api/notifications/:userId/unread-count", isAuthenticated, async (req: any, res) => {
+  app.get("/api/whispers/:userId/unread-count", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const count = await storage.getUnreadNotificationCount(userId);
+      const count = await storage.getUnreadWhisperCount(userId);
       res.json({ count });
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch unread count" });
     }
   });
 
-  app.post("/api/notifications/:notificationId/read", isAuthenticated, async (req, res) => {
+  app.post("/api/whispers/:whisperId/read", isAuthenticated, async (req, res) => {
     try {
-      await storage.markNotificationAsRead(req.params.notificationId);
+      await storage.markWhisperAsRead(req.params.notificationId);
       res.json({ success: true });
     } catch (error) {
       res.status(500).json({ error: "Failed to mark notification as read" });
     }
   });
 
-  app.post("/api/notifications/:userId/read-all", isAuthenticated, async (req: any, res) => {
+  app.post("/api/whispers/:userId/read-all", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      await storage.markAllNotificationsAsRead(userId);
+      await storage.markAllWhispersAsRead(userId);
       res.json({ success: true });
     } catch (error) {
       res.status(500).json({ error: "Failed to mark all notifications as read" });
@@ -775,10 +775,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get unread message count for user
-  app.get("/api/messages/:userId/unread-count", isAuthenticated, async (req: any, res) => {
+  app.get("/api/notes/:userId/unread-count", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const count = await storage.getUnreadMessageCount(userId);
+      const count = await storage.getUnreadNoteCount(userId);
       res.json({ count });
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch unread message count" });
@@ -795,9 +795,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         conversations.map(async (conv) => {
           const otherUserId = conv.user1Id === userId ? conv.user2Id : conv.user1Id;
           const otherUser = await storage.getUser(otherUserId);
-          const messages = await storage.getMessagesByConversationId(conv.id);
+          const messages = await storage.getNotesByConversationId(conv.id);
           const lastMessage = messages[messages.length - 1];
-          const unreadCount = await storage.getUnreadMessageCountByConversation(conv.id, userId);
+          const unreadCount = await storage.getUnreadNoteCountByConversation(conv.id, userId);
           
           return {
             conversation: conv,
@@ -859,7 +859,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: "Access denied to this conversation" });
       }
       
-      const result = await storage.getMessagesByConversationIdPaginated(conversationId, limit, cursor);
+      const result = await storage.getNotesByConversationIdPaginated(conversationId, limit, cursor);
       res.json(result);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch messages" });
@@ -879,7 +879,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: "Access denied to this conversation" });
       }
       
-      await storage.markConversationMessagesAsRead(conversationId, userId);
+      await storage.markConversationNotesAsRead(conversationId, userId);
       res.json({ success: true });
     } catch (error) {
       res.status(500).json({ error: "Failed to mark messages as read" });
@@ -975,7 +975,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             ? conversation.user2Id 
             : conversation.user1Id;
           
-          const newMessage = await storage.createMessage({
+          const newMessage = await storage.createNote({
             conversationId: message.conversationId,
             senderId: userId,
             text: message.text,

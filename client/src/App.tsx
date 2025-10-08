@@ -9,13 +9,13 @@ import { NavigationProvider } from "@/contexts/NavigationContext";
 import { Navigation } from "@/components/Navigation";
 import { CreatePostModal } from "@/components/CreatePostModal";
 import { useAuth } from "@/hooks/useAuth";
-import Feed from "@/pages/Feed";
-import Explore from "@/pages/Explore";
-import Profile from "@/pages/Profile";
+import Flow from "@/pages/Flow";
+import Wander from "@/pages/Wander";
+import Space from "@/pages/Space";
 import Messages from "@/pages/Messages";
-import PostDetail from "@/pages/PostDetail";
-import Notifications from "@/pages/Notifications";
-import Saved from "@/pages/Saved";
+import MomentDetail from "@/pages/MomentDetail";
+import Whispers from "@/pages/Whispers";
+import Kept from "@/pages/Kept";
 import Settings from "@/pages/Settings";
 import NotFound from "@/pages/not-found";
 
@@ -144,13 +144,13 @@ function Router() {
   
   return (
     <Switch>
-      <Route path="/" component={Feed} />
-      <Route path="/explore" component={Explore} />
-      <Route path="/post/:id" component={PostDetail} />
-      <Route path="/profile/:userId" component={Profile} />
-      <Route path="/messages" component={Messages} />
-      <Route path="/notifications" component={Notifications} />
-      <Route path="/saved" component={Saved} />
+      <Route path="/" component={Flow} />
+      <Route path="/wander" component={Wander} />
+      <Route path="/moment/:id" component={MomentDetail} />
+      <Route path="/space/:userId" component={Space} />
+      <Route path="/conversations" component={Messages} />
+      <Route path="/whispers" component={Whispers} />
+      <Route path="/kept" component={Kept} />
       <Route path="/settings" component={Settings} />
       <Route component={NotFound} />
     </Switch>

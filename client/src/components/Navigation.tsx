@@ -18,13 +18,13 @@ export function Navigation() {
   const [location] = useLocation();
 
   const { data: unreadCountData } = useQuery<{ count: number }>({
-    queryKey: ["/api/notifications", user?.id, "unread-count"],
+    queryKey: ["/api/whispers", user?.id, "unread-count"],
     enabled: !!user,
     refetchInterval: 10000,
   });
 
-  const { data: unreadMessagesData } = useQuery<{ count: number }>({
-    queryKey: ["/api/messages", user?.id, "unread-count"],
+  const { data: unreadNotesData } = useQuery<{ count: number }>({
+    queryKey: ["/api/notes", user?.id, "unread-count"],
     enabled: !!user,
     refetchInterval: 10000,
   });
@@ -76,10 +76,10 @@ export function Navigation() {
             variant="ghost"
             size="icon"
             asChild
-            data-testid="button-explore"
+            data-testid="button-wander"
           >
-            <Link href="/explore" onClick={(e) => handleNavigation("/explore", e)}>
-              <Search className={location === "/explore" ? "fill-current" : ""} />
+            <Link href="/wander" onClick={(e) => handleNavigation("/wander", e)}>
+              <Search className={location === "/wander" ? "fill-current" : ""} />
             </Link>
           </Button>
 
@@ -87,25 +87,25 @@ export function Navigation() {
             variant="ghost"
             size="icon"
             asChild
-            data-testid="button-messages"
+            data-testid="button-conversations"
           >
             <Link
-              href="/messages"
-              onClick={(e) => handleNavigation("/messages", e)}
+              href="/conversations"
+              onClick={(e) => handleNavigation("/conversations", e)}
               className="relative"
             >
               <MessageCircle
                 className={`${
-                  location === "/messages" ? "fill-current" : ""
+                  location === "/conversations" ? "fill-current" : ""
                 } ${
-                  unreadMessagesData && unreadMessagesData.count > 0
+                  unreadNotesData && unreadNotesData.count > 0
                     ? "text-primary fill-current"
                     : ""
                 }`}
               />
-              {unreadMessagesData && unreadMessagesData.count > 0 && (
+              {unreadNotesData && unreadNotesData.count > 0 && (
                 <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center font-semibold">
-                  {unreadMessagesData.count > 9 ? "9+" : unreadMessagesData.count}
+                  {unreadNotesData.count > 9 ? "9+" : unreadNotesData.count}
                 </span>
               )}
             </Link>
@@ -115,16 +115,16 @@ export function Navigation() {
             variant="ghost"
             size="icon"
             asChild
-            data-testid="button-notifications"
+            data-testid="button-whispers"
           >
             <Link
-              href="/notifications"
-              onClick={(e) => handleNavigation("/notifications", e)}
+              href="/whispers"
+              onClick={(e) => handleNavigation("/whispers", e)}
               className="relative"
             >
               <Heart
                 className={`${
-                  location === "/notifications" ? "fill-current" : ""
+                  location === "/whispers" ? "fill-current" : ""
                 } ${
                   unreadCountData && unreadCountData.count > 0
                     ? "text-destructive fill-current"
@@ -143,11 +143,11 @@ export function Navigation() {
             variant="ghost"
             size="icon"
             asChild
-            data-testid="button-saved"
+            data-testid="button-kept"
           >
-            <Link href="/saved" onClick={(e) => handleNavigation("/saved", e)}>
+            <Link href="/kept" onClick={(e) => handleNavigation("/kept", e)}>
               <Bookmark
-                className={location === "/saved" ? "fill-current" : ""}
+                className={location === "/kept" ? "fill-current" : ""}
               />
             </Link>
           </Button>
@@ -160,12 +160,12 @@ export function Navigation() {
                     variant="ghost"
                     size="icon"
                     asChild
-                    data-testid="button-profile"
+                    data-testid="button-space"
                   >
                     <Link
-                      href={`/profile/${user.id}`}
+                      href={`/space/${user.id}`}
                       onClick={(e) =>
-                        handleNavigation(`/profile/${user.id}`, e)
+                        handleNavigation(`/space/${user.id}`, e)
                       }
                     >
                       <Avatar className="h-8 w-8">
