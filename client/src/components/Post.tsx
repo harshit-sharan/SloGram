@@ -606,7 +606,7 @@ export function Post({ post }: { post: PostData }) {
               variant="ghost"
               size="icon"
               onClick={() => setShowComments(!showComments)}
-              data-testid={`button-comment-${post.id}`}
+              data-testid={`button-reflect-${post.id}`}
             >
               <MessageCircle />
             </Button>
