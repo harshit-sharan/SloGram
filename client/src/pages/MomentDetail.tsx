@@ -35,7 +35,7 @@ function formatTimestamp(dateString: string): string {
 }
 
 export default function MomentDetail() {
-  const [, params] = useRoute("/post/:id");
+  const [, params] = useRoute("/moment/:id");
   const momentId = params?.id;
 
   const { data: moment, isLoading, error } = useQuery<PostWithAuthor>({
