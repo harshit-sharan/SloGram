@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { Heart, MessageCircle, Share2, Bookmark, Volume2, VolumeX } from "lucide-react";
+import { Heart, Sparkles, Share2, Bookmark, Volume2, VolumeX } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -121,7 +121,7 @@ export function VideoPost({ post }: { post: VideoPostData }) {
               onClick={() => console.log(`Comment on post ${post.id}`)}
               data-testid={`button-comment-${post.id}`}
             >
-              <MessageCircle />
+              <Sparkles />
             </Button>
             <Button
               variant="ghost"

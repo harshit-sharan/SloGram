@@ -1,5 +1,5 @@
 import {
-  Heart,
+  Wind,
   Home,
   PlusSquare,
   Search,
@@ -122,7 +122,7 @@ export function Navigation() {
               onClick={(e) => handleNavigation("/whispers", e)}
               className="relative"
             >
-              <Heart
+              <Wind
                 className={`${
                   location === "/whispers" ? "fill-current" : ""
                 } ${

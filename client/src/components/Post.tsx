@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import {
   Heart,
-  MessageCircle,
+  Sparkles,
   Share2,
   Bookmark,
   MoreVertical,
@@ -682,7 +682,7 @@ export function Post({ post }: { post: PostData }) {
               onClick={() => setShowComments(!showComments)}
               data-testid={`button-reflect-${post.id}`}
             >
-              <MessageCircle />
+              <Sparkles />
             </Button>
             <Button
               variant="ghost"
