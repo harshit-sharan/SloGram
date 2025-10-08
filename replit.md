@@ -2,7 +2,7 @@
 
 ## Overview
 
-Slogram is a mindfulness-focused social media platform inspired by Instagram's interface but adapted for slow living and intentional content sharing. The application enables users to share photos and videos with captions, engage through savors (mindful appreciation) and comments, and connect via direct messaging. The platform emphasizes calm minimalism with a zen-like aesthetic featuring sage green accents and generous whitespace.
+Slogram is a mindfulness-focused social media platform inspired by Instagram's interface but adapted for slow living and intentional content sharing. The application uses contemplative terminology throughout: moments (posts), savors (likes), reflects (comments), whispers (notifications), keeps (saves), flow (feed), space (profile), wander (explore), story (bio), and notes (messages). Users share photos and videos with captions, engage through savors and reflects, and connect via direct notes. The platform emphasizes calm minimalism with a zen-like aesthetic featuring sage green accents and generous whitespace.
 
 ## User Preferences
 
@@ -43,16 +43,16 @@ Preferred communication style: Simple, everyday language.
 - Session-based architecture (connect-pg-simple for session storage)
 
 **API Structure:**
-- RESTful endpoints for posts, users, savors, comments, saves, and notifications
+- RESTful endpoints for moments, users, savors, reflects, keeps, and whispers
 - File upload handling via Multer (stored in `/uploads` directory)
-- WebSocket connections for live messaging between users
-- Explore page uses weighted randomization with per-user caching (5-minute TTL) to ensure consistent pagination
+- WebSocket connections for live notes between users
+- Wander page uses weighted randomization with per-user caching (5-minute TTL) to ensure consistent pagination
 - Periodic cache cleanup (60-second intervals) prevents memory bloat
 
 **Data Layer:**
 - Drizzle ORM for type-safe database operations
 - Schema-first approach with Zod validation
-- Database models: users, posts, savors, comments, saves, notifications, conversations, messages
+- Database models: users, moments, savors, reflects, keeps, whispers, conversations, notes
 
 ### Database Design
 
@@ -62,18 +62,18 @@ Preferred communication style: Simple, everyday language.
 - Connection pooling for efficient resource management
 
 **Schema Architecture:**
-- `users`: Profile data (username, displayName, bio, avatar, email, firstName, lastName, profileImageUrl)
+- `users`: Profile data (username, displayName, story, avatar, email, firstName, lastName, profileImageUrl)
   - New users automatically assigned random zen-themed usernames (e.g., "cosmic_wanderer42") and display names (e.g., "Mindful Spirit")
 - `sessions`: PostgreSQL session storage for Replit Auth (connect-pg-simple)
-- `posts`: Content with media URLs, captions, timestamps, and user references
-- `savors`: Many-to-many relationship between users and posts (mindful appreciation system)
-- `comments`: Threaded discussion on posts with user attribution
-- `saves`: Posts saved by users for later viewing
-- `notifications`: User activity alerts (savors, comments, follows) with read status
-  - Supports three notification types: "savor", "comment", "follow"
-  - Follow notifications do not require postId (nullable field)
-- `conversations`: Direct messaging channels between two users
-- `messages`: Message content with read status and timestamps
+- `moments`: Content with media URLs, captions, timestamps, and user references
+- `savors`: Many-to-many relationship between users and moments (mindful appreciation system)
+- `reflects`: Thoughtful responses on moments with user attribution
+- `keeps`: Moments saved by users for later viewing
+- `whispers`: User activity alerts (savors, reflects, follows) with read status
+  - Supports three whisper types: "savor", "reflect", "follow"
+  - Follow whispers do not require momentId (nullable field)
+- `conversations`: Direct note channels between two users
+- `notes`: Note content with read status and timestamps
 - Cascading deletes for data integrity (ON DELETE CASCADE)
 
 ### External Dependencies
@@ -117,8 +117,8 @@ Preferred communication style: Simple, everyday language.
 - WebSocket upgrade handler validates session before establishing connection
 - No client-provided user IDs trusted - all derived from authenticated session
 - IDOR vulnerabilities prevented via server-side authorization checks
-- End-to-end message encryption using AES-256-GCM algorithm
-  - All direct messages encrypted before storage in database
+- End-to-end note encryption using AES-256-GCM algorithm
+  - All direct notes encrypted before storage in database
   - Encryption key stored securely in MESSAGE_ENCRYPTION_KEY environment variable
-  - Backward compatibility maintained for legacy plaintext messages
-  - Messages automatically decrypted when retrieved for display
+  - Backward compatibility maintained for legacy plaintext notes
+  - Notes automatically decrypted when retrieved for display
