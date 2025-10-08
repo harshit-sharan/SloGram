@@ -17,7 +17,7 @@ interface PostWithAuthor {
   };
   _count?: {
     savors: number;
-    comments: number;
+    reflects: number;
   };
 }
 
@@ -34,49 +34,49 @@ function formatTimestamp(dateString: string): string {
   return date.toLocaleDateString();
 }
 
-export default function PostDetail() {
+export default function MomentDetail() {
   const [, params] = useRoute("/post/:id");
-  const postId = params?.id;
+  const momentId = params?.id;
 
-  const { data: post, isLoading, error } = useQuery<PostWithAuthor>({
-    queryKey: [`/api/posts/${postId}`],
-    enabled: !!postId,
+  const { data: moment, isLoading, error } = useQuery<PostWithAuthor>({
+    queryKey: [`/api/moments/${momentId}`],
+    enabled: !!momentId,
   });
 
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
         <div className="max-w-2xl mx-auto pt-6 px-4">
-          <p className="text-center text-muted-foreground">Loading post...</p>
+          <p className="text-center text-muted-foreground">Loading moment...</p>
         </div>
       </div>
     );
   }
 
-  if (!post) {
+  if (!moment) {
     return (
       <div className="min-h-screen bg-background">
         <div className="max-w-2xl mx-auto pt-6 px-4">
-          <p className="text-center text-muted-foreground">Post not found</p>
+          <p className="text-center text-muted-foreground">Moment not found</p>
         </div>
       </div>
     );
   }
 
   const formattedPost: PostData = {
-    id: post.id,
+    id: moment.id,
     author: {
-      id: post.user.id,
-      name: post.user.displayName || post.user.username,
-      username: post.user.username,
-      avatar: post.user.avatar,
+      id: moment.user.id,
+      name: moment.user.displayName || moment.user.username,
+      username: moment.user.username,
+      avatar: moment.user.avatar,
     },
-    image: post.type === "image" ? post.mediaUrl : undefined,
-    video: post.type === "video" ? post.mediaUrl : undefined,
-    caption: post.caption || "",
-    savors: post._count?.savors || 0,
-    comments: post._count?.comments || 0,
-    timestamp: formatTimestamp(post.createdAt),
+    image: moment.type === "image" ? moment.mediaUrl : undefined,
+    video: moment.type === "video" ? moment.mediaUrl : undefined,
+    caption: moment.caption || "",
+    savors: moment._count?.savors || 0,
+    reflects: moment._count?.reflects || 0,
+    timestamp: formatTimestamp(moment.createdAt),
   };
 
   return (

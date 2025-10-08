@@ -86,7 +86,7 @@ export function UserListDrawer({
       }
       if (postId) {
         queryClient.invalidateQueries({
-          queryKey: ["/api/posts", postId, "savorers"],
+          queryKey: ["/api/moments", postId, "savorers"],
         });
       }
     },
@@ -107,7 +107,7 @@ export function UserListDrawer({
       }
       if (postId) {
         queryClient.invalidateQueries({
-          queryKey: ["/api/posts", postId, "savorers"],
+          queryKey: ["/api/moments", postId, "savorers"],
         });
       }
     },

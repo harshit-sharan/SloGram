@@ -7,10 +7,10 @@ import { formatDistanceToNow } from "date-fns";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/useAuth";
 
-interface NotificationData {
+interface WhisperData {
   id: string;
   userId: string;
-  type: "savor" | "comment" | "follow";
+  type: "savor" | "reflect" | "follow";
   actorId: string;
   postId: string | null;
   read: boolean;
@@ -31,56 +31,56 @@ interface NotificationData {
   };
 }
 
-export default function Notifications() {
+export default function Whispers() {
   const { user } = useAuth();
 
-  const { data: notifications = [], isLoading } = useQuery<NotificationData[]>({
-    queryKey: ["/api/notifications", user?.id],
+  const { data: whispers = [], isLoading } = useQuery<WhisperData[]>({
+    queryKey: ["/api/whispers", user?.id],
     enabled: !!user,
     refetchOnMount: true,
   });
 
   const markAsReadMutation = useMutation({
-    mutationFn: async (notificationId: string) => {
-      return apiRequest("POST", `/api/notifications/${notificationId}/read`, {});
+    mutationFn: async (whisperId: string) => {
+      return apiRequest("POST", `/api/whispers/${whisperId}/read`, {});
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ["/api/notifications", user?.id],
+        queryKey: ["/api/whispers", user?.id],
       });
       queryClient.invalidateQueries({
-        queryKey: ["/api/notifications", user?.id, "unread-count"],
+        queryKey: ["/api/whispers", user?.id, "unread-count"],
       });
     },
   });
 
   const markAllAsReadMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest("POST", `/api/notifications/${user?.id}/read-all`, {});
+      return apiRequest("POST", `/api/whispers/${user?.id}/read-all`, {});
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ["/api/notifications", user?.id],
+        queryKey: ["/api/whispers", user?.id],
       });
       queryClient.invalidateQueries({
-        queryKey: ["/api/notifications", user?.id, "unread-count"],
+        queryKey: ["/api/whispers", user?.id, "unread-count"],
       });
     },
   });
 
-  const handleNotificationClick = (notificationId: string) => {
-    if (!notifications.find(n => n.id === notificationId)?.read) {
-      markAsReadMutation.mutate(notificationId);
+  const handleWhisperClick = (whisperId: string) => {
+    if (!whispers.find(n => n.id === whisperId)?.read) {
+      markAsReadMutation.mutate(whisperId);
     }
   };
 
-  const unreadCount = notifications.filter(n => !n.read).length;
+  const unreadCount = whispers.filter(n => !n.read).length;
 
   return (
     <div className="max-w-2xl mx-auto">
       <div className="sticky top-16 z-40 bg-background border-b">
         <div className="px-4 py-4 flex items-center justify-between">
-          <h1 className="font-serif text-2xl text-foreground">Notifications</h1>
+          <h1 className="font-serif text-2xl text-foreground">Whispers</h1>
           {unreadCount > 0 && (
             <Button
               variant="ghost"
@@ -97,73 +97,73 @@ export default function Notifications() {
       <div className="divide-y">
         {isLoading ? (
           <div className="p-8 text-center text-muted-foreground">
-            Loading notifications...
+            Loading whispers...
           </div>
-        ) : notifications.length === 0 ? (
+        ) : whispers.length === 0 ? (
           <div className="p-8 text-center text-muted-foreground">
-            No notifications yet
+            No whispers yet
           </div>
         ) : (
-          notifications.map((notification) => {
-            const isFollowNotification = notification.type === "follow";
-            const linkHref = isFollowNotification 
-              ? `/profile/${notification.actorId}` 
-              : `/post/${notification.postId}`;
+          whispers.map((whisper) => {
+            const isFollowWhisper = whisper.type === "follow";
+            const linkHref = isFollowWhisper 
+              ? `/profile/${whisper.actorId}` 
+              : `/post/${whisper.postId}`;
             
             return (
               <Link
-                key={notification.id}
+                key={whisper.id}
                 href={linkHref}
-                onClick={() => handleNotificationClick(notification.id)}
+                onClick={() => handleWhisperClick(whisper.id)}
               >
                 <div
                   className={`px-4 py-4 flex items-start gap-3 hover-elevate cursor-pointer ${
-                    !notification.read ? "bg-accent/20" : ""
+                    !whisper.read ? "bg-accent/20" : ""
                   }`}
-                  data-testid={`notification-${notification.id}`}
+                  data-testid={`whisper-${whisper.id}`}
                 >
                   <Avatar className="h-10 w-10">
-                    <AvatarImage src={notification.actor.avatar || undefined} />
+                    <AvatarImage src={whisper.actor.avatar || undefined} />
                     <AvatarFallback>
-                      {(notification.actor.displayName || notification.actor.username).charAt(0)}
+                      {(whisper.actor.displayName || whisper.actor.username).charAt(0)}
                     </AvatarFallback>
                   </Avatar>
 
                   <div className="flex-1 min-w-0">
                     <p className="text-sm">
                       <span className="font-semibold">
-                        {notification.actor.displayName || notification.actor.username}
+                        {whisper.actor.displayName || whisper.actor.username}
                       </span>
-                      {notification.type === "savor" 
-                        ? " savored your post" 
-                        : notification.type === "comment"
-                        ? " commented on your post"
+                      {whisper.type === "savor" 
+                        ? " savored your moment" 
+                        : whisper.type === "reflect"
+                        ? " reflected on your moment"
                         : " started following you"}
                     </p>
                     <p className="text-xs text-muted-foreground mt-1">
-                      {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
+                      {formatDistanceToNow(new Date(whisper.createdAt), { addSuffix: true })}
                     </p>
                   </div>
 
                   <div className="flex items-center gap-2">
-                    {notification.type === "savor" ? (
+                    {whisper.type === "savor" ? (
                       <Heart className="h-5 w-5 fill-current text-destructive" />
-                    ) : notification.type === "comment" ? (
+                    ) : whisper.type === "reflect" ? (
                       <MessageCircle className="h-5 w-5 text-primary" />
                     ) : (
                       <UserPlus className="h-5 w-5 text-primary" />
                     )}
-                    {notification.post && (
+                    {whisper.post && (
                       <>
-                        {notification.post.type === "image" ? (
+                        {whisper.post.type === "image" ? (
                           <img
-                            src={notification.post.mediaUrl}
-                            alt="Post"
+                            src={whisper.post.mediaUrl}
+                            alt="Moment"
                             className="h-12 w-12 object-cover rounded"
                           />
                         ) : (
                           <video
-                            src={notification.post.mediaUrl}
+                            src={whisper.post.mediaUrl}
                             className="h-12 w-12 object-cover rounded"
                             muted
                           />

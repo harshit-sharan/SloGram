@@ -48,19 +48,19 @@ export function CreatePostModal({
     },
   });
 
-  const createPostMutation = useMutation({
-    mutationFn: async (postData: { type: "image" | "video"; mediaUrl: string; caption: string }) => {
-      const response = await apiRequest("POST", "/api/posts", {
-        type: postData.type,
-        mediaUrl: postData.mediaUrl,
-        caption: postData.caption,
+  const createMomentMutation = useMutation({
+    mutationFn: async (momentData: { type: "image" | "video"; mediaUrl: string; caption: string }) => {
+      const response = await apiRequest("POST", "/api/moments", {
+        type: momentData.type,
+        mediaUrl: momentData.mediaUrl,
+        caption: momentData.caption,
       });
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/posts-with-authors"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/moments-with-authors"] });
       toast({
-        title: "Post shared!",
+        title: "Moment shared!",
         description: "Your slow living moment has been shared.",
       });
       setCaption("");
@@ -71,7 +71,7 @@ export function CreatePostModal({
     onError: () => {
       toast({
         title: "Error",
-        description: "Failed to create post. Please try again.",
+        description: "Failed to create moment. Please try again.",
         variant: "destructive",
       });
     },
@@ -109,7 +109,7 @@ export function CreatePostModal({
   const handlePost = () => {
     if (!uploadedMediaURL || !user || !mediaType) return;
     
-    createPostMutation.mutate({
+    createMomentMutation.mutate({
       type: mediaType,
       mediaUrl: uploadedMediaURL,
       caption: caption.trim(),
@@ -127,9 +127,9 @@ export function CreatePostModal({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-2xl" data-testid="modal-create-post">
+      <DialogContent className="max-w-2xl" data-testid="modal-create-moment">
         <DialogHeader>
-          <DialogTitle className="font-serif text-xl">Create new post</DialogTitle>
+          <DialogTitle className="font-serif text-xl">Create new moment</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
@@ -225,10 +225,10 @@ export function CreatePostModal({
             </Button>
             <Button
               onClick={handlePost}
-              disabled={!caption.trim() || !uploadedMediaURL || createPostMutation.isPending}
+              disabled={!caption.trim() || !uploadedMediaURL || createMomentMutation.isPending}
               data-testid="button-share"
             >
-              {createPostMutation.isPending ? "Sharing..." : "Share"}
+              {createMomentMutation.isPending ? "Sharing..." : "Share"}
             </Button>
           </div>
         </div>

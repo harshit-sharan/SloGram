@@ -39,7 +39,7 @@ interface User {
   lastName?: string;
   displayName?: string;
   profileImageUrl?: string;
-  bio?: string;
+  story?: string;
   avatar?: string;
 }
 
@@ -60,7 +60,7 @@ function EditProfileDialog({ user }: { user: User }) {
     resolver: zodResolver(updateUserProfileSchema),
     defaultValues: {
       displayName: user.displayName ?? "",
-      bio: user.bio ?? "",
+      story: user.story ?? "",
       username: user.username ?? "",
     },
   });
@@ -143,17 +143,17 @@ function EditProfileDialog({ user }: { user: User }) {
             />
             <FormField
               control={form.control}
-              name="bio"
+              name="story"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Bio</FormLabel>
+                  <FormLabel>Story</FormLabel>
                   <FormControl>
                     <Textarea
                       {...field}
                       value={field.value ?? ""}
-                      placeholder="Tell us about yourself"
+                      placeholder="Share your story"
                       rows={4}
-                      data-testid="textarea-bio"
+                      data-testid="textarea-story"
                     />
                   </FormControl>
                   <FormMessage />
@@ -199,8 +199,8 @@ export default function Profile() {
     enabled: !!userId,
   });
 
-  const { data: posts = [], isLoading: postsLoading } = useQuery<Post[]>({
-    queryKey: ["/api/posts/user", userId],
+  const { data: moments = [], isLoading: momentsLoading } = useQuery<Post[]>({
+    queryKey: ["/api/moments/user", userId],
     enabled: !!userId,
   });
 
@@ -302,7 +302,7 @@ export default function Profile() {
     }
   };
 
-  if (userLoading || postsLoading) {
+  if (userLoading || momentsLoading) {
     return (
       <div className="min-h-screen bg-background pb-20 md:pb-0">
         <div className="max-w-5xl mx-auto px-4 py-8">
@@ -392,8 +392,8 @@ export default function Profile() {
             </div>
 
             <div className="flex gap-8 justify-center md:justify-start mb-4">
-              <div data-testid="text-posts-count">
-                <span className="font-semibold">{posts.length}</span> posts
+              <div data-testid="text-moments-count">
+                <span className="font-semibold">{moments.length}</span> moments
               </div>
               <button
                 onClick={() => setDrawerType("followers")}
@@ -419,9 +419,9 @@ export default function Profile() {
               <p className="font-semibold mb-1" data-testid="text-display-name">
                 {user.displayName || `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email}
               </p>
-              {user.bio && (
-                <p className="text-muted-foreground max-w-md whitespace-pre-line" data-testid="text-bio">
-                  {user.bio}
+              {user.story && (
+                <p className="text-muted-foreground max-w-md whitespace-pre-line" data-testid="text-story">
+                  {user.story}
                 </p>
               )}
             </div>
@@ -431,31 +431,31 @@ export default function Profile() {
         <div className="border-t">
           <div className="flex items-center justify-center gap-2 py-3 text-sm font-semibold">
             <Grid3x3 className="h-4 w-4" />
-            POSTS
+            MOMENTS
           </div>
 
-          {posts.length === 0 ? (
+          {moments.length === 0 ? (
             <div className="py-12 text-center text-muted-foreground">
-              No posts yet
+              No moments yet
             </div>
           ) : (
             <div className="grid grid-cols-3 gap-1">
-              {posts.map((post, index) => (
+              {moments.map((moment, index) => (
                 <Link
-                  key={post.id}
-                  href={`/post/${post.id}`}
-                  data-testid={`button-post-${index}`}
+                  key={moment.id}
+                  href={`/post/${moment.id}`}
+                  data-testid={`button-moment-${index}`}
                 >
                   <div className="aspect-square hover-elevate overflow-hidden cursor-pointer">
-                    {post.type === "image" ? (
+                    {moment.type === "image" ? (
                       <img
-                        src={post.mediaUrl}
-                        alt={`Post ${index + 1}`}
+                        src={moment.mediaUrl}
+                        alt={`Moment ${index + 1}`}
                         className="w-full h-full object-cover"
                       />
                     ) : (
                       <video
-                        src={post.mediaUrl}
+                        src={moment.mediaUrl}
                         className="w-full h-full object-cover"
                         muted
                         loop

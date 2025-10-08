@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { Link } from "wouter";
 
-interface SavedPost {
+interface KeptMoment {
   id: string;
   userId: string;
   type: "image" | "video";
@@ -12,11 +12,11 @@ interface SavedPost {
   savedAt: string;
 }
 
-export default function Saved() {
+export default function Kept() {
   const { user } = useAuth();
 
-  const { data: savedPosts = [], isLoading } = useQuery<SavedPost[]>({
-    queryKey: ["/api/saved-posts"],
+  const { data: keptMoments = [], isLoading } = useQuery<KeptMoment[]>({
+    queryKey: ["/api/keeps"],
     enabled: !!user,
   });
 
@@ -24,7 +24,7 @@ export default function Saved() {
     return (
       <div className="min-h-screen bg-background pb-20 md:pb-0">
         <div className="max-w-5xl mx-auto px-4 py-8">
-          <h1 className="font-serif text-2xl mb-6" data-testid="text-page-title">Saved Posts</h1>
+          <h1 className="font-serif text-2xl mb-6" data-testid="text-page-title">Kept Moments</h1>
           <p className="text-center text-muted-foreground">Loading...</p>
         </div>
       </div>
@@ -34,29 +34,29 @@ export default function Saved() {
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
       <div className="max-w-5xl mx-auto px-4 py-8">
-        <h1 className="font-serif text-2xl mb-6" data-testid="text-page-title">Saved Posts</h1>
+        <h1 className="font-serif text-2xl mb-6" data-testid="text-page-title">Kept Moments</h1>
 
-        {savedPosts.length === 0 ? (
-          <div className="text-center py-12" data-testid="empty-saved">
-            <p className="text-muted-foreground">No saved posts yet</p>
+        {keptMoments.length === 0 ? (
+          <div className="text-center py-12" data-testid="empty-kept">
+            <p className="text-muted-foreground">No kept moments yet</p>
             <p className="text-sm text-muted-foreground mt-2">
-              Posts you save will appear here
+              Moments you keep will appear here
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-3 gap-1" data-testid="saved-posts-grid">
-            {savedPosts.map((post) => (
+          <div className="grid grid-cols-3 gap-1" data-testid="kept-moments-grid">
+            {keptMoments.map((moment) => (
               <Link
-                key={post.id}
-                href={`/post/${post.id}`}
-                data-testid={`link-saved-post-${post.id}`}
+                key={moment.id}
+                href={`/post/${moment.id}`}
+                data-testid={`link-kept-moment-${moment.id}`}
               >
                 <div className="relative aspect-square bg-muted cursor-pointer hover-elevate overflow-hidden">
-                  {post.type === "video" ? (
+                  {moment.type === "video" ? (
                     <video
-                      src={post.mediaUrl}
+                      src={moment.mediaUrl}
                       className="w-full h-full object-cover"
-                      data-testid={`video-saved-${post.id}`}
+                      data-testid={`video-kept-${moment.id}`}
                       muted
                       loop
                       playsInline
@@ -65,10 +65,10 @@ export default function Saved() {
                     />
                   ) : (
                     <img
-                      src={post.mediaUrl}
-                      alt="Saved post"
+                      src={moment.mediaUrl}
+                      alt="Kept moment"
                       className="w-full h-full object-cover"
-                      data-testid={`img-saved-${post.id}`}
+                      data-testid={`img-kept-${moment.id}`}
                     />
                   )}
                 </div>

@@ -27,8 +27,8 @@ interface MessageThreadProps {
   autoFocus?: boolean;
 }
 
-interface MessagesResponse {
-  messages: Message[];
+interface NotesResponse {
+  notes: Message[];
   hasMore: boolean;
 }
 
@@ -41,45 +41,45 @@ export function MessageThread({ conversationId, otherUser, autoFocus = false }: 
   const [shouldScrollToBottom, setShouldScrollToBottom] = useState(true);
   const { isConnected, lastMessage, sendMessage } = useWebSocket();
 
-  // Fetch messages with infinite query (reverse pagination)
+  // Fetch notes with infinite query (reverse pagination)
   const {
     data,
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
     refetch,
-  } = useInfiniteQuery<MessagesResponse>({
-    queryKey: ["/api/conversations", conversationId, "messages"],
+  } = useInfiniteQuery<NotesResponse>({
+    queryKey: ["/api/conversations", conversationId, "notes"],
     queryFn: async ({ pageParam }) => {
-      const url = `/api/conversations/${conversationId}/messages?limit=20${pageParam ? `&cursor=${pageParam}` : ''}`;
+      const url = `/api/conversations/${conversationId}/notes?limit=20${pageParam ? `&cursor=${pageParam}` : ''}`;
       const response = await fetch(url);
-      if (!response.ok) throw new Error("Failed to fetch messages");
+      if (!response.ok) throw new Error("Failed to fetch notes");
       return response.json();
     },
     getNextPageParam: (lastPage) => {
-      if (!lastPage.hasMore || lastPage.messages.length === 0) return undefined;
-      // Use the oldest message's createdAt as the cursor
-      return lastPage.messages[lastPage.messages.length - 1].createdAt;
+      if (!lastPage.hasMore || lastPage.notes.length === 0) return undefined;
+      // Use the oldest note's createdAt as the cursor
+      return lastPage.notes[lastPage.notes.length - 1].createdAt;
     },
     initialPageParam: undefined,
     staleTime: 0,
     refetchOnMount: true,
   });
 
-  // Flatten and reverse messages (oldest first at top)
-  const messages = data?.pages.flatMap(page => page.messages).reverse() || [];
+  // Flatten and reverse notes (oldest first at top)
+  const notes = data?.pages.flatMap(page => page.notes).reverse() || [];
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
   };
 
-  // Initial scroll to bottom when first messages load
+  // Initial scroll to bottom when first notes load
   useEffect(() => {
-    if (messages.length > 0 && shouldScrollToBottom) {
+    if (notes.length > 0 && shouldScrollToBottom) {
       setTimeout(() => scrollToBottom(), 0);
       setShouldScrollToBottom(false);
     }
-  }, [messages.length, shouldScrollToBottom]);
+  }, [notes.length, shouldScrollToBottom]);
 
   // Auto-focus input when autoFocus prop is true
   useEffect(() => {
@@ -92,20 +92,20 @@ export function MessageThread({ conversationId, otherUser, autoFocus = false }: 
     }
   }, [autoFocus, conversationId]);
 
-  // Mark messages as read when conversation is opened
+  // Mark notes as read when conversation is opened
   useEffect(() => {
     const markAsRead = async () => {
       try {
         await apiRequest("POST", `/api/conversations/${conversationId}/mark-read`, {});
         // Invalidate unread count and conversations list
         queryClient.invalidateQueries({
-          queryKey: ["/api/messages", user?.id, "unread-count"],
+          queryKey: ["/api/notes", user?.id, "unread-count"],
         });
         queryClient.invalidateQueries({
           queryKey: ["/api/conversations-with-details", user?.id],
         });
       } catch (error) {
-        console.error("Failed to mark messages as read:", error);
+        console.error("Failed to mark notes as read:", error);
       }
     };
 
@@ -114,23 +114,23 @@ export function MessageThread({ conversationId, otherUser, autoFocus = false }: 
     }
   }, [conversationId, user?.id]);
 
-  // Refetch messages when receiving WebSocket messages for this conversation
+  // Refetch notes when receiving WebSocket notes for this conversation
   useEffect(() => {
-    if (lastMessage?.type === "message" && lastMessage.message?.conversationId === conversationId) {
-      // Refetch to get the new message
+    if (lastMessage?.type === "note" && lastMessage.message?.conversationId === conversationId) {
+      // Refetch to get the new note
       refetch();
       
-      // Scroll to bottom to show new message
+      // Scroll to bottom to show new note
       setTimeout(() => scrollToBottom(), 100);
       
-      // Update conversations list to show last message preview
+      // Update conversations list to show last note preview
       queryClient.invalidateQueries({
         queryKey: ["/api/conversations-with-details", user?.id],
       });
     }
   }, [lastMessage, conversationId, user?.id, refetch]);
 
-  // Handle scroll to load older messages
+  // Handle scroll to load older notes
   useEffect(() => {
     const container = messagesContainerRef.current;
     if (!container) return;
@@ -138,12 +138,12 @@ export function MessageThread({ conversationId, otherUser, autoFocus = false }: 
     const handleScroll = () => {
       const { scrollTop } = container;
       
-      // If scrolled near top (within 100px), load more messages
+      // If scrolled near top (within 100px), load more notes
       if (scrollTop < 100 && hasNextPage && !isFetchingNextPage) {
         const previousScrollHeight = container.scrollHeight;
         
         fetchNextPage().then(() => {
-          // Maintain scroll position after loading older messages
+          // Maintain scroll position after loading older notes
           requestAnimationFrame(() => {
             const newScrollHeight = container.scrollHeight;
             const scrollDiff = newScrollHeight - previousScrollHeight;
@@ -161,7 +161,7 @@ export function MessageThread({ conversationId, otherUser, autoFocus = false }: 
     if (!newMessage.trim()) return;
 
     sendMessage({
-      type: "message",
+      type: "note",
       conversationId,
       recipientId: otherUser.id,
       text: newMessage,
@@ -200,23 +200,23 @@ export function MessageThread({ conversationId, otherUser, autoFocus = false }: 
       <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-4 space-y-4">
         {isFetchingNextPage && (
           <div className="text-center text-sm text-muted-foreground py-2">
-            Loading older messages...
+            Loading older notes...
           </div>
         )}
-        {messages.map((msg) => (
+        {notes.map((note) => (
           <div
-            key={msg.id}
-            className={`flex ${msg.senderId === user?.id ? "justify-end" : "justify-start"}`}
-            data-testid={`message-${msg.id}`}
+            key={note.id}
+            className={`flex ${note.senderId === user?.id ? "justify-end" : "justify-start"}`}
+            data-testid={`note-${note.id}`}
           >
             <div
               className={`max-w-xs md:max-w-md px-4 py-2 rounded-lg ${
-                msg.senderId === user?.id
+                note.senderId === user?.id
                   ? "bg-primary text-primary-foreground"
                   : "bg-muted"
               }`}
             >
-              <p className="text-sm break-words">{msg.text}</p>
+              <p className="text-sm break-words">{note.text}</p>
             </div>
           </div>
         ))}
@@ -230,14 +230,14 @@ export function MessageThread({ conversationId, otherUser, autoFocus = false }: 
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder="Type a message..."
+            placeholder="Type a note..."
             className="flex-1"
-            data-testid="input-message"
+            data-testid="input-note"
           />
           <Button
             onClick={handleSend}
             disabled={!newMessage.trim() || !isConnected}
-            data-testid="button-send-message"
+            data-testid="button-send-note"
           >
             <Send className="h-4 w-4" />
           </Button>

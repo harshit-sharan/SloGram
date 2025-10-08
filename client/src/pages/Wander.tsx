@@ -22,7 +22,7 @@ interface PostWithAuthor {
   };
   _count?: {
     savors: number;
-    comments: number;
+    reflects: number;
   };
 }
 
@@ -77,7 +77,7 @@ function ExploreVideoThumbnail({ post }: { post: PostWithAuthor }) {
   }, []);
 
   return (
-    <Link href={`/post/${post.id}`} data-testid={`explore-post-${post.id}`}>
+    <Link href={`/post/${post.id}`} data-testid={`explore-moment-${post.id}`}>
       <div
         ref={containerRef}
         className="relative aspect-square overflow-hidden bg-muted hover-elevate rounded-sm cursor-pointer"
@@ -126,7 +126,7 @@ export default function Explore() {
         );
         if (!res.ok) throw new Error("Failed to fetch explore posts");
         return res.json() as Promise<{
-          posts: PostWithAuthor[];
+          moments: PostWithAuthor[];
           hasMore: boolean;
         }>;
       },
@@ -179,7 +179,7 @@ export default function Explore() {
     setShowResults(false);
   };
 
-  const explorePosts = data?.pages.flatMap((page) => page.posts) ?? [];
+  const exploreMoments = data?.pages.flatMap((page) => page.moments) ?? [];
 
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
@@ -251,12 +251,12 @@ export default function Explore() {
 
         {isLoading ? (
           <div className="text-center py-12">
-            <p className="text-muted-foreground">Loading posts...</p>
+            <p className="text-muted-foreground">Loading moments...</p>
           </div>
-        ) : explorePosts.length === 0 ? (
+        ) : exploreMoments.length === 0 ? (
           <div className="text-center py-12" data-testid="empty-explore">
             <p className="text-muted-foreground">
-              No posts to explore at the moment.
+              No moments to explore at the moment.
             </p>
           </div>
         ) : (
@@ -265,19 +265,19 @@ export default function Explore() {
               className="grid grid-cols-3 gap-1 md:gap-2"
               data-testid="explore-grid"
             >
-              {explorePosts.map((post) =>
-                post.type === "video" ? (
-                  <ExploreVideoThumbnail key={post.id} post={post} />
+              {exploreMoments.map((moment) =>
+                moment.type === "video" ? (
+                  <ExploreVideoThumbnail key={moment.id} post={moment} />
                 ) : (
                   <Link
-                    key={post.id}
-                    href={`/post/${post.id}`}
-                    data-testid={`explore-post-${post.id}`}
+                    key={moment.id}
+                    href={`/post/${moment.id}`}
+                    data-testid={`explore-moment-${moment.id}`}
                   >
                     <div className="relative aspect-square overflow-hidden bg-muted hover-elevate rounded-sm cursor-pointer">
                       <img
-                        src={post.mediaUrl}
-                        alt={post.caption || "Post"}
+                        src={moment.mediaUrl}
+                        alt={moment.caption || "Moment"}
                         className="w-full h-full object-cover"
                       />
                       <div className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors pointer-events-none" />
@@ -290,15 +290,15 @@ export default function Explore() {
             {hasNextPage && (
               <div ref={observerTarget} className="py-8 text-center">
                 {isFetchingNextPage && (
-                  <p className="text-muted-foreground">Loading more posts...</p>
+                  <p className="text-muted-foreground">Loading more moments...</p>
                 )}
               </div>
             )}
 
-            {!hasNextPage && explorePosts.length > 0 && (
+            {!hasNextPage && exploreMoments.length > 0 && (
               <div className="py-8 text-center">
                 <p className="text-muted-foreground">
-                  No more posts to explore
+                  No more moments to explore
                 </p>
               </div>
             )}
