@@ -25,13 +25,13 @@ export const users = pgTable("users", {
   username: text("username").unique(),
   password: text("password"),
   displayName: text("display_name"),
-  bio: text("bio"),
+  story: text("story"),
   avatar: text("avatar"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-export const posts = pgTable("posts", {
+export const moments = pgTable("moments", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   type: text("type").notNull().$type<"image" | "video">(),
@@ -43,21 +43,21 @@ export const posts = pgTable("posts", {
 export const savors = pgTable("savors", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  postId: varchar("post_id").notNull().references(() => posts.id, { onDelete: "cascade" }),
+  momentId: varchar("moment_id").notNull().references(() => moments.id, { onDelete: "cascade" }),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
-export const saves = pgTable("saves", {
+export const keeps = pgTable("keeps", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  postId: varchar("post_id").notNull().references(() => posts.id, { onDelete: "cascade" }),
+  momentId: varchar("moment_id").notNull().references(() => moments.id, { onDelete: "cascade" }),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
-export const comments = pgTable("comments", {
+export const reflects = pgTable("reflects", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  postId: varchar("post_id").notNull().references(() => posts.id, { onDelete: "cascade" }),
+  momentId: varchar("moment_id").notNull().references(() => moments.id, { onDelete: "cascade" }),
   text: text("text").notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
@@ -75,7 +75,7 @@ export const conversations = pgTable("conversations", {
   ),
 }));
 
-export const messages = pgTable("messages", {
+export const notes = pgTable("notes", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   conversationId: varchar("conversation_id").notNull().references(() => conversations.id, { onDelete: "cascade" }),
   senderId: varchar("sender_id").notNull().references(() => users.id, { onDelete: "cascade" }),
@@ -84,12 +84,12 @@ export const messages = pgTable("messages", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
-export const notifications = pgTable("notifications", {
+export const whispers = pgTable("whispers", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  type: text("type").notNull().$type<"savor" | "comment" | "follow">(),
+  type: text("type").notNull().$type<"savor" | "reflect" | "follow">(),
   actorId: varchar("actor_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  postId: varchar("post_id").references(() => posts.id, { onDelete: "cascade" }),
+  momentId: varchar("moment_id").references(() => moments.id, { onDelete: "cascade" }),
   read: boolean("read").notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
@@ -106,18 +106,18 @@ export const insertUserSchema = createInsertSchema(users).pick({
   password: true,
 });
 
-export const insertPostSchema = createInsertSchema(posts).omit({
+export const insertMomentSchema = createInsertSchema(moments).omit({
   id: true,
   createdAt: true,
 });
 
-export const insertMessageSchema = createInsertSchema(messages).omit({
+export const insertNoteSchema = createInsertSchema(notes).omit({
   id: true,
   createdAt: true,
   read: true,
 });
 
-export const insertCommentSchema = createInsertSchema(comments).omit({
+export const insertReflectSchema = createInsertSchema(reflects).omit({
   id: true,
   createdAt: true,
 });
@@ -129,7 +129,7 @@ export const insertFollowSchema = createInsertSchema(follows).omit({
 
 export const updateUserProfileSchema = createInsertSchema(users).pick({
   displayName: true,
-  bio: true,
+  story: true,
   username: true,
 }).partial().refine(
   (data) => {
@@ -148,14 +148,14 @@ export type InsertUser = z.infer<typeof insertUserSchema>;
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
 export type UpdateUserProfile = z.infer<typeof updateUserProfileSchema>;
-export type InsertPost = z.infer<typeof insertPostSchema>;
-export type Post = typeof posts.$inferSelect;
-export type InsertMessage = z.infer<typeof insertMessageSchema>;
-export type Message = typeof messages.$inferSelect;
+export type InsertMoment = z.infer<typeof insertMomentSchema>;
+export type Moment = typeof moments.$inferSelect;
+export type InsertNote = z.infer<typeof insertNoteSchema>;
+export type Note = typeof notes.$inferSelect;
 export type Conversation = typeof conversations.$inferSelect;
-export type Comment = typeof comments.$inferSelect;
+export type Reflect = typeof reflects.$inferSelect;
 export type Savor = typeof savors.$inferSelect;
-export type Save = typeof saves.$inferSelect;
-export type Notification = typeof notifications.$inferSelect;
+export type Keep = typeof keeps.$inferSelect;
+export type Whisper = typeof whispers.$inferSelect;
 export type InsertFollow = z.infer<typeof insertFollowSchema>;
 export type Follow = typeof follows.$inferSelect;
