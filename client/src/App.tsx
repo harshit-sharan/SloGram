@@ -146,7 +146,7 @@ function Router() {
     <Switch>
       <Route path="/" component={Flow} />
       <Route path="/wander" component={Wander} />
-      <Route path="/moment/:id" component={MomentDetail} />
+      <Route path="/post/:id" component={MomentDetail} />
       <Route path="/space/:userId" component={Space} />
       <Route path="/conversations" component={Messages} />
       <Route path="/whispers" component={Whispers} />
