@@ -60,7 +60,7 @@ export function Post({ post }: { post: PostData }) {
   const { user } = useAuth();
   const videoRef = useRef<HTMLVideoElement>(null);
   const videoContainerRef = useRef<HTMLDivElement>(null);
-  const [saved, setSaved] = useState(false);
+  const [kept, setKept] = useState(false);
   const [showFullCaption, setShowFullCaption] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState("");
@@ -149,7 +149,7 @@ export function Post({ post }: { post: PostData }) {
   // Update local state when keep query data is available
   useEffect(() => {
     if (keepData !== undefined) {
-      setSaved(keepData.kept);
+      setKept(keepData.kept);
     }
   }, [keepData]);
 
@@ -231,7 +231,7 @@ export function Post({ post }: { post: PostData }) {
     },
     onMutate: async () => {
       // Optimistically update the UI
-      setSaved(!saved);
+      setKept(!kept);
     },
     onSuccess: () => {
       // Invalidate and refetch keep status
@@ -241,7 +241,7 @@ export function Post({ post }: { post: PostData }) {
     },
     onError: () => {
       // Revert on error
-      setSaved(saved);
+      setKept(kept);
     },
   });
 
@@ -625,7 +625,7 @@ export function Post({ post }: { post: PostData }) {
             onClick={handleKeep}
             data-testid={`button-keep-${post.id}`}
           >
-            <Bookmark className={saved ? "fill-current" : ""} />
+            <Bookmark className={kept ? "fill-current" : ""} />
           </Button>
         </div>
 

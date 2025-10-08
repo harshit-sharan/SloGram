@@ -9,7 +9,7 @@ interface KeptMoment {
   mediaUrl: string;
   caption: string | null;
   createdAt: string;
-  savedAt: string;
+  keptAt: string;
 }
 
 export default function Kept() {
