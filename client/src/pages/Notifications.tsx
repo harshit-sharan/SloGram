@@ -10,7 +10,7 @@ import { useAuth } from "@/hooks/useAuth";
 interface NotificationData {
   id: string;
   userId: string;
-  type: "like" | "comment" | "follow";
+  type: "savor" | "comment" | "follow";
   actorId: string;
   postId: string | null;
   read: boolean;
@@ -134,8 +134,8 @@ export default function Notifications() {
                       <span className="font-semibold">
                         {notification.actor.displayName || notification.actor.username}
                       </span>
-                      {notification.type === "like" 
-                        ? " liked your post" 
+                      {notification.type === "savor" 
+                        ? " savored your post" 
                         : notification.type === "comment"
                         ? " commented on your post"
                         : " started following you"}
@@ -146,7 +146,7 @@ export default function Notifications() {
                   </div>
 
                   <div className="flex items-center gap-2">
-                    {notification.type === "like" ? (
+                    {notification.type === "savor" ? (
                       <Heart className="h-5 w-5 fill-current text-destructive" />
                     ) : notification.type === "comment" ? (
                       <MessageCircle className="h-5 w-5 text-primary" />

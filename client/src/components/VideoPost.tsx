@@ -13,22 +13,22 @@ export interface VideoPostData {
   };
   video: string;
   caption: string;
-  likes: number;
+  savors: number;
   comments: number;
   timestamp: string;
 }
 
 export function VideoPost({ post }: { post: VideoPostData }) {
-  const [liked, setLiked] = useState(false);
+  const [savored, setSavored] = useState(false);
   const [saved, setSaved] = useState(false);
   const [muted, setMuted] = useState(true);
   const [showFullCaption, setShowFullCaption] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const { toast } = useToast();
 
-  const handleLike = () => {
-    setLiked(!liked);
-    console.log(`Post ${post.id} ${liked ? "unliked" : "liked"}`);
+  const handleSavor = () => {
+    setSavored(!savored);
+    console.log(`Post ${post.id} ${savored ? "unsavored" : "savored"}`);
   };
 
   const handleSave = () => {
@@ -110,10 +110,10 @@ export function VideoPost({ post }: { post: VideoPostData }) {
             <Button
               variant="ghost"
               size="icon"
-              onClick={handleLike}
-              data-testid={`button-like-${post.id}`}
+              onClick={handleSavor}
+              data-testid={`button-savor-${post.id}`}
             >
-              <Heart className={liked ? "fill-current text-destructive" : ""} />
+              <Heart className={savored ? "fill-current text-destructive" : ""} />
             </Button>
             <Button
               variant="ghost"
@@ -142,8 +142,8 @@ export function VideoPost({ post }: { post: VideoPostData }) {
           </Button>
         </div>
 
-        <p className="font-semibold text-sm mb-2" data-testid={`text-likes-${post.id}`}>
-          {post.likes + (liked ? 1 : 0)} likes
+        <p className="font-semibold text-sm mb-2" data-testid={`text-savors-${post.id}`}>
+          {post.savors + (savored ? 1 : 0)} savors
         </p>
 
         <div className="text-sm">

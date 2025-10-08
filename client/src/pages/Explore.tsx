@@ -21,7 +21,7 @@ interface PostWithAuthor {
     profileImageUrl?: string;
   };
   _count?: {
-    likes: number;
+    savors: number;
     comments: number;
   };
 }

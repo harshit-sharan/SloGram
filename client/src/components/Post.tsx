@@ -51,7 +51,7 @@ export interface PostData {
   image?: string;
   video?: string;
   caption: string;
-  likes: number;
+  savors: number;
   comments: number;
   timestamp: string;
 }
@@ -66,7 +66,7 @@ export function Post({ post }: { post: PostData }) {
   const [commentText, setCommentText] = useState("");
   const [following, setFollowing] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [showLikersDrawer, setShowLikersDrawer] = useState(false);
+  const [showSavorersDrawer, setShowSavorersDrawer] = useState(false);
   const { toast } = useToast();
   
   // Video controls state
@@ -105,33 +105,33 @@ export function Post({ post }: { post: PostData }) {
     return () => observer.disconnect();
   }, [post.video]);
 
-  // Fetch initial like status
-  const { data: likeData } = useQuery<{ liked: boolean }>({
-    queryKey: ["/api/posts", post.id, "liked", user?.id],
+  // Fetch initial savor status
+  const { data: savorData } = useQuery<{ savored: boolean }>({
+    queryKey: ["/api/posts", post.id, "savored", user?.id],
     queryFn: async () => {
-      const response = await fetch(`/api/posts/${post.id}/liked?userId=${user?.id}`);
-      if (!response.ok) throw new Error("Failed to fetch like status");
+      const response = await fetch(`/api/posts/${post.id}/savored?userId=${user?.id}`);
+      if (!response.ok) throw new Error("Failed to fetch savor status");
       return response.json();
     },
     enabled: !!user,
-    staleTime: 0, // Always fetch fresh like status
+    staleTime: 0, // Always fetch fresh savor status
     refetchOnMount: true,
   });
 
-  const [liked, setLiked] = useState(false);
-  const [likeCount, setLikeCount] = useState(post.likes);
+  const [savored, setSavored] = useState(false);
+  const [savorCount, setSavorCount] = useState(post.savors);
 
   // Update local state when query data is available
   useEffect(() => {
-    if (likeData !== undefined) {
-      setLiked(likeData.liked);
+    if (savorData !== undefined) {
+      setSavored(savorData.savored);
     }
-  }, [likeData]);
+  }, [savorData]);
 
-  // Update like count when post data changes
+  // Update savor count when post data changes
   useEffect(() => {
-    setLikeCount(post.likes);
-  }, [post.likes]);
+    setSavorCount(post.savors);
+  }, [post.savors]);
 
   // Fetch initial save status
   const { data: saveData } = useQuery<{ saved: boolean }>({
@@ -184,44 +184,44 @@ export function Post({ post }: { post: PostData }) {
     enabled: showComments,
   });
 
-  // Fetch users who liked the post
-  const { data: likers = [] } = useQuery<any[]>({
-    queryKey: ["/api/posts", post.id, "likers"],
+  // Fetch users who savored the post
+  const { data: savorers = [] } = useQuery<any[]>({
+    queryKey: ["/api/posts", post.id, "savorers"],
     queryFn: async () => {
-      const response = await fetch(`/api/posts/${post.id}/likers`);
-      if (!response.ok) throw new Error("Failed to fetch likers");
+      const response = await fetch(`/api/posts/${post.id}/savorers`);
+      if (!response.ok) throw new Error("Failed to fetch savorers");
       return response.json();
     },
-    enabled: showLikersDrawer,
+    enabled: showSavorersDrawer,
   });
 
-  // Mutation to toggle like
-  const likeMutation = useMutation({
+  // Mutation to toggle savor
+  const savorMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest("POST", `/api/posts/${post.id}/like`, { userId: user?.id });
+      return apiRequest("POST", `/api/posts/${post.id}/savor`, { userId: user?.id });
     },
     onMutate: async () => {
       // Optimistically update the UI
-      const newLikedState = !liked;
-      setLiked(newLikedState);
-      // Update like count optimistically
-      setLikeCount(prev => newLikedState ? prev + 1 : prev - 1);
+      const newSavoredState = !savored;
+      setSavored(newSavoredState);
+      // Update savor count optimistically
+      setSavorCount(prev => newSavoredState ? prev + 1 : prev - 1);
     },
     onSuccess: () => {
-      // Invalidate and refetch like status
+      // Invalidate and refetch savor status
       queryClient.invalidateQueries({
-        queryKey: ["/api/posts", post.id, "liked", user?.id],
+        queryKey: ["/api/posts", post.id, "savored", user?.id],
       });
     },
     onError: () => {
       // Revert on error
-      setLiked(liked);
-      setLikeCount(post.likes);
+      setSavored(savored);
+      setSavorCount(post.savors);
     },
   });
 
-  const handleLike = () => {
-    likeMutation.mutate();
+  const handleSavor = () => {
+    savorMutation.mutate();
   };
 
   // Mutation to toggle save
@@ -597,10 +597,10 @@ export function Post({ post }: { post: PostData }) {
             <Button
               variant="ghost"
               size="icon"
-              onClick={handleLike}
-              data-testid={`button-like-${post.id}`}
+              onClick={handleSavor}
+              data-testid={`button-savor-${post.id}`}
             >
-              <Heart className={liked ? "fill-current text-destructive" : ""} />
+              <Heart className={savored ? "fill-current text-destructive" : ""} />
             </Button>
             <Button
               variant="ghost"
@@ -630,12 +630,12 @@ export function Post({ post }: { post: PostData }) {
         </div>
 
         <button
-          onClick={() => setShowLikersDrawer(true)}
+          onClick={() => setShowSavorersDrawer(true)}
           className="font-semibold text-sm mb-2 hover:opacity-70 transition-opacity"
-          data-testid={`button-show-likers-${post.id}`}
+          data-testid={`button-show-savorers-${post.id}`}
         >
-          <span data-testid={`text-likes-${post.id}`}>
-            {likeCount} {likeCount === 1 ? 'like' : 'likes'}
+          <span data-testid={`text-savors-${post.id}`}>
+            {savorCount} {savorCount === 1 ? 'savor' : 'savors'}
           </span>
         </button>
 
@@ -731,11 +731,11 @@ export function Post({ post }: { post: PostData }) {
       </AlertDialog>
 
       <UserListDrawer
-        open={showLikersDrawer}
-        onOpenChange={setShowLikersDrawer}
-        title="Likes"
-        users={likers}
-        type="likers"
+        open={showSavorersDrawer}
+        onOpenChange={setShowSavorersDrawer}
+        title="Savors"
+        users={savorers}
+        type="savorers"
         postId={post.id}
       />
     </article>

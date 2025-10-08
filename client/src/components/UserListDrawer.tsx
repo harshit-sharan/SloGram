@@ -30,7 +30,7 @@ interface UserListDrawerProps {
   onOpenChange: (open: boolean) => void;
   title: string;
   users: User[];
-  type: "followers" | "following" | "likers";
+  type: "followers" | "following" | "savorers";
   sourceUserId?: string;
   postId?: string;
 }
@@ -86,7 +86,7 @@ export function UserListDrawer({
       }
       if (postId) {
         queryClient.invalidateQueries({
-          queryKey: ["/api/posts", postId, "likers"],
+          queryKey: ["/api/posts", postId, "savorers"],
         });
       }
     },
@@ -107,7 +107,7 @@ export function UserListDrawer({
       }
       if (postId) {
         queryClient.invalidateQueries({
-          queryKey: ["/api/posts", postId, "likers"],
+          queryKey: ["/api/posts", postId, "savorers"],
         });
       }
     },

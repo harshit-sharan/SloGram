@@ -252,14 +252,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const postsWithAuthors = await Promise.all(
         followedUsersPosts.map(async (post) => {
           const user = await storage.getUser(post.userId);
-          const likesCount = await storage.getLikesByPostId(post.id);
+          const savorsCount = await storage.getSavorsByPostId(post.id);
           const comments = await storage.getCommentsByPostId(post.id);
           
           return {
             ...post,
             user,
             _count: {
-              likes: likesCount,
+              savors: savorsCount,
               comments: comments.length,
             },
           };
@@ -326,14 +326,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const postsWithAuthors = await Promise.all(
         explorePosts.map(async (post) => {
           const user = await storage.getUser(post.userId);
-          const likesCount = await storage.getLikesByPostId(post.id);
+          const savorsCount = await storage.getSavorsByPostId(post.id);
           const comments = await storage.getCommentsByPostId(post.id);
           
           return {
             ...post,
             user,
             _count: {
-              likes: likesCount,
+              savors: savorsCount,
               comments: comments.length,
             },
           };
@@ -412,14 +412,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const user = await storage.getUser(post.userId);
-      const likesCount = await storage.getLikesByPostId(post.id);
+      const savorsCount = await storage.getSavorsByPostId(post.id);
       const comments = await storage.getCommentsByPostId(post.id);
       
       res.json({
         ...post,
         user,
         _count: {
-          likes: likesCount,
+          savors: savorsCount,
           comments: comments.length,
         },
       });

@@ -27,7 +27,7 @@ interface PostWithAuthor {
     profileImageUrl?: string;
   };
   _count?: {
-    likes: number;
+    savors: number;
     comments: number;
   };
 }
@@ -148,7 +148,7 @@ export default function Feed() {
     image: post.type === "image" ? post.mediaUrl : undefined,
     video: post.type === "video" ? post.mediaUrl : undefined,
     caption: post.caption || "",
-    likes: post._count?.likes || 0,
+    savors: post._count?.savors || 0,
     comments: post._count?.comments || 0,
     timestamp: formatTimestamp(post.createdAt),
   }));
