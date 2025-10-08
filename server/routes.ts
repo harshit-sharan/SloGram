@@ -648,39 +648,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Saves API
-  app.post("/api/moments/:momentId/save", isAuthenticated, async (req: any, res) => {
+  // Keeps API
+  app.post("/api/moments/:momentId/keep", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const saved = await storage.toggleKeep(userId, req.params.momentId);
-      res.json({ saved });
+      const kept = await storage.toggleKeep(userId, req.params.momentId);
+      res.json({ kept });
     } catch (error) {
-      res.status(500).json({ error: "Failed to toggle save" });
+      res.status(500).json({ error: "Failed to toggle keep" });
     }
   });
 
-  app.get("/api/moments/:momentId/saved", isAuthenticated, async (req: any, res) => {
+  app.get("/api/moments/:momentId/kept", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const saved = await storage.isMomentKeptByUser(userId, req.params.momentId);
-      // Disable HTTP caching for save status
+      const kept = await storage.isMomentKeptByUser(userId, req.params.momentId);
+      // Disable HTTP caching for keep status
       res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
       res.setHeader('Pragma', 'no-cache');
       res.setHeader('Expires', '0');
-      res.json({ saved });
+      res.json({ kept });
     } catch (error) {
-      res.status(500).json({ error: "Failed to check save status" });
+      res.status(500).json({ error: "Failed to check keep status" });
     }
   });
 
-  app.get("/api/saved-posts", isAuthenticated, async (req: any, res) => {
+  app.get("/api/keeps", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const savedPosts = await storage.getKeptMomentsByUserId(userId);
-      res.json(savedPosts);
+      const keptMoments = await storage.getKeptMomentsByUserId(userId);
+      res.json(keptMoments);
     } catch (error) {
-      console.error("Failed to fetch saved posts:", error);
-      res.status(500).json({ error: "Failed to fetch saved posts" });
+      console.error("Failed to fetch kept moments:", error);
+      res.status(500).json({ error: "Failed to fetch kept moments" });
     }
   });
 
