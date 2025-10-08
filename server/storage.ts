@@ -1,6 +1,6 @@
 import { type User, type InsertUser, type UpsertUser, type Post, type InsertPost, type Message, type InsertMessage, type Conversation, type Comment, type Notification, type Follow } from "@shared/schema";
 import { db } from "./db";
-import { users, posts, messages, conversations, comments, likes, saves, notifications, follows } from "@shared/schema";
+import { users, posts, messages, conversations, comments, savors, saves, notifications, follows } from "@shared/schema";
 import { eq, and, or, desc, ilike, inArray, sql } from "drizzle-orm";
 import { encryptMessage, decryptMessage } from "./encryption";
 
@@ -35,11 +35,11 @@ export interface IStorage {
   createComment(comment: { userId: string; postId: string; text: string }): Promise<Comment>;
   getCommentsByPostId(postId: string): Promise<Array<Comment & { user: User }>>;
   
-  // Likes
-  toggleLike(userId: string, postId: string): Promise<boolean>;
-  getLikesByPostId(postId: string): Promise<number>;
-  isPostLikedByUser(userId: string, postId: string): Promise<boolean>;
-  getUsersWhoLikedPost(postId: string, currentUserId?: string): Promise<Array<User & { isFollowing: boolean }>>;
+  // Savors
+  toggleSavor(userId: string, postId: string): Promise<boolean>;
+  getSavorsByPostId(postId: string): Promise<number>;
+  isPostSavoredByUser(userId: string, postId: string): Promise<boolean>;
+  getUsersWhoSavoredPost(postId: string, currentUserId?: string): Promise<Array<User & { isFollowing: boolean }>>;
   
   // Saves
   toggleSave(userId: string, postId: string): Promise<boolean>;
@@ -47,7 +47,7 @@ export interface IStorage {
   getSavedPostsByUserId(userId: string): Promise<Array<Post & { savedAt: Date }>>;
   
   // Notifications
-  createNotification(notification: { userId: string; type: "like" | "comment" | "follow"; actorId: string; postId?: string }): Promise<Notification>;
+  createNotification(notification: { userId: string; type: "savor" | "comment" | "follow"; actorId: string; postId?: string }): Promise<Notification>;
   getNotificationsByUserId(userId: string): Promise<Array<Notification & { actor: User; post?: Post }>>;
   markNotificationAsRead(notificationId: string): Promise<void>;
   markAllNotificationsAsRead(userId: string): Promise<void>;
@@ -124,7 +124,7 @@ export class DbStorage implements IStorage {
   }
 
   async deletePost(postId: string): Promise<void> {
-    await db.delete(likes).where(eq(likes.postId, postId));
+    await db.delete(savors).where(eq(savors.postId, postId));
     await db.delete(saves).where(eq(saves.postId, postId));
     await db.delete(comments).where(eq(comments.postId, postId));
     await db.delete(notifications).where(eq(notifications.postId, postId));
@@ -346,33 +346,33 @@ export class DbStorage implements IStorage {
     return result as Array<Comment & { user: User }>;
   }
 
-  async toggleLike(userId: string, postId: string): Promise<boolean> {
-    const [existing] = await db.select().from(likes).where(
-      and(eq(likes.userId, userId), eq(likes.postId, postId))
+  async toggleSavor(userId: string, postId: string): Promise<boolean> {
+    const [existing] = await db.select().from(savors).where(
+      and(eq(savors.userId, userId), eq(savors.postId, postId))
     );
 
     if (existing) {
-      await db.delete(likes).where(eq(likes.id, existing.id));
+      await db.delete(savors).where(eq(savors.id, existing.id));
       return false;
     } else {
-      await db.insert(likes).values({ userId, postId });
+      await db.insert(savors).values({ userId, postId });
       return true;
     }
   }
 
-  async getLikesByPostId(postId: string): Promise<number> {
-    const result = await db.select().from(likes).where(eq(likes.postId, postId));
+  async getSavorsByPostId(postId: string): Promise<number> {
+    const result = await db.select().from(savors).where(eq(savors.postId, postId));
     return result.length;
   }
 
-  async isPostLikedByUser(userId: string, postId: string): Promise<boolean> {
-    const [existing] = await db.select().from(likes).where(
-      and(eq(likes.userId, userId), eq(likes.postId, postId))
+  async isPostSavoredByUser(userId: string, postId: string): Promise<boolean> {
+    const [existing] = await db.select().from(savors).where(
+      and(eq(savors.userId, userId), eq(savors.postId, postId))
     );
     return !!existing;
   }
 
-  async getUsersWhoLikedPost(postId: string, currentUserId?: string): Promise<Array<User & { isFollowing: boolean }>> {
+  async getUsersWhoSavoredPost(postId: string, currentUserId?: string): Promise<Array<User & { isFollowing: boolean }>> {
     const result = await db
       .select({
         id: users.id,
@@ -386,16 +386,16 @@ export class DbStorage implements IStorage {
         profileImageUrl: users.profileImageUrl,
         isFollowing: sql<boolean>`CASE WHEN ${follows.followerId} IS NOT NULL THEN true ELSE false END`,
       })
-      .from(likes)
-      .innerJoin(users, eq(likes.userId, users.id))
+      .from(savors)
+      .innerJoin(users, eq(savors.userId, users.id))
       .leftJoin(
         follows,
         currentUserId 
           ? and(eq(follows.followerId, currentUserId), eq(follows.followingId, users.id))
           : sql`false`
       )
-      .where(eq(likes.postId, postId))
-      .orderBy(desc(likes.createdAt));
+      .where(eq(savors.postId, postId))
+      .orderBy(desc(savors.createdAt));
     
     return result as Array<User & { isFollowing: boolean }>;
   }
@@ -438,7 +438,7 @@ export class DbStorage implements IStorage {
     }));
   }
 
-  async createNotification(notification: { userId: string; type: "like" | "comment" | "follow"; actorId: string; postId?: string }): Promise<Notification> {
+  async createNotification(notification: { userId: string; type: "savor" | "comment" | "follow"; actorId: string; postId?: string }): Promise<Notification> {
     const [newNotification] = await db.insert(notifications).values(notification).returning();
     return newNotification;
   }
