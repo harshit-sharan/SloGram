@@ -18,9 +18,9 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
   const previousLocationRef = useRef<string>('/');
 
   useEffect(() => {
-    // Only update the previous location reference when navigating to a non-post page
-    // This way, when viewing posts, we remember where we came from
-    if (!location.startsWith('/post/')) {
+    // Only update the previous location reference when navigating to a non-moment page
+    // This way, when viewing moments, we remember where we came from
+    if (!location.startsWith('/moment/')) {
       previousLocationRef.current = location;
     }
   }, [location]);

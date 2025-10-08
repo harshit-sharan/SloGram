@@ -443,7 +443,7 @@ export default function Profile() {
               {moments.map((moment, index) => (
                 <Link
                   key={moment.id}
-                  href={`/post/${moment.id}`}
+                  href={`/moment/${moment.id}`}
                   data-testid={`button-moment-${index}`}
                 >
                   <div className="aspect-square hover-elevate overflow-hidden cursor-pointer">

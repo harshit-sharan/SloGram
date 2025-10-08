@@ -48,7 +48,7 @@ export default function Kept() {
             {keptMoments.map((moment) => (
               <Link
                 key={moment.id}
-                href={`/post/${moment.id}`}
+                href={`/moment/${moment.id}`}
                 data-testid={`link-kept-moment-${moment.id}`}
               >
                 <div className="relative aspect-square bg-muted cursor-pointer hover-elevate overflow-hidden">

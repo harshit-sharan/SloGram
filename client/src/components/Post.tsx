@@ -493,7 +493,7 @@ export function Post({ post }: { post: PostData }) {
       {(post.video || post.image) && (
         <div className="relative w-full bg-muted">
           {post.video ? (
-            <Link href={`/post/${post.id}`} data-testid={`link-post-media-${post.id}`}>
+            <Link href={`/moment/${post.id}`} data-testid={`link-post-media-${post.id}`}>
               <div ref={videoContainerRef} className="relative cursor-pointer">
                 <video
                   ref={videoRef}
@@ -579,7 +579,7 @@ export function Post({ post }: { post: PostData }) {
               </div>
             </Link>
           ) : post.image ? (
-            <Link href={`/post/${post.id}`} data-testid={`link-post-media-${post.id}`}>
+            <Link href={`/moment/${post.id}`} data-testid={`link-post-media-${post.id}`}>
               <img
                 src={post.image}
                 alt="Post content"

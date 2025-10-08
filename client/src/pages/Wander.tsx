@@ -77,7 +77,7 @@ function ExploreVideoThumbnail({ post }: { post: PostWithAuthor }) {
   }, []);
 
   return (
-    <Link href={`/post/${post.id}`} data-testid={`explore-moment-${post.id}`}>
+    <Link href={`/moment/${post.id}`} data-testid={`explore-moment-${post.id}`}>
       <div
         ref={containerRef}
         className="relative aspect-square overflow-hidden bg-muted hover-elevate rounded-sm cursor-pointer"
@@ -271,7 +271,7 @@ export default function Explore() {
                 ) : (
                   <Link
                     key={moment.id}
-                    href={`/post/${moment.id}`}
+                    href={`/moment/${moment.id}`}
                     data-testid={`explore-moment-${moment.id}`}
                   >
                     <div className="relative aspect-square overflow-hidden bg-muted hover-elevate rounded-sm cursor-pointer">

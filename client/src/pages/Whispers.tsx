@@ -108,7 +108,7 @@ export default function Whispers() {
             const isFollowWhisper = whisper.type === "follow";
             const linkHref = isFollowWhisper 
               ? `/space/${whisper.actorId}` 
-              : `/post/${whisper.postId}`;
+              : `/moment/${whisper.postId}`;
             
             return (
               <Link

@@ -44,12 +44,12 @@ export function VideoPost({ post }: { post: VideoPostData }) {
   };
 
   const handleShare = async () => {
-    const postUrl = `${window.location.origin}/post/${post.id}`;
+    const postUrl = `${window.location.origin}/moment/${post.id}`;
     try {
       await navigator.clipboard.writeText(postUrl);
       toast({
         title: "Link copied!",
-        description: "Post link has been copied to your clipboard",
+        description: "Moment link has been copied to your clipboard",
       });
     } catch (error) {
       toast({
