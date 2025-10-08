@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { MessageThread } from "@/components/MessageThread";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 
 interface ConversationWithUser {
   conversation: {
@@ -150,11 +150,13 @@ export default function Messages() {
               >
                 <ArrowLeft className="h-5 w-5" />
               </Button>
-              <Avatar className="h-8 w-8">
-                <AvatarImage src={selected.otherUser.avatar} />
-                <AvatarFallback>{selected.otherUser.displayName?.charAt(0) || "U"}</AvatarFallback>
-              </Avatar>
-              <span className="font-semibold">{selected.otherUser.displayName}</span>
+              <Link href={`/space/${selected.otherUser.id}`} className="flex items-center gap-2 hover-elevate rounded-md p-1 -m-1" data-testid="link-user-space-mobile">
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src={selected.otherUser.avatar} />
+                  <AvatarFallback>{selected.otherUser.displayName?.charAt(0) || "U"}</AvatarFallback>
+                </Avatar>
+                <span className="font-semibold">{selected.otherUser.displayName}</span>
+              </Link>
             </div>
             <MessageThread
               conversationId={selected.conversation.id}

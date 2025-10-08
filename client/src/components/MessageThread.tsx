@@ -7,6 +7,7 @@ import { useWebSocket } from "@/hooks/useWebSocket";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/useAuth";
+import { Link } from "wouter";
 
 interface Message {
   id: string;
@@ -183,18 +184,20 @@ export function MessageThread({ conversationId, otherUser, autoFocus = false }: 
   return (
     <div className="flex flex-col h-full" data-testid="message-thread">
       <div className="border-b p-4 flex items-center gap-3">
-        <Avatar className="h-10 w-10">
-          <AvatarImage src={otherUser?.avatar} />
-          <AvatarFallback>{otherUser?.name?.charAt(0) || otherUser?.username?.charAt(0) || "U"}</AvatarFallback>
-        </Avatar>
-        <div>
-          <p className="font-serif font-semibold" data-testid="text-recipient-name">
-            {otherUser.name}
-          </p>
-          <p className="text-xs text-muted-foreground" data-testid="text-connection-status">
-            {isConnected ? "Active now" : "Offline"}
-          </p>
-        </div>
+        <Link href={`/space/${otherUser.id}`} className="flex items-center gap-3 hover-elevate rounded-md p-1 -m-1" data-testid="link-user-space">
+          <Avatar className="h-10 w-10">
+            <AvatarImage src={otherUser?.avatar} />
+            <AvatarFallback>{otherUser?.name?.charAt(0) || otherUser?.username?.charAt(0) || "U"}</AvatarFallback>
+          </Avatar>
+          <div>
+            <p className="font-serif font-semibold" data-testid="text-recipient-name">
+              {otherUser.name}
+            </p>
+            <p className="text-xs text-muted-foreground" data-testid="text-connection-status">
+              {isConnected ? "Active now" : "Offline"}
+            </p>
+          </div>
+        </Link>
       </div>
 
       <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-4 space-y-4">
