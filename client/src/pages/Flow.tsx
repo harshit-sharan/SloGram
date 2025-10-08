@@ -12,7 +12,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-interface PostWithAuthor {
+interface MomentWithAuthor {
   id: string;
   userId: string;
   type: "image" | "video";
@@ -28,7 +28,7 @@ interface PostWithAuthor {
   };
   _count?: {
     savors: number;
-    comments: number;
+    reflects: number;
   };
 }
 
@@ -45,23 +45,23 @@ function formatTimestamp(dateString: string): string {
   return date.toLocaleDateString();
 }
 
-export default function Feed() {
+export default function Flow() {
   const { user, isLoading: isAuthLoading } = useAuth();
   const loadMoreRef = useRef<HTMLDivElement>(null);
 
   const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useInfiniteQuery({
-      queryKey: ["/api/posts-with-authors"],
+      queryKey: ["/api/moments-with-authors"],
       queryFn: async ({ pageParam = 0 }) => {
         const response = await fetch(
-          `/api/posts-with-authors?limit=10&offset=${pageParam}`,
+          `/api/moments-with-authors?limit=10&offset=${pageParam}`,
         );
-        if (!response.ok) throw new Error("Failed to fetch posts");
+        if (!response.ok) throw new Error("Failed to fetch moments");
         return response.json();
       },
       getNextPageParam: (lastPage, allPages) => {
         if (!lastPage.hasMore) return undefined;
-        return allPages.reduce((total, page) => total + page.posts.length, 0);
+        return allPages.reduce((total, page) => total + page.moments.length, 0);
       },
       initialPageParam: 0,
       enabled: !!user,
@@ -128,47 +128,47 @@ export default function Feed() {
     return (
       <div className="min-h-screen bg-background pb-20 md:pb-0">
         <div className="max-w-2xl mx-auto pt-6">
-          <p className="text-center text-muted-foreground">Loading posts...</p>
+          <p className="text-center text-muted-foreground">Loading moments...</p>
         </div>
       </div>
     );
   }
 
-  // Flatten all posts from all pages
-  const allPosts = data?.pages.flatMap((page) => page.posts) || [];
+  // Flatten all moments from all pages
+  const allMoments = data?.pages.flatMap((page) => page.moments) || [];
 
-  const formattedPosts: PostData[] = allPosts.map((post) => ({
-    id: post.id,
+  const formattedMoments: PostData[] = allMoments.map((moment) => ({
+    id: moment.id,
     author: {
-      id: post.user.id,
-      name: post.user.displayName || post.user.username,
-      username: post.user.username,
-      avatar: post.user.profileImageUrl || post.user.avatar,
+      id: moment.user.id,
+      name: moment.user.displayName || moment.user.username,
+      username: moment.user.username,
+      avatar: moment.user.profileImageUrl || moment.user.avatar,
     },
-    image: post.type === "image" ? post.mediaUrl : undefined,
-    video: post.type === "video" ? post.mediaUrl : undefined,
-    caption: post.caption || "",
-    savors: post._count?.savors || 0,
-    comments: post._count?.comments || 0,
-    timestamp: formatTimestamp(post.createdAt),
+    image: moment.type === "image" ? moment.mediaUrl : undefined,
+    video: moment.type === "video" ? moment.mediaUrl : undefined,
+    caption: moment.caption || "",
+    savors: moment._count?.savors || 0,
+    reflects: moment._count?.reflects || 0,
+    timestamp: formatTimestamp(moment.createdAt),
   }));
 
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
       <div className="max-w-2xl mx-auto pt-6">
-        {formattedPosts.length === 0 ? (
+        {formattedMoments.length === 0 ? (
           <div
             className="flex flex-col items-center justify-center py-12 px-4"
-            data-testid="empty-feed"
+            data-testid="empty-flow"
           >
             <p className="text-center text-muted-foreground">
-              Your feed is empty. Follow other users to see their posts here.
+              Your flow is empty. Follow other users to see their moments here.
             </p>
           </div>
         ) : (
           <>
-            {formattedPosts.map((post) => (
-              <Post key={post.id} post={post} />
+            {formattedMoments.map((moment) => (
+              <Post key={moment.id} post={moment} />
             ))}
 
             {hasNextPage && (
@@ -178,7 +178,7 @@ export default function Feed() {
                 data-testid="load-more-trigger"
               >
                 {isFetchingNextPage ? (
-                  <p className="text-muted-foreground">Loading more posts...</p>
+                  <p className="text-muted-foreground">Loading more moments...</p>
                 ) : null}
               </div>
             )}

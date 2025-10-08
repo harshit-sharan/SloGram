@@ -26,10 +26,10 @@ import {
 } from "@/components/ui/alert-dialog";
 import { UserListDrawer } from "@/components/UserListDrawer";
 
-interface CommentWithUser {
+interface ReflectWithUser {
   id: string;
   userId: string;
-  postId: string;
+  momentId: string;
   text: string;
   createdAt: string;
   user: {
@@ -52,7 +52,7 @@ export interface PostData {
   video?: string;
   caption: string;
   savors: number;
-  comments: number;
+  reflects: number;
   timestamp: string;
 }
 
@@ -107,9 +107,9 @@ export function Post({ post }: { post: PostData }) {
 
   // Fetch initial savor status
   const { data: savorData } = useQuery<{ savored: boolean }>({
-    queryKey: ["/api/posts", post.id, "savored", user?.id],
+    queryKey: ["/api/moments", post.id, "savored", user?.id],
     queryFn: async () => {
-      const response = await fetch(`/api/posts/${post.id}/savored?userId=${user?.id}`);
+      const response = await fetch(`/api/moments/${post.id}/savored?userId=${user?.id}`);
       if (!response.ok) throw new Error("Failed to fetch savor status");
       return response.json();
     },
@@ -133,25 +133,25 @@ export function Post({ post }: { post: PostData }) {
     setSavorCount(post.savors);
   }, [post.savors]);
 
-  // Fetch initial save status
-  const { data: saveData } = useQuery<{ saved: boolean }>({
-    queryKey: ["/api/posts", post.id, "saved", user?.id],
+  // Fetch initial keep status
+  const { data: keepData } = useQuery<{ kept: boolean }>({
+    queryKey: ["/api/moments", post.id, "kept", user?.id],
     queryFn: async () => {
-      const response = await fetch(`/api/posts/${post.id}/saved?userId=${user?.id}`);
-      if (!response.ok) throw new Error("Failed to fetch save status");
+      const response = await fetch(`/api/moments/${post.id}/kept?userId=${user?.id}`);
+      if (!response.ok) throw new Error("Failed to fetch keep status");
       return response.json();
     },
     enabled: !!user,
-    staleTime: 0, // Always fetch fresh save status
+    staleTime: 0, // Always fetch fresh keep status
     refetchOnMount: true,
   });
 
-  // Update local state when save query data is available
+  // Update local state when keep query data is available
   useEffect(() => {
-    if (saveData !== undefined) {
-      setSaved(saveData.saved);
+    if (keepData !== undefined) {
+      setSaved(keepData.kept);
     }
-  }, [saveData]);
+  }, [keepData]);
 
   // Fetch follow status
   const { data: followData, isLoading: followLoading } = useQuery<{ following: boolean }>({
@@ -173,22 +173,22 @@ export function Post({ post }: { post: PostData }) {
     }
   }, [followData]);
 
-  // Fetch comments
-  const { data: comments = [] } = useQuery<CommentWithUser[]>({
-    queryKey: ["/api/posts", post.id, "comments"],
+  // Fetch reflects
+  const { data: reflects = [] } = useQuery<ReflectWithUser[]>({
+    queryKey: ["/api/moments", post.id, "reflects"],
     queryFn: async () => {
-      const response = await fetch(`/api/posts/${post.id}/comments`);
-      if (!response.ok) throw new Error("Failed to fetch comments");
+      const response = await fetch(`/api/moments/${post.id}/reflects`);
+      if (!response.ok) throw new Error("Failed to fetch reflects");
       return response.json();
     },
     enabled: showComments,
   });
 
-  // Fetch users who savored the post
+  // Fetch users who savored the moment
   const { data: savorers = [] } = useQuery<any[]>({
-    queryKey: ["/api/posts", post.id, "savorers"],
+    queryKey: ["/api/moments", post.id, "savorers"],
     queryFn: async () => {
-      const response = await fetch(`/api/posts/${post.id}/savorers`);
+      const response = await fetch(`/api/moments/${post.id}/savorers`);
       if (!response.ok) throw new Error("Failed to fetch savorers");
       return response.json();
     },
@@ -198,7 +198,7 @@ export function Post({ post }: { post: PostData }) {
   // Mutation to toggle savor
   const savorMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest("POST", `/api/posts/${post.id}/savor`, { userId: user?.id });
+      return apiRequest("POST", `/api/moments/${post.id}/savor`, { userId: user?.id });
     },
     onMutate: async () => {
       // Optimistically update the UI
@@ -210,7 +210,7 @@ export function Post({ post }: { post: PostData }) {
     onSuccess: () => {
       // Invalidate and refetch savor status
       queryClient.invalidateQueries({
-        queryKey: ["/api/posts", post.id, "savored", user?.id],
+        queryKey: ["/api/moments", post.id, "savored", user?.id],
       });
     },
     onError: () => {
@@ -224,19 +224,19 @@ export function Post({ post }: { post: PostData }) {
     savorMutation.mutate();
   };
 
-  // Mutation to toggle save
-  const saveMutation = useMutation({
+  // Mutation to toggle keep
+  const keepMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest("POST", `/api/posts/${post.id}/save`, { userId: user?.id });
+      return apiRequest("POST", `/api/moments/${post.id}/keep`, { userId: user?.id });
     },
     onMutate: async () => {
       // Optimistically update the UI
       setSaved(!saved);
     },
     onSuccess: () => {
-      // Invalidate and refetch save status
+      // Invalidate and refetch keep status
       queryClient.invalidateQueries({
-        queryKey: ["/api/posts", post.id, "saved", user?.id],
+        queryKey: ["/api/moments", post.id, "kept", user?.id],
       });
     },
     onError: () => {
@@ -245,14 +245,14 @@ export function Post({ post }: { post: PostData }) {
     },
   });
 
-  const handleSave = () => {
-    saveMutation.mutate();
+  const handleKeep = () => {
+    keepMutation.mutate();
   };
 
-  // Mutation to submit comment
-  const commentMutation = useMutation({
+  // Mutation to submit reflect
+  const reflectMutation = useMutation({
     mutationFn: async (text: string) => {
-      return apiRequest("POST", `/api/posts/${post.id}/comments`, {
+      return apiRequest("POST", `/api/moments/${post.id}/reflects`, {
         userId: user?.id,
         text,
       });
@@ -260,13 +260,13 @@ export function Post({ post }: { post: PostData }) {
     onSuccess: () => {
       setCommentText("");
       queryClient.invalidateQueries({
-        queryKey: ["/api/posts", post.id, "comments"],
+        queryKey: ["/api/moments", post.id, "reflects"],
       });
     },
     onError: (error: any) => {
       toast({
-        title: "Comment failed",
-        description: error.message || "Your comment could not be posted. Please try again.",
+        title: "Reflect failed",
+        description: error.message || "Your reflection could not be posted. Please try again.",
         variant: "destructive",
       });
     },
@@ -275,7 +275,7 @@ export function Post({ post }: { post: PostData }) {
   const handleCommentSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (commentText.trim()) {
-      commentMutation.mutate(commentText);
+      reflectMutation.mutate(commentText);
     }
   };
 
@@ -306,23 +306,23 @@ export function Post({ post }: { post: PostData }) {
     followMutation.mutate();
   };
 
-  // Mutation to delete post
+  // Mutation to delete moment
   const deleteMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest("DELETE", `/api/posts/${post.id}`, {});
+      return apiRequest("DELETE", `/api/moments/${post.id}`, {});
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/posts-with-authors"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/posts/user", post.author.id] });
+      queryClient.invalidateQueries({ queryKey: ["/api/moments-with-authors"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/moments/user", post.author.id] });
       toast({
-        title: "Post deleted",
-        description: "Your post has been deleted successfully",
+        title: "Moment deleted",
+        description: "Your moment has been deleted successfully",
       });
       setShowDeleteDialog(false);
     },
     onError: (error: any) => {
       toast({
-        title: "Failed to delete post",
+        title: "Failed to delete moment",
         description: error.message || "Please try again",
         variant: "destructive",
       });
@@ -334,15 +334,15 @@ export function Post({ post }: { post: PostData }) {
   };
 
   const handleShare = async () => {
-    const postUrl = `${window.location.origin}/post/${post.id}`;
+    const momentUrl = `${window.location.origin}/moment/${post.id}`;
     
     // Try to use native share on mobile devices
     if (navigator.share) {
       try {
         await navigator.share({
-          title: `${post.author.name}'s post`,
-          text: post.caption || "Check out this post on Slogram",
-          url: postUrl,
+          title: `${post.author.name}'s moment`,
+          text: post.caption || "Check out this moment on Slogram",
+          url: momentUrl,
         });
       } catch (error: any) {
         // User cancelled the share or it failed
@@ -358,10 +358,10 @@ export function Post({ post }: { post: PostData }) {
     } else {
       // Fallback to clipboard for desktop
       try {
-        await navigator.clipboard.writeText(postUrl);
+        await navigator.clipboard.writeText(momentUrl);
         toast({
           title: "Link copied!",
-          description: "Post link has been copied to your clipboard",
+          description: "Moment link has been copied to your clipboard",
         });
       } catch (error) {
         toast({
@@ -622,8 +622,8 @@ export function Post({ post }: { post: PostData }) {
           <Button
             variant="ghost"
             size="icon"
-            onClick={handleSave}
-            data-testid={`button-save-${post.id}`}
+            onClick={handleKeep}
+            data-testid={`button-keep-${post.id}`}
           >
             <Bookmark className={saved ? "fill-current" : ""} />
           </Button>
@@ -655,32 +655,32 @@ export function Post({ post }: { post: PostData }) {
           )}
         </div>
 
-        {post.comments > 0 && !showComments && (
+        {post.reflects > 0 && !showComments && (
           <button
             className="text-sm text-muted-foreground mt-2 hover-elevate rounded px-1"
             onClick={() => setShowComments(true)}
-            data-testid={`button-view-comments-${post.id}`}
+            data-testid={`button-view-reflects-${post.id}`}
           >
-            View all {post.comments} comments
+            View all {post.reflects} reflection{post.reflects !== 1 ? 's' : ''}
           </button>
         )}
 
         {showComments && (
-          <div className="mt-4 space-y-3" data-testid={`comments-section-${post.id}`}>
-            {comments.map((comment) => (
-              <div key={comment.id} className="flex gap-2" data-testid={`comment-${comment.id}`}>
+          <div className="mt-4 space-y-3" data-testid={`reflects-section-${post.id}`}>
+            {reflects.map((reflect) => (
+              <div key={reflect.id} className="flex gap-2" data-testid={`reflect-${reflect.id}`}>
                 <Avatar className="h-6 w-6 flex-shrink-0">
-                  <AvatarImage src={comment.user.avatar || undefined} />
+                  <AvatarImage src={reflect.user.avatar || undefined} />
                   <AvatarFallback>
-                    {(comment.user.displayName || comment.user.username)?.charAt(0) || "U"}
+                    {(reflect.user.displayName || reflect.user.username)?.charAt(0) || "U"}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 text-sm">
-                  <span className="font-serif font-semibold mr-2" data-testid={`comment-author-${comment.id}`}>
-                    {comment.user.username}
+                  <span className="font-serif font-semibold mr-2" data-testid={`reflect-author-${reflect.id}`}>
+                    {reflect.user.username}
                   </span>
-                  <span className="text-foreground" data-testid={`comment-text-${comment.id}`}>
-                    {comment.text}
+                  <span className="text-foreground" data-testid={`reflect-text-${reflect.id}`}>
+                    {reflect.text}
                   </span>
                 </div>
               </div>
@@ -689,20 +689,20 @@ export function Post({ post }: { post: PostData }) {
             <form onSubmit={handleCommentSubmit} className="flex gap-2 mt-3">
               <Input
                 type="text"
-                placeholder="Add a comment..."
+                placeholder="Add a reflection..."
                 value={commentText}
                 onChange={(e) => setCommentText(e.target.value)}
-                disabled={commentMutation.isPending}
+                disabled={reflectMutation.isPending}
                 className="flex-1 text-sm"
-                data-testid={`input-comment-${post.id}`}
+                data-testid={`input-reflect-${post.id}`}
               />
               <Button
                 type="submit"
                 size="sm"
-                disabled={!commentText.trim() || commentMutation.isPending}
-                data-testid={`button-submit-comment-${post.id}`}
+                disabled={!commentText.trim() || reflectMutation.isPending}
+                data-testid={`button-submit-reflect-${post.id}`}
               >
-                Post
+                Share
               </Button>
             </form>
           </div>

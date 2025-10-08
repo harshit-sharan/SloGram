@@ -253,14 +253,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         followedUsersPosts.map(async (post) => {
           const user = await storage.getUser(post.userId);
           const savorsCount = await storage.getSavorsByMomentId(post.id);
-          const comments = await storage.getReflectsByMomentId(post.id);
+          const reflects = await storage.getReflectsByMomentId(post.id);
           
           return {
             ...post,
             user,
             _count: {
               savors: savorsCount,
-              comments: comments.length,
+              reflects: reflects.length,
             },
           };
         })
@@ -297,10 +297,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Apply pagination
-      const paginatedPosts = shuffled.slice(offset, offset + limit);
+      const paginatedMoments = shuffled.slice(offset, offset + limit);
       const hasMore = offset + limit < shuffled.length;
       
-      res.json({ posts: paginatedPosts, hasMore });
+      res.json({ moments: paginatedMoments, hasMore });
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch posts" });
     }
@@ -327,14 +327,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         explorePosts.map(async (post) => {
           const user = await storage.getUser(post.userId);
           const savorsCount = await storage.getSavorsByMomentId(post.id);
-          const comments = await storage.getReflectsByMomentId(post.id);
+          const reflects = await storage.getReflectsByMomentId(post.id);
           
           return {
             ...post,
             user,
             _count: {
               savors: savorsCount,
-              comments: comments.length,
+              reflects: reflects.length,
             },
           };
         })
@@ -366,10 +366,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         items.splice(selectedIndex, 1);
       }
       
-      const paginatedPosts = shuffled.slice(offset, offset + limit);
+      const paginatedMoments = shuffled.slice(offset, offset + limit);
       const hasMore = offset + limit < shuffled.length;
       
-      res.json({ posts: paginatedPosts, hasMore });
+      res.json({ moments: paginatedMoments, hasMore });
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch explore posts" });
     }
@@ -413,14 +413,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const user = await storage.getUser(post.userId);
       const savorsCount = await storage.getSavorsByMomentId(post.id);
-      const comments = await storage.getReflectsByMomentId(post.id);
+      const reflects = await storage.getReflectsByMomentId(post.id);
       
       res.json({
         ...post,
         user,
         _count: {
           savors: savorsCount,
-          comments: comments.length,
+          reflects: reflects.length,
         },
       });
     } catch (error) {
