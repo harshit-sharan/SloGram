@@ -125,6 +125,17 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### October 8, 2025 - Conversation Navigation Improvements
+- **Fixed conversation routing from user space**: Updated Space.tsx to navigate to `/conversations` instead of `/messages`
+  - Renamed `messageMutation` to `conversationMutation` for consistent terminology
+  - Updated navigation path from `/messages?conversation=${id}` to `/conversations?conversation=${id}`
+  - Updated button handler from `handleMessageClick` to `handleConversationClick`
+  - Updated data-testid from `button-message` to `button-conversation`
+- **Added clickable user headers in conversation windows**: Made user name and avatar in conversation windows navigate to their space
+  - MessageThread component: Avatar and name wrapped in Link to `/space/${userId}` with data-testid="link-user-space"
+  - Messages.tsx mobile header: Avatar and name wrapped in Link to `/space/${userId}` with data-testid="link-user-space-mobile"
+  - Added hover-elevate effects to both clickable headers
+
 ### October 8, 2025 - Terminology Consistency Updates
 - **Fixed kept moments feature**: Migrated all "save/saved" terminology to "keep/kept" throughout the application
   - Updated backend endpoints: `/api/save` → `/api/keeps`, `/api/saved-posts` → `/api/keeps`
