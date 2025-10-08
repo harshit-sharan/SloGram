@@ -45,5 +45,5 @@ export function containsProfanity(text: string | undefined): boolean {
 }
 
 export function getProfanityError(): string {
-  return 'Your comment contains inappropriate language. Please keep comments respectful.';
+  return 'Your reflection contains inappropriate language. Please keep reflections respectful.';
 }

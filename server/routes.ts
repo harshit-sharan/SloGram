@@ -684,32 +684,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Comments API
-  app.post("/api/moments/:momentId/comments", isAuthenticated, async (req: any, res) => {
+  // Reflects API
+  app.post("/api/moments/:momentId/reflects", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const commentText = req.body.text;
+      const reflectText = req.body.text;
       
-      // Validate comment text is not empty
-      if (!commentText || typeof commentText !== 'string' || commentText.trim().length === 0) {
-        return res.status(400).json({ error: "Comment cannot be empty" });
+      // Validate reflect text is not empty
+      if (!reflectText || typeof reflectText !== 'string' || reflectText.trim().length === 0) {
+        return res.status(400).json({ error: "Reflection cannot be empty" });
       }
       
       // Check for profanity
-      if (containsProfanity(commentText)) {
+      if (containsProfanity(reflectText)) {
         return res.status(400).json({ error: getProfanityError() });
       }
       
-      const comment = await storage.createReflect({
+      const reflect = await storage.createReflect({
         userId,
         momentId: req.params.momentId,
-        text: commentText,
+        text: reflectText,
       });
       
-      // Create notification for comment
+      // Create notification for reflect
       const post = await storage.getMoment(req.params.momentId);
       
-      // Only create notification if it's not the post owner commenting on their own post
+      // Only create notification if it's not the moment owner reflecting on their own moment
       if (post && post.userId !== userId) {
         await storage.createWhisper({
           userId: post.userId,
@@ -719,18 +719,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      res.json(comment);
+      res.json(reflect);
     } catch (error) {
-      res.status(400).json({ error: "Failed to create comment" });
+      res.status(400).json({ error: "Failed to create reflection" });
     }
   });
 
-  app.get("/api/moments/:momentId/comments", isAuthenticated, async (req, res) => {
+  app.get("/api/moments/:momentId/reflects", isAuthenticated, async (req, res) => {
     try {
-      const comments = await storage.getReflectsByMomentId(req.params.momentId);
-      res.json(comments);
+      const reflects = await storage.getReflectsByMomentId(req.params.momentId);
+      res.json(reflects);
     } catch (error) {
-      res.status(500).json({ error: "Failed to fetch comments" });
+      res.status(500).json({ error: "Failed to fetch reflections" });
     }
   });
 
