@@ -588,63 +588,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Likes API
-  app.post("/api/posts/:postId/like", isAuthenticated, async (req: any, res) => {
+  // Savors API
+  app.post("/api/posts/:postId/savor", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const liked = await storage.toggleLike(userId, req.params.postId);
+      const savored = await storage.toggleSavor(userId, req.params.postId);
       
-      // Create notification if liked (not if unliked)
-      if (liked) {
+      // Create notification if savored (not if unsavored)
+      if (savored) {
         const post = await storage.getPost(req.params.postId);
         
-        // Only create notification if it's not the post owner liking their own post
+        // Only create notification if it's not the post owner savoring their own post
         if (post && post.userId !== userId) {
           await storage.createNotification({
             userId: post.userId,
-            type: "like",
+            type: "savor",
             actorId: userId,
             postId: req.params.postId,
           });
         }
       }
       
-      res.json({ liked });
+      res.json({ savored });
     } catch (error) {
-      res.status(500).json({ error: "Failed to toggle like" });
+      res.status(500).json({ error: "Failed to toggle savor" });
     }
   });
 
-  app.get("/api/posts/:postId/likes", isAuthenticated, async (req, res) => {
+  app.get("/api/posts/:postId/savors", isAuthenticated, async (req, res) => {
     try {
-      const count = await storage.getLikesByPostId(req.params.postId);
+      const count = await storage.getSavorsByPostId(req.params.postId);
       res.json({ count });
     } catch (error) {
-      res.status(500).json({ error: "Failed to fetch likes" });
+      res.status(500).json({ error: "Failed to fetch savors" });
     }
   });
 
-  app.get("/api/posts/:postId/liked", isAuthenticated, async (req: any, res) => {
+  app.get("/api/posts/:postId/savored", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const liked = await storage.isPostLikedByUser(userId, req.params.postId);
-      // Disable HTTP caching for like status
+      const savored = await storage.isPostSavoredByUser(userId, req.params.postId);
+      // Disable HTTP caching for savor status
       res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
       res.setHeader('Pragma', 'no-cache');
       res.setHeader('Expires', '0');
-      res.json({ liked });
+      res.json({ savored });
     } catch (error) {
-      res.status(500).json({ error: "Failed to check like status" });
+      res.status(500).json({ error: "Failed to check savor status" });
     }
   });
 
-  app.get("/api/posts/:postId/likers", isAuthenticated, async (req: any, res) => {
+  app.get("/api/posts/:postId/savorers", isAuthenticated, async (req: any, res) => {
     try {
       const currentUserId = req.user.claims.sub;
-      const users = await storage.getUsersWhoLikedPost(req.params.postId, currentUserId);
+      const users = await storage.getUsersWhoSavoredPost(req.params.postId, currentUserId);
       res.json(users);
     } catch (error) {
-      res.status(500).json({ error: "Failed to fetch users who liked post" });
+      res.status(500).json({ error: "Failed to fetch users who savored post" });
     }
   });
 
