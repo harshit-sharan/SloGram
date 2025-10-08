@@ -939,12 +939,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         const message = JSON.parse(data.toString());
 
-        if (message.type === 'message') {
-          // Validate message payload
+        if (message.type === 'note') {
+          // Validate note payload
           if (!message.conversationId || !message.text || typeof message.text !== 'string') {
             ws.send(JSON.stringify({
               type: 'error',
-              message: 'Invalid message format',
+              message: 'Invalid note format',
             }));
             return;
           }
@@ -953,7 +953,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (message.text.length > 10000) {
             ws.send(JSON.stringify({
               type: 'error',
-              message: 'Message too long',
+              message: 'Note too long',
             }));
             return;
           }
@@ -984,7 +984,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const recipientWs = clients.get(recipientId);
           if (recipientWs && recipientWs.readyState === WebSocket.OPEN) {
             recipientWs.send(JSON.stringify({
-              type: 'message',
+              type: 'note',
               message: newMessage,
             }));
           }
@@ -992,7 +992,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Confirm to sender
           if (ws.readyState === WebSocket.OPEN) {
             ws.send(JSON.stringify({
-              type: 'message',
+              type: 'note',
               message: newMessage,
             }));
           }

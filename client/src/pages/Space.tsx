@@ -186,7 +186,7 @@ function EditProfileDialog({ user }: { user: User }) {
 
 export default function Profile() {
   const { user: currentUser } = useAuth();
-  const [, params] = useRoute("/profile/:userId");
+  const [, params] = useRoute("/space/:userId");
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const userId = params?.userId || "";
