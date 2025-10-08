@@ -2,7 +2,7 @@
 
 ## Overview
 
-Slogram is a mindfulness-focused social media platform inspired by Instagram's interface but adapted for slow living and intentional content sharing. The application enables users to share photos and videos with captions, engage through likes and comments, and connect via direct messaging. The platform emphasizes calm minimalism with a zen-like aesthetic featuring sage green accents and generous whitespace.
+Slogram is a mindfulness-focused social media platform inspired by Instagram's interface but adapted for slow living and intentional content sharing. The application enables users to share photos and videos with captions, engage through savors (mindful appreciation) and comments, and connect via direct messaging. The platform emphasizes calm minimalism with a zen-like aesthetic featuring sage green accents and generous whitespace.
 
 ## User Preferences
 
@@ -43,7 +43,7 @@ Preferred communication style: Simple, everyday language.
 - Session-based architecture (connect-pg-simple for session storage)
 
 **API Structure:**
-- RESTful endpoints for posts, users, likes, comments, saves, and notifications
+- RESTful endpoints for posts, users, savors, comments, saves, and notifications
 - File upload handling via Multer (stored in `/uploads` directory)
 - WebSocket connections for live messaging between users
 - Explore page uses weighted randomization with per-user caching (5-minute TTL) to ensure consistent pagination
@@ -52,7 +52,7 @@ Preferred communication style: Simple, everyday language.
 **Data Layer:**
 - Drizzle ORM for type-safe database operations
 - Schema-first approach with Zod validation
-- Database models: users, posts, likes, comments, saves, notifications, conversations, messages
+- Database models: users, posts, savors, comments, saves, notifications, conversations, messages
 
 ### Database Design
 
@@ -66,11 +66,11 @@ Preferred communication style: Simple, everyday language.
   - New users automatically assigned random zen-themed usernames (e.g., "cosmic_wanderer42") and display names (e.g., "Mindful Spirit")
 - `sessions`: PostgreSQL session storage for Replit Auth (connect-pg-simple)
 - `posts`: Content with media URLs, captions, timestamps, and user references
-- `likes`: Many-to-many relationship between users and posts
+- `savors`: Many-to-many relationship between users and posts (mindful appreciation system)
 - `comments`: Threaded discussion on posts with user attribution
 - `saves`: Posts saved by users for later viewing
-- `notifications`: User activity alerts (likes, comments, follows) with read status
-  - Supports three notification types: "like", "comment", "follow"
+- `notifications`: User activity alerts (savors, comments, follows) with read status
+  - Supports three notification types: "savor", "comment", "follow"
   - Follow notifications do not require postId (nullable field)
 - `conversations`: Direct messaging channels between two users
 - `messages`: Message content with read status and timestamps
