@@ -6,6 +6,7 @@ import { useRoute, Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { VideoThumbnail } from "@/components/VideoThumbnail";
 import {
   Dialog,
   DialogContent,
@@ -454,14 +455,9 @@ export default function Profile() {
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <video
+                      <VideoThumbnail
                         src={moment.mediaUrl}
-                        className="w-full h-full object-cover"
-                        muted
-                        loop
-                        playsInline
-                        onMouseEnter={(e) => e.currentTarget.play()}
-                        onMouseLeave={(e) => e.currentTarget.pause()}
+                        className="w-full h-full"
                       />
                     )}
                   </div>
