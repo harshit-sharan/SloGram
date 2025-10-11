@@ -136,13 +136,10 @@ function Router() {
   const [location, setLocation] = useLocation();
 
   useEffect(() => {
-    // AUTH CHECK DISABLED - No redirect for unauthenticated users
-    /* ORIGINAL REDIRECT CODE - DISABLED
     // If user is not logged in and trying to access a protected route, redirect to home
     if (user === null && location !== "/") {
       setLocation("/");
     }
-    */
   }, [user, location, setLocation]);
   
   return (
