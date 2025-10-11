@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { Link } from "wouter";
+import { VideoThumbnail } from "@/components/VideoThumbnail";
 
 interface KeptMoment {
   id: string;
@@ -53,15 +54,10 @@ export default function Kept() {
               >
                 <div className="relative aspect-square bg-muted cursor-pointer hover-elevate overflow-hidden">
                   {moment.type === "video" ? (
-                    <video
+                    <VideoThumbnail
                       src={moment.mediaUrl}
-                      className="w-full h-full object-cover"
-                      data-testid={`video-kept-${moment.id}`}
-                      muted
-                      loop
-                      playsInline
-                      onMouseEnter={(e) => e.currentTarget.play()}
-                      onMouseLeave={(e) => e.currentTarget.pause()}
+                      className="w-full h-full"
+                      testId={`video-kept-${moment.id}`}
                     />
                   ) : (
                     <img
