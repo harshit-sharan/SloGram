@@ -3,10 +3,9 @@
     "relation": ["delegate_permission/common.handle_all_urls"],
     "target": {
       "namespace": "android_app",
-      "package_name": "com.slogram.app",
+      "package_name": "co.median.android.lpmdpky",
       "sha256_cert_fingerprints": [
-        "REPLACE_WITH_YOUR_DEBUG_SHA256_FINGERPRINT",
-        "REPLACE_WITH_YOUR_RELEASE_SHA256_FINGERPRINT"
+    "C6:64:B9:8A:8A:F2:D3:25:93:A9:4E:5D:27:0C:FA:09:57:72:56:56:2B:CA:98:ED:1C:3B:58:C0:38:90:04:0E"
       ]
     }
   }
