@@ -3,14 +3,18 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 
 const app = express();
+
+// Serve Android assetlinks.json for App Links - must be before any other middleware
+app.get('/.well-known/assetlinks.json', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.sendFile('public/.well-known/assetlinks.json', { root: process.cwd() });
+});
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
 // Serve uploaded files
 app.use('/uploads', express.static('uploads'));
-
-// Serve .well-known directory for Android App Links and other verification files
-app.use('/.well-known', express.static('public/.well-known'));
 
 app.use((req, res, next) => {
   const start = Date.now();
