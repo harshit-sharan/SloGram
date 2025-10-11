@@ -85,6 +85,8 @@ export default function Flow() {
     return () => observer.disconnect();
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
+  // AUTH CHECK DISABLED - Login dialog is hidden
+  /* ORIGINAL LOGIN DIALOG - DISABLED
   // Show login dialog when not authenticated
   if (!user && !isAuthLoading) {
     return (
@@ -123,6 +125,7 @@ export default function Flow() {
       </div>
     );
   }
+  */
 
   if (isLoading || isAuthLoading) {
     return (

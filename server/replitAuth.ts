@@ -173,6 +173,10 @@ export async function setupAuth(app: Express) {
 }
 
 export const isAuthenticated: RequestHandler = async (req, res, next) => {
+  // AUTH CHECK DISABLED - Bypassing authentication for all requests
+  return next();
+  
+  /* ORIGINAL AUTH CODE - DISABLED
   const user = req.user as any;
 
   if (!req.isAuthenticated() || !user.expires_at) {
@@ -199,4 +203,5 @@ export const isAuthenticated: RequestHandler = async (req, res, next) => {
     res.status(401).json({ message: "Unauthorized" });
     return;
   }
+  */
 };
