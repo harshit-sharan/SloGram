@@ -9,6 +9,9 @@ app.use(express.urlencoded({ extended: false }));
 // Serve uploaded files
 app.use('/uploads', express.static('uploads'));
 
+// Serve .well-known directory for Android App Links and other verification files
+app.use('/.well-known', express.static('public/.well-known'));
+
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
