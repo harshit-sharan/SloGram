@@ -170,6 +170,9 @@ export function MessageThread({ conversationId, otherUser, autoFocus = false }: 
 
     setNewMessage("");
     
+    // Maintain focus on input to keep keyboard open on mobile
+    inputRef.current?.focus();
+    
     // Scroll to bottom after sending
     setTimeout(() => scrollToBottom(), 100);
   };
