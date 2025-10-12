@@ -125,6 +125,12 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### October 12, 2025 - Mobile UX Improvements
+- **Fixed keyboard dismissal on mobile devices**: Updated MessageThread component to maintain input focus after sending a message
+  - Added `inputRef.current?.focus()` after clearing message input to prevent keyboard from closing on mobile
+  - Allows users to quickly send multiple messages without the keyboard dismissing between sends
+  - Improves messaging UX especially on mobile devices
+
 ### October 8, 2025 - Conversation Navigation Improvements
 - **Fixed conversation routing from user space**: Updated Space.tsx to navigate to `/conversations` instead of `/messages`
   - Renamed `messageMutation` to `conversationMutation` for consistent terminology
