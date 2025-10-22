@@ -7,6 +7,55 @@ const openai = new OpenAI({
   apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY
 });
 
+export async function analyzeImageContent(imageUrl: string): Promise<string> {
+  try {
+    console.log("[VISUAL MODERATION] Analyzing image:", imageUrl);
+    
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        {
+          role: "system",
+          content: `You are analyzing images for Slogram, a mindfulness-focused social platform for slow, intentional living. 
+
+Describe the image focusing on:
+- Energy level (calm/slow vs. fast/intense)
+- Motion and speed (static, gentle motion, rapid motion, speed)
+- Emotional tone (peaceful, energetic, aggressive, rushed)
+- Visual elements (colors, lighting, composition)
+- Subject matter (nature, technology, people, activities)
+
+Be specific about any elements that suggest urgency, speed, hustle, or intensity.`
+        },
+        {
+          role: "user",
+          content: [
+            {
+              type: "text",
+              text: "Please analyze this image for a mindfulness-focused social platform. Describe what you see with focus on the energy, pace, and mood."
+            },
+            {
+              type: "image_url",
+              image_url: {
+                url: imageUrl
+              }
+            }
+          ]
+        }
+      ],
+      max_completion_tokens: 300
+    });
+
+    const description = response.choices[0].message.content || "Unable to analyze image";
+    console.log("[VISUAL MODERATION] Analysis result:", description);
+    return description;
+  } catch (error) {
+    console.error("[VISUAL MODERATION] Error analyzing image:", error);
+    // Return empty string on error - moderation will still check the caption
+    return "";
+  }
+}
+
 export interface ModerationResult {
   approved: boolean;
   tone: "Still" | "Flow" | "Vibrant" | "Loud";
