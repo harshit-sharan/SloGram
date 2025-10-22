@@ -130,13 +130,15 @@ Preferred communication style: Simple, everyday language.
   - Uses GPT-5 via Replit AI Integrations (OpenAI-compatible API) without requiring own API key
   - Evaluates content for peacefulness (calm vs anxious), mindfulness (care/reflection), and harmony (visual/emotional tone)
   - Provides detailed scoring (0-100) for each dimension and categorizes tone: Still, Flow, Vibrant, or Loud
-  - Flags content with urgent language, promotional tone, excessive caps/exclamation marks, aggressive statements
+  - Flags content with urgent language ("fast", "quick", "rush", "hurry"), promotional tone, excessive caps/exclamation marks, aggressive statements
   - Returns gentle, thoughtful feedback aligned with Slogram's brand voice when content is flagged
   - Moderation endpoint: `/api/moderate` for pre-checking content
   - Integrated into moment creation: POST `/api/moments` automatically moderates before creating
-  - Fail-open strategy: approves content if moderation service errors to prevent blocking users
+  - **Fail-closed strategy**: Rejects content if moderation service errors or returns invalid responses to maintain community standards
+  - Validates AI responses have all required fields (approved, tone, numeric scores)
   - Frontend shows extended toasts (10 seconds) with gentle feedback for flagged content
   - Backend logging added for debugging moderation decisions
+  - Distinguishes between validation errors ("moderation_error") and service errors ("moderation_service_error")
 
 ### October 12, 2025 - Mobile UX Improvements
 - **Fixed keyboard dismissal on mobile devices**: Updated MessageThread component to maintain input focus after sending a message
