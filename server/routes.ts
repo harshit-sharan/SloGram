@@ -441,8 +441,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (!moderationResult.approved) {
         return res.status(400).json({ 
-          error: generateGentleFeedback(moderationResult),
-          moderationResult
+          error: generateGentleFeedback(moderationResult)
         });
       }
 
