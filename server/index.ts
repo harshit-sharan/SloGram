@@ -10,6 +10,14 @@ app.get("/.well-known/assetlinks.json", (req, res) => {
   res.sendFile("public/.well-known/assetlinks.json", { root: process.cwd() });
 });
 
+// Serve Apple well-known apple-app-site-association for App Links - must be before any other middleware
+app.get("/apple-app-site-association", (req, res) => {
+  res.setHeader("Content-Type", "application/json");
+  res.sendFile("public/.well-known/apple-app-site-association", {
+    root: process.cwd(),
+  });
+});
+
 // Serve Apple apple-app-site-association for App Links - must be before any other middleware
 app.get("/.well-known/apple-app-site-association", (req, res) => {
   res.setHeader("Content-Type", "application/json");
