@@ -10,6 +10,12 @@ app.get('/.well-known/assetlinks.json', (req, res) => {
   res.sendFile('public/.well-known/assetlinks.json', { root: process.cwd() });
 });
 
+// Serve Apple assetlinks.json for App Links - must be before any other middleware
+app.get('/.well-known/assetlinks.json', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.sendFile('public/.well-known/assetlinks.json', { root: process.cwd() });
+});
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
