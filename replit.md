@@ -139,6 +139,14 @@ Preferred communication style: Simple, everyday language.
   - Frontend shows extended toasts (10 seconds) with gentle feedback for flagged content
   - Backend logging added for debugging moderation decisions
   - Distinguishes between validation errors ("moderation_error") and service errors ("moderation_service_error")
+- **Added visual content analysis**: Integrated GPT-4 Vision API to analyze actual image content, not just captions
+  - `analyzeImageContent` function uses gpt-4o model with vision capabilities
+  - Analyzes images for speed-focused content (racing cars, sports action), urgency signals, and aggressive visual elements
+  - POST `/api/moments` generates temporary signed URLs (300 second TTL) for AI vision access using object storage
+  - Exports `parseObjectPath` and `signObjectURL` from objectStorage.ts for URL generation
+  - Graceful degradation: Falls back to caption-only moderation if image analysis fails
+  - Visual descriptions passed to `moderateContent` alongside text captions for comprehensive evaluation
+  - Blocks racing car images and other urgent/speed-focused visual content as requested
 
 ### October 12, 2025 - Mobile UX Improvements
 - **Fixed keyboard dismissal on mobile devices**: Updated MessageThread component to maintain input focus after sending a message
