@@ -39,7 +39,7 @@ CONTENT THAT BELONGS:
 
 CONTENT TO FLAG:
 TEXT CONTENT - Flag if it includes:
-- Urgent or high-pressure language: "Hurry," "Now," "Don't wait," "Limited time," "Go go go"
+- Urgent or high-pressure language: "Hurry," "Now," "Don't wait," "Limited time," "Go go go", "Quick", "Fast", "Rush"
 - Self-promotion or attention-seeking: "Smash that follow," "Hit like," "Check my page"
 - Excessive exclamation marks, all caps, or loud energy
 - Ranting, reactive, or emotionally charged without reflection
@@ -48,7 +48,7 @@ TEXT CONTENT - Flag if it includes:
 - Advertising or product pitches (unless calm, mindful, and transparent)
 
 VISUAL DESCRIPTIONS - Flag if mentioned:
-- Rapid motion, fast cuts, flashing lights
+- Rapid motion, fast cuts, flashing lights, speed, speeding
 - Aggressive dancing, energetic transitions, jump edits
 - Loud, upbeat, or jarring music
 - Overly saturated colors, harsh contrast, neon tones
@@ -60,20 +60,47 @@ VISUAL DESCRIPTIONS - Flag if mentioned:
 TONE COMPASS:
 - Still (0-25): Peaceful, meditative, grounded - APPROVE
 - Flow (26-50): Calm motion, thoughtful, balanced - APPROVE
-- Vibrant (51-75): Energetic but respectful - REVIEW
-- Loud (76-100): Fast, jarring, attention-grabbing - REMOVE
+- Vibrant (51-75): Energetic but respectful - REVIEW & REJECT
+- Loud (76-100): Fast, jarring, attention-grabbing - REJECT
 
-Analyze the content and respond with JSON containing:
+CRITICAL: You MUST respond with valid JSON in this EXACT format:
 {
-  "approved": boolean,
-  "tone": "Still" | "Flow" | "Vibrant" | "Loud",
+  "approved": true or false,
+  "tone": "Still" or "Flow" or "Vibrant" or "Loud",
   "scores": {
-    "peacefulness": 0-100,
-    "mindfulness": 0-100,
-    "harmony": 0-100
+    "peacefulness": number from 0 to 100,
+    "mindfulness": number from 0 to 100,
+    "harmony": number from 0 to 100
   },
-  "flags": ["list of specific issues found"],
-  "feedback": "gentle, kind explanation if not approved"
+  "flags": ["array of specific issues like urgent_language, high_pressure, promotional, loud_tone, rapid_motion"],
+  "feedback": "gentle, kind explanation if not approved, otherwise omit this field"
+}
+
+EXAMPLE RESPONSES:
+
+For calm content:
+{
+  "approved": true,
+  "tone": "Flow",
+  "scores": {
+    "peacefulness": 85,
+    "mindfulness": 90,
+    "harmony": 88
+  },
+  "flags": []
+}
+
+For urgent content:
+{
+  "approved": false,
+  "tone": "Loud",
+  "scores": {
+    "peacefulness": 15,
+    "mindfulness": 20,
+    "harmony": 10
+  },
+  "flags": ["urgent_language", "high_pressure", "loud_tone"],
+  "feedback": "This content feels rushed and pressured. Slogram is a space for calm, unhurried sharing. Consider slowing down and sharing from a more grounded place."
 }
 
 When in doubt, err on the side of calm and approve borderline cases if the intent feels genuine.`;
@@ -113,13 +140,39 @@ ${mediaDescription ? `Visual Description: ${mediaDescription}` : ""}
     
     console.log("[MODERATION] AI Response:", result);
 
+    // Validate that we got a proper response with all required fields
+    if (
+      !result || 
+      typeof result.approved !== 'boolean' || 
+      !result.tone || 
+      !result.scores ||
+      typeof result.scores.peacefulness !== 'number' ||
+      typeof result.scores.mindfulness !== 'number' ||
+      typeof result.scores.harmony !== 'number'
+    ) {
+      console.error("[MODERATION] Invalid AI response - missing required fields. Rejecting content for safety.");
+      console.error("[MODERATION] Received:", result);
+      // When we get an invalid response, fail-closed (reject) for safety
+      return {
+        approved: false,
+        tone: "Loud",
+        scores: {
+          peacefulness: 0,
+          mindfulness: 0,
+          harmony: 0
+        },
+        flags: ["moderation_error"],
+        feedback: "We couldn't properly review this content at the moment. Please try sharing again in a moment, or reach out if this continues. 🌿"
+      };
+    }
+
     const moderationResult = {
-      approved: result.approved ?? true,
-      tone: result.tone || "Flow",
+      approved: result.approved,
+      tone: result.tone,
       scores: {
-        peacefulness: result.scores?.peacefulness ?? 75,
-        mindfulness: result.scores?.mindfulness ?? 75,
-        harmony: result.scores?.harmony ?? 75
+        peacefulness: result.scores.peacefulness,
+        mindfulness: result.scores.mindfulness,
+        harmony: result.scores.harmony
       },
       flags: result.flags || [],
       feedback: result.feedback
@@ -134,17 +187,17 @@ ${mediaDescription ? `Visual Description: ${mediaDescription}` : ""}
       message: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined
     });
-    // On error, default to approving content (fail open to not block users)
+    // On error, reject content (fail-closed) to maintain community standards
     return {
-      approved: true,
-      tone: "Flow",
+      approved: false,
+      tone: "Loud",
       scores: {
-        peacefulness: 75,
-        mindfulness: 75,
-        harmony: 75
+        peacefulness: 0,
+        mindfulness: 0,
+        harmony: 0
       },
-      flags: [],
-      feedback: undefined
+      flags: ["moderation_service_error"],
+      feedback: "We're experiencing a temporary issue with our content review system. Please try sharing again in a moment. If this continues, reach out to our support team. 🌿"
     };
   }
 }

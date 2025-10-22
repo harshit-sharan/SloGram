@@ -82,15 +82,18 @@ export function CreatePostModal({
     },
     onError: (error: Error) => {
       const errorMessage = error.message;
+      console.log("[CreatePostModal] Mutation error:", errorMessage);
       
       // Check if this is a moderation error (contains our gentle feedback)
       if (errorMessage.includes("🌿") || errorMessage.includes("Slogram is a space")) {
+        console.log("[CreatePostModal] Showing moderation feedback toast");
         toast({
           title: "Content Review",
           description: errorMessage,
           duration: 10000,
         });
       } else {
+        console.log("[CreatePostModal] Showing generic error toast");
         toast({
           title: "Error",
           description: "Failed to create moment. Please try again.",
