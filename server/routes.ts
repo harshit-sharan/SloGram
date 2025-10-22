@@ -7,7 +7,7 @@ import { insertMomentSchema, insertNoteSchema, updateUserProfileSchema, users } 
 import { db } from "./db";
 import { eq } from "drizzle-orm";
 import { containsProfanity, getProfanityError } from "./profanity-filter";
-import { ObjectStorageService, ObjectNotFoundError, parseObjectPath, signObjectURL } from "./objectStorage";
+import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import { ObjectPermission } from "./objectAcl";
 import { moderateContent, generateGentleFeedback, analyzeImageContent } from "./moderation";
 
@@ -424,17 +424,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let mediaDescription = req.body.mediaDescription;
       if (postData.type === "image" && postData.mediaUrl) {
         try {
-          // Generate a temporary signed URL for the image
-          const { bucketName, objectName } = parseObjectPath(postData.mediaUrl);
-          const signedImageUrl = await signObjectURL({
-            bucketName,
-            objectName,
-            method: "GET",
-            ttlSec: 300 // 5 minutes
-          });
-          
-          // Analyze the image content
-          mediaDescription = await analyzeImageContent(signedImageUrl);
+          // Analyze the image content directly from object storage
+          mediaDescription = await analyzeImageContent(postData.mediaUrl);
         } catch (error) {
           console.error("[VISUAL MODERATION] Failed to analyze image:", error);
           // Continue with text-only moderation if image analysis fails

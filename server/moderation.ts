@@ -1,4 +1,5 @@
 import OpenAI from "openai";
+import { ObjectStorageService } from "./objectStorage";
 
 // This is using Replit's AI Integrations service, which provides OpenAI-compatible API access without requiring your own OpenAI API key.
 // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
@@ -7,9 +8,26 @@ const openai = new OpenAI({
   apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY
 });
 
-export async function analyzeImageContent(imageUrl: string): Promise<string> {
+export async function analyzeImageContent(objectPath: string): Promise<string> {
   try {
-    console.log("[VISUAL MODERATION] Analyzing image:", imageUrl);
+    console.log("[VISUAL MODERATION] Analyzing image:", objectPath);
+    
+    // Download the image from object storage
+    const objectStorageService = new ObjectStorageService();
+    const objectFile = await objectStorageService.getObjectEntityFile(objectPath);
+    
+    // Get the image data as a buffer
+    const [buffer] = await objectFile.download();
+    const base64Image = buffer.toString('base64');
+    
+    // Get the content type (mime type)
+    const [metadata] = await objectFile.getMetadata();
+    const mimeType = metadata.contentType || 'image/jpeg';
+    
+    // Create a data URL for the image
+    const dataUrl = `data:${mimeType};base64,${base64Image}`;
+    
+    console.log("[VISUAL MODERATION] Image downloaded, size:", buffer.length, "bytes, type:", mimeType);
     
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
@@ -37,7 +55,7 @@ Be specific about any elements that suggest urgency, speed, hustle, or intensity
             {
               type: "image_url",
               image_url: {
-                url: imageUrl
+                url: dataUrl
               }
             }
           ]
