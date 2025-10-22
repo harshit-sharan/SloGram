@@ -59,6 +59,12 @@ export function CreatePostModal({
         mediaUrl: momentData.mediaUrl,
         caption: momentData.caption,
       });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to create moment");
+      }
+      
       return response.json();
     },
     onSuccess: () => {
@@ -66,20 +72,31 @@ export function CreatePostModal({
         queryKey: ["/api/moments-with-authors"],
       });
       toast({
-        title: "Moment shared!",
-        description: "Your mindful moment has been shared.",
+        title: "Moment shared! 🌿",
+        description: "Your mindful moment has been shared with the community.",
       });
       setCaption("");
       setUploadedMediaURL(null);
       setMediaType(null);
       onOpenChange(false);
     },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to create moment. Please try again.",
-        variant: "destructive",
-      });
+    onError: (error: Error) => {
+      const errorMessage = error.message;
+      
+      // Check if this is a moderation error (contains our gentle feedback)
+      if (errorMessage.includes("🌿") || errorMessage.includes("Slogram is a space")) {
+        toast({
+          title: "Content Review",
+          description: errorMessage,
+          duration: 10000,
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to create moment. Please try again.",
+          variant: "destructive",
+        });
+      }
     },
   });
 
