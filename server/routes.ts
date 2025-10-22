@@ -9,6 +9,7 @@ import { eq } from "drizzle-orm";
 import { containsProfanity, getProfanityError } from "./profanity-filter";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import { ObjectPermission } from "./objectAcl";
+import { moderateContent, generateGentleFeedback } from "./moderation";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication
@@ -375,6 +376,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Content Moderation API
+  app.post("/api/moderate", isAuthenticated, async (req: any, res) => {
+    try {
+      const { caption, type, mediaDescription } = req.body;
+      
+      const result = await moderateContent(
+        caption || null,
+        type || "image",
+        mediaDescription
+      );
+      
+      res.json({
+        ...result,
+        message: generateGentleFeedback(result)
+      });
+    } catch (error) {
+      console.error("Moderation error:", error);
+      res.status(500).json({ 
+        error: "Failed to moderate content",
+        approved: true // Fail open to not block users
+      });
+    }
+  });
+
   // Posts API
   app.get("/api/moments", isAuthenticated, async (req, res) => {
     try {
@@ -394,9 +419,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         mediaUrl: req.body.mediaUrl,
         caption: req.body.caption,
       });
+
+      // Check moderation before creating the moment
+      const moderationResult = await moderateContent(
+        postData.caption || null,
+        postData.type as "image" | "video",
+        req.body.mediaDescription
+      );
+
+      if (!moderationResult.approved) {
+        return res.status(400).json({ 
+          error: generateGentleFeedback(moderationResult),
+          moderationResult
+        });
+      }
+
       const post = await storage.createMoment(postData);
       res.json(post);
     } catch (error) {
+      console.error("Error creating moment:", error);
       res.status(400).json({ error: "Invalid post data" });
     }
   });
