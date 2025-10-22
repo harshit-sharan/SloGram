@@ -90,6 +90,9 @@ Caption: ${caption || "(no caption)"}
 ${mediaDescription ? `Visual Description: ${mediaDescription}` : ""}
 `.trim();
 
+    console.log("[MODERATION] Analyzing content:", { contentType, captionLength: caption?.length, hasDescription: !!mediaDescription });
+    console.log("[MODERATION] Caption text:", caption);
+
     const response = await openai.chat.completions.create({
       model: "gpt-5",
       messages: [
@@ -108,7 +111,9 @@ ${mediaDescription ? `Visual Description: ${mediaDescription}` : ""}
 
     const result = JSON.parse(response.choices[0].message.content || "{}");
     
-    return {
+    console.log("[MODERATION] AI Response:", result);
+
+    const moderationResult = {
       approved: result.approved ?? true,
       tone: result.tone || "Flow",
       scores: {
@@ -119,8 +124,16 @@ ${mediaDescription ? `Visual Description: ${mediaDescription}` : ""}
       flags: result.flags || [],
       feedback: result.feedback
     };
+
+    console.log("[MODERATION] Final result:", { approved: moderationResult.approved, tone: moderationResult.tone, flags: moderationResult.flags });
+
+    return moderationResult;
   } catch (error) {
-    console.error("Moderation error:", error);
+    console.error("[MODERATION] Error occurred:", error);
+    console.error("[MODERATION] Error details:", {
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined
+    });
     // On error, default to approving content (fail open to not block users)
     return {
       approved: true,
