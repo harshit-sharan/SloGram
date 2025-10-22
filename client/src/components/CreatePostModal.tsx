@@ -60,11 +60,6 @@ export function CreatePostModal({
         caption: momentData.caption,
       });
       
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to create moment");
-      }
-      
       return response.json();
     },
     onSuccess: () => {
@@ -81,8 +76,22 @@ export function CreatePostModal({
       onOpenChange(false);
     },
     onError: (error: Error) => {
-      const errorMessage = error.message;
+      let errorMessage = error.message;
       console.log("[CreatePostModal] Mutation error:", errorMessage);
+      
+      // Parse the error message if it's in the format "400: {\"error\":\"message\"}"
+      try {
+        const match = errorMessage.match(/^\d+:\s*(.+)$/);
+        if (match) {
+          const jsonStr = match[1];
+          const errorData = JSON.parse(jsonStr);
+          if (errorData.error) {
+            errorMessage = errorData.error;
+          }
+        }
+      } catch (e) {
+        // If parsing fails, use the original error message
+      }
       
       // Check if this is a moderation error (contains our gentle feedback)
       if (errorMessage.includes("🌿") || errorMessage.includes("Slogram is a space")) {
