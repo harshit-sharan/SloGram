@@ -57,3 +57,23 @@ Preferred communication style: Simple, everyday language.
     - `connect-pg-simple` for PostgreSQL session management
     - Multer for image/video uploads
     - OpenAI-compatible API (GPT-5, GPT-4 Vision) via Replit AI Integrations for content moderation.
+
+## Recent Changes
+
+### October 27, 2025 - Username-based Profile URLs and Share Profile Feature
+- **Added username-based profile navigation**: Users can now access profiles using either user ID or username in the URL
+  - Backend endpoint `/api/users/:userIdOrUsername` tries to fetch by ID first, then falls back to username
+  - Frontend Space component properly handles both URL formats: `/space/{userId}` and `/space/{username}`
+  - All API calls use the resolved user.id instead of the route parameter for consistency
+- **Added share profile button**: Users can now share any profile (their own or others') via a share button
+  - Share button visible on all user profiles with data-testid="button-share-profile"
+  - Uses native device share options (navigator.share API) for seamless sharing across apps
+  - Includes profile title, description (story or fallback text), and URL in share data
+  - Prefers username in URL format, falls back to user ID if username is not set
+  - Shows error toast only for genuine failures (not user cancellation/AbortError)
+  - Positioned alongside other profile action buttons (Edit Profile/Settings for own profile, Follow/Message for others)
+
+### October 27, 2025 - Fixed Whisper Navigation
+- **Fixed whisper click navigation**: Updated whisper interface to use `momentId` and `moment` instead of `postId` and `post` to match backend schema
+  - Clicking on savor/reflect whispers now correctly navigates to the moment page
+  - Fixed "undefined" in URL error when clicking whispers

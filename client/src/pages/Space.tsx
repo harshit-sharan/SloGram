@@ -291,18 +291,25 @@ export default function Profile() {
     const profileIdentifier = user.username || user.id;
     const profileUrl = `${window.location.origin}/space/${profileIdentifier}`;
     
-    try {
-      await navigator.clipboard.writeText(profileUrl);
-      toast({
-        title: "Link copied!",
-        description: "Profile link copied to clipboard",
-      });
-    } catch (error) {
-      toast({
-        title: "Failed to copy link",
-        description: "Please try again",
-        variant: "destructive",
-      });
+    // Try to use native share on mobile devices
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `${user.displayName || user.username || 'User'}'s profile`,
+          text: user.story || `Check out ${user.displayName || user.username || 'this user'}'s profile on Slogram`,
+          url: profileUrl,
+        });
+      } catch (error: any) {
+        // User cancelled the share or it failed
+        // Only show error if it's not a user cancellation
+        if (error.name !== "AbortError") {
+          toast({
+            title: "Failed to share",
+            description: "Could not open share options",
+            variant: "destructive",
+          });
+        }
+      }
     }
   };
 
