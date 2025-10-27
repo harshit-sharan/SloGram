@@ -101,6 +101,17 @@ export const follows = pgTable("follows", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+export const supportRequests = pgTable("support_requests", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id, { onDelete: "set null" }),
+  name: text("name").notNull(),
+  email: text("email").notNull(),
+  subject: text("subject").notNull(),
+  message: text("message").notNull(),
+  status: text("status").notNull().default("open").$type<"open" | "in_progress" | "resolved">(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
@@ -125,6 +136,17 @@ export const insertReflectSchema = createInsertSchema(reflects).omit({
 export const insertFollowSchema = createInsertSchema(follows).omit({
   id: true,
   createdAt: true,
+});
+
+export const insertSupportRequestSchema = createInsertSchema(supportRequests).omit({
+  id: true,
+  createdAt: true,
+  status: true,
+}).extend({
+  email: z.string().email("Please enter a valid email address"),
+  name: z.string().min(1, "Name is required"),
+  subject: z.string().min(1, "Subject is required"),
+  message: z.string().min(10, "Message must be at least 10 characters"),
 });
 
 export const updateUserProfileSchema = createInsertSchema(users).pick({
@@ -159,3 +181,5 @@ export type Keep = typeof keeps.$inferSelect;
 export type Whisper = typeof whispers.$inferSelect;
 export type InsertFollow = z.infer<typeof insertFollowSchema>;
 export type Follow = typeof follows.$inferSelect;
+export type InsertSupportRequest = z.infer<typeof insertSupportRequestSchema>;
+export type SupportRequest = typeof supportRequests.$inferSelect;
