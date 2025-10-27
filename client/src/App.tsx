@@ -133,15 +133,19 @@ function useScrollRestoration() {
 
 function Router() {
   useScrollRestoration();
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
   const [location, setLocation] = useLocation();
 
   useEffect(() => {
+    // Wait for auth to finish loading before checking
+    if (isLoading) return;
+    
     // If user is not logged in and trying to access a protected route, redirect to home
-    if (user === null && location !== "/") {
+    // Exception: support page is accessible to everyone
+    if (!user && location !== "/" && location !== "/support") {
       setLocation("/");
     }
-  }, [user, location, setLocation]);
+  }, [user, isLoading, location, setLocation]);
   
   return (
     <Switch>

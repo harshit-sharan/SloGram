@@ -42,7 +42,8 @@ Preferred communication style: Simple, everyday language.
 
 - **Dual Authentication**: Replit Auth (OpenID Connect) and local email/password authentication (scrypt hashing). Both use the same session store.
 - **Session Management**: Session-based with httpOnly secure cookies, PostgreSQL storage, 7-day TTL.
-- **Authorization**: `isAuthenticated` middleware protects all routes. Server-side user ID validation.
+- **Authorization**: `isAuthenticated` middleware protects all routes. Server-side user ID validation. Client-side redirect system protects frontend pages.
+- **Protected Routes**: All pages redirect to home (`/`) when not authenticated, except for the home page itself and `/support` which are publicly accessible.
 - **Security Measures**: Timing-safe password comparison, password validation, user object sanitization, unique email constraint. End-to-end note encryption (AES-256-GCM) with key from `MESSAGE_ENCRYPTION_KEY`.
 
 ## External Dependencies
@@ -59,6 +60,15 @@ Preferred communication style: Simple, everyday language.
     - OpenAI-compatible API (GPT-5, GPT-4 Vision) via Replit AI Integrations for content moderation.
 
 ## Recent Changes
+
+### October 27, 2025 - Authentication Redirect System
+- **Added client-side authentication redirect**: Non-authenticated users are now redirected to home when attempting to access protected pages
+  - Redirect logic implemented in Router component's useEffect hook
+  - Waits for auth loading to complete before checking and redirecting
+  - Public pages accessible to everyone: `/` (home) and `/support`
+  - Protected pages redirect to home: `/wander`, `/settings`, `/whispers`, `/conversations`, `/kept`, `/space/:userId`, `/moment/:id`
+  - Uses wouter's `setLocation` for client-side navigation
+  - Prevents flash of protected content by checking `isLoading` state
 
 ### October 27, 2025 - Support Request System
 - **Added support page and request system**: Users can now submit support requests directly through the platform
