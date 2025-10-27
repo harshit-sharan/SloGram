@@ -2,7 +2,7 @@
 
 ## Overview
 
-Slogram is a mindfulness-focused social media platform inspired by Instagram's interface but adapted for slow living and intentional content sharing. The application uses contemplative terminology throughout: moments (posts), savors (likes), reflects (comments), whispers (notifications), keeps (saves), flow (feed), space (profile), wander (explore), story (bio), and notes (messages). Users share photos and videos with captions, engage through savors and reflects, and connect via direct notes. The platform emphasizes calm minimalism with a zen-like aesthetic featuring sage green accents and generous whitespace.
+Slogram is a mindfulness-focused social media platform inspired by Instagram's interface but adapted for slow living and intentional content sharing. It uses contemplative terminology for its features (e.g., "moments" for posts, "savors" for likes). Users share photos and videos, engage with content, and connect via direct messages. The platform emphasizes calm minimalism with a zen-like aesthetic, featuring sage green accents and generous whitespace, promoting a serene digital experience.
 
 ## User Preferences
 
@@ -10,208 +10,50 @@ Preferred communication style: Simple, everyday language.
 
 ## System Architecture
 
-### Frontend Architecture
+### Frontend
 
-**Technology Stack:**
-- React with TypeScript for type-safe component development
-- Vite as the build tool and development server
-- Wouter for lightweight client-side routing
-- TanStack Query for server state management and data fetching
-- Tailwind CSS for utility-first styling
+- **Technology Stack**: React with TypeScript, Vite, Wouter for routing, TanStack Query for state management, Tailwind CSS for styling.
+- **UI Component System**: Radix UI primitives, shadcn/ui (New York style), custom design system based on Instagram, and theme provider for light/dark modes.
+- **Design Philosophy**: Instagram-like image-first layout, calm minimalism, zen-like color palette (sage green accent), Inter for body text, Libre Baskerville for headers, content-over-chrome, mobile-first responsive design with adaptive scaling and spacing.
 
-**UI Component System:**
-- Radix UI primitives for accessible, unstyled components
-- shadcn/ui component library (New York style variant)
-- Custom design system based on Instagram's clean interface with slow living adaptations
-- Theme provider supporting light/dark modes with CSS custom properties
+### Backend
 
-**Design Philosophy:**
-- Reference-based approach using Instagram's image-first layout
-- Calm minimalism with generous whitespace
-- Zen-like color palette (sage green accent: 160 45% 45%)
-- Typography: Inter for body text, Libre Baskerville for display/headers
-- Content-over-chrome philosophy letting posts breathe
-- Mobile-first responsive design:
-  - Logo scales appropriately on mobile (10x10 on mobile, 12x12 on desktop) with object-contain to prevent squishing
-  - Reduced icon spacing on mobile (gap-1 on mobile, gap-2 on desktop) for better space utilization
+- **Server Framework**: Express.js for REST APIs, WebSocket server for real-time messaging, session-based architecture with `connect-pg-simple`.
+- **API Structure**: RESTful endpoints for core features (moments, users, savors, reflects, keeps, whispers). File upload handling via Multer. Real-time notes via WebSockets. Wander page uses weighted randomization with per-user caching.
+- **Data Layer**: Drizzle ORM for type-safe database operations, schema-first approach with Zod validation.
+- **AI Integration**: GPT-5 via Replit AI Integrations for content moderation based on peacefulness, mindfulness, and harmony. GPT-4 Vision API for visual content analysis to detect urgent or aggressive imagery. Integrates into moment creation with a fail-closed strategy for moderation.
 
-### Backend Architecture
+### Database
 
-**Server Framework:**
-- Express.js for REST API endpoints
-- WebSocket server for real-time messaging functionality
-- Session-based architecture (connect-pg-simple for session storage)
-
-**API Structure:**
-- RESTful endpoints for moments, users, savors, reflects, keeps, and whispers
-- File upload handling via Multer (stored in `/uploads` directory)
-- WebSocket connections for live notes between users
-- Wander page uses weighted randomization with per-user caching (5-minute TTL) to ensure consistent pagination
-- Periodic cache cleanup (60-second intervals) prevents memory bloat
-
-**Data Layer:**
-- Drizzle ORM for type-safe database operations
-- Schema-first approach with Zod validation
-- Database models: users, moments, savors, reflects, keeps, whispers, conversations, notes
-
-### Database Design
-
-**Database Technology:**
-- PostgreSQL via Neon serverless (@neondatabase/serverless)
-- WebSocket constructor override for serverless compatibility
-- Connection pooling for efficient resource management
-
-**Schema Architecture:**
-- `users`: Profile data (username, displayName, story, avatar, email, firstName, lastName, profileImageUrl)
-  - New users automatically assigned random zen-themed usernames (e.g., "cosmic_wanderer42") and display names (e.g., "Mindful Spirit")
-- `sessions`: PostgreSQL session storage for Replit Auth (connect-pg-simple)
-- `moments`: Content with media URLs, captions, timestamps, and user references
-- `savors`: Many-to-many relationship between users and moments (mindful appreciation system)
-- `reflects`: Thoughtful responses on moments with user attribution
-- `keeps`: Moments saved by users for later viewing
-- `whispers`: User activity alerts (savors, reflects, follows) with read status
-  - Supports three whisper types: "savor", "reflect", "follow"
-  - Follow whispers do not require momentId (nullable field)
-- `conversations`: Direct note channels between two users
-- `notes`: Note content with read status and timestamps
-- Cascading deletes for data integrity (ON DELETE CASCADE)
-
-### External Dependencies
-
-**Third-Party Services:**
-- Neon Database (PostgreSQL hosting) - Required DATABASE_URL environment variable
-- Google Fonts CDN - Inter and Libre Baskerville font families
-
-**File Storage:**
-- Local filesystem storage for uploaded media files
-- Files served statically from `/uploads` directory via Express
-
-**Development Tools:**
-- Replit-specific plugins for development experience (cartographer, dev-banner, runtime-error-modal)
-- TypeScript for static type checking across shared code
-
-**Key Integrations:**
-- Replit Auth (OpenID Connect) for authentication with session-based security
-- WebSocket protocol for real-time messaging (ws library)
-- Session management via PostgreSQL (connect-pg-simple)
-- Image/video upload handling (Multer middleware)
+- **Technology**: PostgreSQL via Neon serverless, connection pooling.
+- **Schema**:
+    - `users`: Profile data, includes auto-generated zen-themed usernames/display names for new users.
+    - `sessions`: PostgreSQL session storage.
+    - `moments`: Content with media, captions.
+    - `savors`: User appreciation of moments.
+    - `reflects`: User responses to moments.
+    - `keeps`: User-saved moments.
+    - `whispers`: User activity notifications (savor, reflect, follow).
+    - `conversations`: Direct note channels.
+    - `notes`: Encrypted note content with read status.
+- **Data Integrity**: Cascading deletes for related data.
 
 ### Authentication & Security
 
-**Authentication Methods (Dual Auth System):**
-- **Replit Auth (OpenID Connect):** OAuth-based authentication supporting Google, GitHub, and other providers
-- **Local Email/Password Auth:** Custom authentication with secure password hashing using scrypt
-- Both methods share the same session store and work seamlessly together
-- Session-based authentication with httpOnly secure cookies
-- Sessions stored in PostgreSQL with 7-day TTL
-- All API routes protected with isAuthenticated middleware (supports both auth types)
-- WebSocket connections authenticated via session validation
+- **Dual Authentication**: Replit Auth (OpenID Connect) and local email/password authentication (scrypt hashing). Both use the same session store.
+- **Session Management**: Session-based with httpOnly secure cookies, PostgreSQL storage, 7-day TTL.
+- **Authorization**: `isAuthenticated` middleware protects all routes. Server-side user ID validation.
+- **Security Measures**: Timing-safe password comparison, password validation, user object sanitization, unique email constraint. End-to-end note encryption (AES-256-GCM) with key from `MESSAGE_ENCRYPTION_KEY`.
 
-**Local Auth Implementation:**
-- Password hashing with scrypt (64-byte hash, 16-byte random salt per user)
-- Timing-safe password comparison to prevent timing attacks
-- Password validation (minimum 6 characters)
-- Automatic generation of zen-themed usernames and display names for new users
-- User object sanitization - password hashes never sent to client or stored in session
-- Endpoints: `/api/local/signup`, `/api/local/login`
-- Uses passport-local strategy
+## External Dependencies
 
-**Replit Auth User Claims:**
-- `sub`: User ID (unique identifier)
-- `email`: User's email address
-- `first_name`: User's first name
-- `last_name`: User's last name
-- `profile_image_url`: User's profile image URL
-
-**Security Measures:**
-- Server-side user ID validation on all routes (supports both req.user.claims.sub for Replit Auth and req.user.id for local auth)
-- WebSocket upgrade handler validates session before establishing connection
-- No client-provided user IDs trusted - all derived from authenticated session
-- IDOR vulnerabilities prevented via server-side authorization checks
-- Password hashes sanitized from all API responses and session storage
-- Unique email constraint prevents duplicate accounts
-- End-to-end note encryption using AES-256-GCM algorithm
-  - All direct notes encrypted before storage in database
-  - Encryption key stored securely in MESSAGE_ENCRYPTION_KEY environment variable
-  - Backward compatibility maintained for legacy plaintext notes
-  - Notes automatically decrypted when retrieved for display
-
-## Recent Changes
-
-### October 27, 2025 - Dual Authentication System
-- **Added email/password authentication alongside Replit Auth**: Users can now sign up and log in using either email/password or Replit Auth (Google, GitHub, etc.)
-  - Implemented secure password hashing using scrypt with random salt per user
-  - Created passport-local strategy for email/password authentication
-  - Added signup and login forms with tabs for both authentication methods
-  - Both auth methods share the same PostgreSQL session store
-  - Enhanced isAuthenticated middleware to support both auth types
-  - User objects sanitized to prevent password hash exposure to clients
-  - Automatic generation of zen-themed usernames and display names for local signups
-  - Updated `/api/auth/user` endpoint to handle both Replit Auth and local auth sessions
-  - Frontend auth dialog shows tabs for "Log In" and "Sign Up" with email/password forms
-  - Added "Or continue with" dividers for Replit Auth buttons
-  - **CRITICAL FIX**: Created `getUserId` helper function in routes.ts to extract user ID from both auth types
-    - Replit Auth stores user data in `req.user.claims.sub`
-    - Local auth stores user data in `req.user.id`
-    - All 25+ API endpoints updated to use `getUserId(req)` instead of `req.user.claims.sub`
-    - Fixed 500 errors on feed, wander, whispers, notes, followers, following, conversations, etc.
-    - Local auth users can now access all features: view feed, create posts, start chats, follow users
-
-### October 22, 2025 - AI-Based Content Moderation
-- **Implemented AI-powered content moderation**: Added comprehensive moderation system based on Slogram's mindfulness guidelines
-  - Uses GPT-5 via Replit AI Integrations (OpenAI-compatible API) without requiring own API key
-  - Evaluates content for peacefulness (calm vs anxious), mindfulness (care/reflection), and harmony (visual/emotional tone)
-  - Provides detailed scoring (0-100) for each dimension and categorizes tone: Still, Flow, Vibrant, or Loud
-  - Flags content with urgent language ("fast", "quick", "rush", "hurry"), promotional tone, excessive caps/exclamation marks, aggressive statements
-  - Returns gentle, thoughtful feedback aligned with Slogram's brand voice when content is flagged
-  - Moderation endpoint: `/api/moderate` for pre-checking content
-  - Integrated into moment creation: POST `/api/moments` automatically moderates before creating
-  - **Fail-closed strategy**: Rejects content if moderation service errors or returns invalid responses to maintain community standards
-  - Validates AI responses have all required fields (approved, tone, numeric scores)
-  - Frontend shows extended toasts (10 seconds) with gentle feedback for flagged content
-  - Backend logging added for debugging moderation decisions
-  - Distinguishes between validation errors ("moderation_error") and service errors ("moderation_service_error")
-- **Added visual content analysis**: Integrated GPT-4 Vision API to analyze actual image content, not just captions
-  - `analyzeImageContent` function uses gpt-4o model with vision capabilities
-  - Analyzes images for speed-focused content (racing cars, sports action), urgency signals, and aggressive visual elements
-  - POST `/api/moments` generates temporary signed URLs (300 second TTL) for AI vision access using object storage
-  - Exports `parseObjectPath` and `signObjectURL` from objectStorage.ts for URL generation
-  - Graceful degradation: Falls back to caption-only moderation if image analysis fails
-  - Visual descriptions passed to `moderateContent` alongside text captions for comprehensive evaluation
-  - Blocks racing car images and other urgent/speed-focused visual content as requested
-
-### October 12, 2025 - Mobile UX Improvements
-- **Fixed keyboard dismissal on mobile devices**: Updated MessageThread component to maintain input focus after sending a message
-  - Added `inputRef.current?.focus()` after clearing message input to prevent keyboard from closing on mobile
-  - Allows users to quickly send multiple messages without the keyboard dismissing between sends
-  - Improves messaging UX especially on mobile devices
-
-### October 8, 2025 - Conversation Navigation Improvements
-- **Fixed conversation routing from user space**: Updated Space.tsx to navigate to `/conversations` instead of `/messages`
-  - Renamed `messageMutation` to `conversationMutation` for consistent terminology
-  - Updated navigation path from `/messages?conversation=${id}` to `/conversations?conversation=${id}`
-  - Updated button handler from `handleMessageClick` to `handleConversationClick`
-  - Updated data-testid from `button-message` to `button-conversation`
-- **Added clickable user headers in conversation windows**: Made user name and avatar in conversation windows navigate to their space
-  - MessageThread component: Avatar and name wrapped in Link to `/space/${userId}` with data-testid="link-user-space"
-  - Messages.tsx mobile header: Avatar and name wrapped in Link to `/space/${userId}` with data-testid="link-user-space-mobile"
-  - Added hover-elevate effects to both clickable headers
-
-### October 8, 2025 - Terminology Consistency Updates
-- **Fixed kept moments feature**: Migrated all "save/saved" terminology to "keep/kept" throughout the application
-  - Updated backend endpoints: `/api/save` → `/api/keeps`, `/api/saved-posts` → `/api/keeps`
-  - Updated frontend state management in Post and VideoPost components: `saved/setSaved` → `kept/setKept`
-  - Updated UI labels and data-testid attributes: `button-save` → `button-keep`
-  - Fixed "saved is not defined" error in VideoPost component
-- **Fixed reflect feature**: Updated all "comment" references to "reflect" in backend APIs and frontend components
-  - Backend endpoint: `/api/moments/:momentId/reflects`
-  - Updated profanity filter to use "reflection" terminology
-
-### October 8, 2025 - Routing Fixes
-- **Fixed Space page routing issue**: Corrected Space component to use `/space/:userId` route pattern (was using incorrect `/profile/:userId`)
-- **Fixed WebSocket note handling**: Aligned backend WebSocket handler to use `type: 'note'` matching frontend (was using `type: 'message'`)
-- **Updated all user profile links**: Changed all navigation links from `/profile/` to `/space/` across:
-  - Post component (author name and avatar links)
-  - Whispers page (follow whisper links)
-  - Wander page (search result links)
-  - UserListDrawer component (user list links)
+- **Third-Party Services**:
+    - Neon Database (PostgreSQL hosting)
+    - Google Fonts CDN (Inter, Libre Baskerville)
+- **File Storage**: Local filesystem storage for uploaded media, served statically.
+- **Key Integrations**:
+    - Replit Auth (OpenID Connect)
+    - WebSocket protocol (`ws` library)
+    - `connect-pg-simple` for PostgreSQL session management
+    - Multer for image/video uploads
+    - OpenAI-compatible API (GPT-5, GPT-4 Vision) via Replit AI Integrations for content moderation.
