@@ -209,7 +209,7 @@ function AuthDialog() {
                 </Button>
               </form>
 
-              <div className="relative">
+              {/* <div className="relative">
                 <div className="absolute inset-0 flex items-center">
                   <span className="w-full border-t" />
                 </div>
@@ -220,7 +220,7 @@ function AuthDialog() {
                 </div>
               </div>
 
-              {/* <Button
+              <Button
                 variant="outline"
                 className="w-full"
                 onClick={() => (window.location.href = "/api/login")}
@@ -291,7 +291,7 @@ function AuthDialog() {
                 </Button>
               </form>
 
-              <div className="relative">
+              {/* <div className="relative">
                 <div className="absolute inset-0 flex items-center">
                   <span className="w-full border-t" />
                 </div>
@@ -302,7 +302,7 @@ function AuthDialog() {
                 </div>
               </div>
 
-              {/* <Button
+              <Button
                 variant="outline"
                 className="w-full"
                 onClick={() => (window.location.href = "/api/login")}

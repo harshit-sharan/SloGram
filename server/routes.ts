@@ -546,9 +546,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/users/:userId", isAuthenticated, async (req, res) => {
+  app.get("/api/users/:userIdOrUsername", isAuthenticated, async (req, res) => {
     try {
-      const user = await storage.getUser(req.params.userId);
+      const userIdOrUsername = req.params.userIdOrUsername;
+      // Try to get user by ID first, then by username
+      let user = await storage.getUser(userIdOrUsername);
+      if (!user) {
+        user = await storage.getUserByUsername(userIdOrUsername);
+      }
       if (!user) {
         return res.status(404).json({ error: "User not found" });
       }

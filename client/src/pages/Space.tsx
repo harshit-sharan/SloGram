@@ -1,4 +1,4 @@
-import { Settings, Grid3x3, MessageCircle, Camera } from "lucide-react";
+import { Settings, Grid3x3, MessageCircle, Camera, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -190,51 +190,53 @@ export default function Profile() {
   const [, params] = useRoute("/space/:userId");
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const userId = params?.userId || "";
+  const userIdOrUsername = params?.userId || "";
   const [drawerType, setDrawerType] = useState<"followers" | "following" | null>(null);
 
-  const isOwnProfile = userId === currentUser?.id;
-
   const { data: user, isLoading: userLoading } = useQuery<User>({
-    queryKey: ["/api/users", userId],
-    enabled: !!userId,
+    queryKey: ["/api/users", userIdOrUsername],
+    enabled: !!userIdOrUsername,
   });
 
+  const isOwnProfile = user?.id === currentUser?.id;
+
   const { data: moments = [], isLoading: momentsLoading } = useQuery<Post[]>({
-    queryKey: ["/api/moments/user", userId],
-    enabled: !!userId,
+    queryKey: ["/api/moments/user", user?.id],
+    enabled: !!user?.id,
   });
 
   const { data: followData, isLoading: followLoading } = useQuery<{ following: boolean }>({
-    queryKey: ["/api/users", userId, "is-following"],
-    enabled: !!userId && !isOwnProfile,
+    queryKey: ["/api/users", user?.id, "is-following"],
+    enabled: !!user?.id && !isOwnProfile,
   });
 
   const { data: followers = [] } = useQuery<User[]>({
-    queryKey: ["/api/users", userId, "followers"],
-    enabled: !!userId,
+    queryKey: ["/api/users", user?.id, "followers"],
+    enabled: !!user?.id,
   });
 
   const { data: following = [] } = useQuery<User[]>({
-    queryKey: ["/api/users", userId, "following"],
-    enabled: !!userId,
+    queryKey: ["/api/users", user?.id, "following"],
+    enabled: !!user?.id,
   });
 
   const followMutation = useMutation({
     mutationFn: async () => {
-      return await apiRequest("POST", `/api/users/${userId}/follow`, {});
+      if (!user?.id) throw new Error("User not found");
+      return await apiRequest("POST", `/api/users/${user.id}/follow`, {});
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/users", userId, "is-following"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/users", userId, "followers"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/users", userId, "following"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/users", user?.id, "is-following"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/users", user?.id, "followers"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/users", user?.id, "following"] });
     },
   });
 
   const conversationMutation = useMutation({
     mutationFn: async () => {
+      if (!user?.id) throw new Error("User not found");
       const response = await apiRequest("POST", `/api/conversations`, {
-        otherUserId: userId,
+        otherUserId: user.id,
       });
       return response.json();
     },
@@ -259,7 +261,7 @@ export default function Profile() {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/users", userId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/users", userIdOrUsername] });
       queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
       toast({
         title: "Profile picture updated",
@@ -274,6 +276,26 @@ export default function Profile() {
       });
     },
   });
+
+  const handleShareProfile = async () => {
+    if (!user?.username) return;
+    
+    const profileUrl = `${window.location.origin}/space/${user.username}`;
+    
+    try {
+      await navigator.clipboard.writeText(profileUrl);
+      toast({
+        title: "Link copied!",
+        description: "Profile link copied to clipboard",
+      });
+    } catch (error) {
+      toast({
+        title: "Failed to copy link",
+        description: "Please try again",
+        variant: "destructive",
+      });
+    }
+  };
 
   const isFollowing = followData?.following || false;
 
@@ -360,6 +382,14 @@ export default function Profile() {
               {isOwnProfile ? (
                 <div className="flex gap-2">
                   <EditProfileDialog user={user} />
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    onClick={handleShareProfile}
+                    data-testid="button-share-profile"
+                  >
+                    <Share2 className="h-5 w-5" />
+                  </Button>
                   <Button variant="ghost" size="icon" asChild data-testid="button-settings">
                     <Link href="/settings">
                       <Settings className="h-5 w-5" />
@@ -474,7 +504,7 @@ export default function Profile() {
         title="Followers"
         users={followers}
         type="followers"
-        sourceUserId={userId}
+        sourceUserId={user?.id || ""}
       />
 
       <UserListDrawer
@@ -483,7 +513,7 @@ export default function Profile() {
         title="Following"
         users={following}
         type="following"
-        sourceUserId={userId}
+        sourceUserId={user?.id || ""}
       />
     </div>
   );
