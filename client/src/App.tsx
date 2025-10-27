@@ -18,6 +18,7 @@ import Whispers from "@/pages/Whispers";
 import Kept from "@/pages/Kept";
 import Settings from "@/pages/Settings";
 import Support from "@/pages/Support";
+import Privacy from "@/pages/Privacy";
 import NotFound from "@/pages/not-found";
 
 // Hook to manage scroll position restoration
@@ -141,8 +142,8 @@ function Router() {
     if (isLoading) return;
     
     // If user is not logged in and trying to access a protected route, redirect to home
-    // Exception: support page is accessible to everyone
-    if (!user && location !== "/" && location !== "/support") {
+    // Exception: support and privacy pages are accessible to everyone
+    if (!user && location !== "/" && location !== "/support" && location !== "/privacy") {
       setLocation("/");
     }
   }, [user, isLoading, location, setLocation]);
@@ -158,6 +159,7 @@ function Router() {
       <Route path="/kept" component={Kept} />
       <Route path="/settings" component={Settings} />
       <Route path="/support" component={Support} />
+      <Route path="/privacy" component={Privacy} />
       <Route component={NotFound} />
     </Switch>
   );

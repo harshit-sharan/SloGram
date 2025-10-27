@@ -18,8 +18,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { insertSupportRequestSchema, type InsertSupportRequest } from "@shared/schema";
 import { useAuth } from "@/hooks/useAuth";
-import { HeadphonesIcon, Send } from "lucide-react";
+import { HeadphonesIcon, Send, Shield } from "lucide-react";
 import { useEffect } from "react";
+import { Link } from "wouter";
 
 export default function Support() {
   const { toast } = useToast();
@@ -203,6 +204,15 @@ export default function Support() {
             </Form>
           </CardContent>
         </Card>
+
+        <div className="mt-6 text-center">
+          <Link href="/privacy">
+            <Button variant="ghost" size="sm" data-testid="link-privacy-policy">
+              <Shield className="h-4 w-4 mr-2" />
+              Privacy Policy
+            </Button>
+          </Link>
+        </div>
       </div>
     </div>
   );

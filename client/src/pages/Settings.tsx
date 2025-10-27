@@ -1,4 +1,4 @@
-import { LogOut, HeadphonesIcon } from "lucide-react";
+import { LogOut, HeadphonesIcon, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
@@ -51,11 +51,17 @@ export default function Settings() {
             <CardTitle>Help & Support</CardTitle>
             <CardDescription>Get assistance with your account or report an issue</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="flex flex-wrap gap-3">
             <Link href="/support">
               <Button variant="outline" className="w-full sm:w-auto" data-testid="button-contact-support">
                 <HeadphonesIcon className="h-4 w-4 mr-2" />
                 Contact Support
+              </Button>
+            </Link>
+            <Link href="/privacy">
+              <Button variant="outline" className="w-full sm:w-auto" data-testid="button-privacy-policy">
+                <Shield className="h-4 w-4 mr-2" />
+                Privacy Policy
               </Button>
             </Link>
           </CardContent>
