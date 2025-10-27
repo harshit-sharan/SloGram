@@ -12,6 +12,19 @@ import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import { ObjectPermission } from "./objectAcl";
 import { moderateContent, generateGentleFeedback, analyzeImageContent } from "./moderation";
 
+// Helper function to extract user ID from both Replit Auth and local auth
+function getUserId(req: any): string {
+  // Local auth: user object stored directly in req.user with id property
+  if (req.user && req.user.id && !req.user.claims) {
+    return req.user.id;
+  }
+  // Replit Auth: user data in req.user.claims.sub
+  if (req.user && req.user.claims && req.user.claims.sub) {
+    return req.user.claims.sub;
+  }
+  throw new Error("User ID not found in request");
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication - both Replit Auth and local email/password auth
   await setupAuth(app);
@@ -31,7 +44,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Handle Replit Auth (user data is in req.user.claims)
       if (req.user && req.user.claims) {
-        const userId = req.user.claims.sub;
+        const userId = getUserId(req);
         const user = await storage.getUser(userId);
         return res.json(sanitizeUser(user));
       }
@@ -47,7 +60,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Endpoint for serving uploaded files with ACL checking
   app.get("/objects/:objectPath(*)", isAuthenticated, async (req: any, res) => {
-    const userId = req.user?.claims?.sub;
+    const userId = getUserId(req);
     const objectStorageService = new ObjectStorageService();
     try {
       const objectFile = await objectStorageService.getObjectEntityFile(req.path);
@@ -244,7 +257,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Posts API with author details and counts
   app.get("/api/moments-with-authors", isAuthenticated, async (req: any, res) => {
     try {
-      const currentUserId = req.user.claims.sub;
+      const currentUserId = getUserId(req);
       const limit = parseInt(req.query.limit as string) || 10;
       const offset = parseInt(req.query.offset as string) || 0;
       
@@ -326,7 +339,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Explore posts API - posts from users you don't follow
   app.get("/api/explore-posts", isAuthenticated, async (req: any, res) => {
     try {
-      const currentUserId = req.user.claims.sub;
+      const currentUserId = getUserId(req);
       const limit = parseInt(req.query.limit as string) || 30;
       const offset = parseInt(req.query.offset as string) || 0;
       
@@ -428,7 +441,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/moments", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = getUserId(req);
       const postData = insertMomentSchema.parse({
         userId,
         type: req.body.type,
@@ -498,7 +511,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/moments/:momentId", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = getUserId(req);
       const postId = req.params.momentId;
       
       const post = await storage.getMoment(postId);
@@ -547,7 +560,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/users/:userId", isAuthenticated, async (req: any, res) => {
     try {
-      const currentUserId = req.user.claims.sub;
+      const currentUserId = getUserId(req);
       const targetUserId = req.params.userId;
       
       // Only allow users to update their own profile
@@ -598,7 +611,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Follow API
   app.post("/api/users/:userId/follow", isAuthenticated, async (req: any, res) => {
     try {
-      const currentUserId = req.user.claims.sub;
+      const currentUserId = getUserId(req);
       const targetUserId = req.params.userId;
       
       if (currentUserId === targetUserId) {
@@ -624,7 +637,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/users/:userId/is-following", isAuthenticated, async (req: any, res) => {
     try {
-      const currentUserId = req.user.claims.sub;
+      const currentUserId = getUserId(req);
       const targetUserId = req.params.userId;
       const isFollowing = await storage.isFollowing(currentUserId, targetUserId);
       res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
@@ -638,7 +651,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/users/:userId/followers", isAuthenticated, async (req: any, res) => {
     try {
-      const currentUserId = req.user.claims.sub;
+      const currentUserId = getUserId(req);
       const followers = await storage.getFollowers(req.params.userId, currentUserId);
       res.json(followers.map(sanitizeUser));
     } catch (error) {
@@ -648,7 +661,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/users/:userId/following", isAuthenticated, async (req: any, res) => {
     try {
-      const currentUserId = req.user.claims.sub;
+      const currentUserId = getUserId(req);
       const following = await storage.getFollowing(req.params.userId, currentUserId);
       res.json(following.map(sanitizeUser));
     } catch (error) {
@@ -659,7 +672,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Savors API
   app.post("/api/moments/:momentId/savor", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = getUserId(req);
       const savored = await storage.toggleSavor(userId, req.params.momentId);
       
       // Create notification if savored (not if unsavored)
@@ -694,7 +707,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/moments/:momentId/savored", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = getUserId(req);
       const savored = await storage.isMomentSavoredByUser(userId, req.params.momentId);
       // Disable HTTP caching for savor status
       res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
@@ -708,7 +721,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/moments/:momentId/savorers", isAuthenticated, async (req: any, res) => {
     try {
-      const currentUserId = req.user.claims.sub;
+      const currentUserId = getUserId(req);
       const users = await storage.getUsersWhoSavoredMoment(req.params.momentId, currentUserId);
       res.json(users.map(sanitizeUser));
     } catch (error) {
@@ -719,7 +732,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Keeps API
   app.post("/api/moments/:momentId/keep", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = getUserId(req);
       const kept = await storage.toggleKeep(userId, req.params.momentId);
       res.json({ kept });
     } catch (error) {
@@ -729,7 +742,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/moments/:momentId/kept", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = getUserId(req);
       const kept = await storage.isMomentKeptByUser(userId, req.params.momentId);
       // Disable HTTP caching for keep status
       res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
@@ -743,7 +756,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/keeps", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = getUserId(req);
       const keptMoments = await storage.getKeptMomentsByUserId(userId);
       res.json(keptMoments);
     } catch (error) {
@@ -755,7 +768,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Reflects API
   app.post("/api/moments/:momentId/reflects", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = getUserId(req);
       const reflectText = req.body.text;
       
       // Validate reflect text is not empty
@@ -810,7 +823,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Notifications API
   app.get("/api/whispers/:userId", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = getUserId(req);
       const notifications = await storage.getWhispersByUserId(userId);
       // Sanitize nested user (actor) objects
       const sanitizedNotifications = notifications.map(notification => ({
@@ -825,7 +838,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/whispers/:userId/unread-count", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = getUserId(req);
       const count = await storage.getUnreadWhisperCount(userId);
       res.json({ count });
     } catch (error) {
@@ -844,7 +857,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/whispers/:userId/read-all", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = getUserId(req);
       await storage.markAllWhispersAsRead(userId);
       res.json({ success: true });
     } catch (error) {
@@ -855,7 +868,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get unread message count for user
   app.get("/api/notes/:userId/unread-count", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = getUserId(req);
       const count = await storage.getUnreadNoteCount(userId);
       res.json({ count });
     } catch (error) {
@@ -866,7 +879,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Conversations API with user details and last message
   app.get("/api/conversations-with-details/:userId", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = getUserId(req);
       const conversations = await storage.getConversationsByUserId(userId);
       
       const conversationsWithDetails = await Promise.all(
@@ -894,7 +907,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/conversations/:userId", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = getUserId(req);
       const conversations = await storage.getConversationsByUserId(userId);
       res.json(conversations);
     } catch (error) {
@@ -904,7 +917,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/conversations", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = getUserId(req);
       const otherUserId = req.body.otherUserId;
       
       if (!otherUserId) {
@@ -924,7 +937,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Messages API with pagination
   app.get("/api/conversations/:conversationId/messages", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = getUserId(req);
       const conversationId = req.params.conversationId;
       const limit = parseInt(req.query.limit as string) || 20;
       const cursor = req.query.cursor as string | undefined;
@@ -946,7 +959,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/conversations/:conversationId/mark-read", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = getUserId(req);
       const conversationId = req.params.conversationId;
       
       // Get the conversation to verify the user is a participant

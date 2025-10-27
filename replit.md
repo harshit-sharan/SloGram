@@ -150,6 +150,12 @@ Preferred communication style: Simple, everyday language.
   - Updated `/api/auth/user` endpoint to handle both Replit Auth and local auth sessions
   - Frontend auth dialog shows tabs for "Log In" and "Sign Up" with email/password forms
   - Added "Or continue with" dividers for Replit Auth buttons
+  - **CRITICAL FIX**: Created `getUserId` helper function in routes.ts to extract user ID from both auth types
+    - Replit Auth stores user data in `req.user.claims.sub`
+    - Local auth stores user data in `req.user.id`
+    - All 25+ API endpoints updated to use `getUserId(req)` instead of `req.user.claims.sub`
+    - Fixed 500 errors on feed, wander, whispers, notes, followers, following, conversations, etc.
+    - Local auth users can now access all features: view feed, create posts, start chats, follow users
 
 ### October 22, 2025 - AI-Based Content Moderation
 - **Implemented AI-powered content moderation**: Added comprehensive moderation system based on Slogram's mindfulness guidelines
