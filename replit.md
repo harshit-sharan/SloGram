@@ -60,6 +60,18 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### October 27, 2025 - Support Request System
+- **Added support page and request system**: Users can now submit support requests directly through the platform
+  - New `/support` route with dedicated Support page component
+  - Form includes fields for name, email, subject, and message with validation
+  - Smart conditional rendering: hides name/email fields for logged-in users (auto-filled from their account)
+  - Shows "Submitting as [Name] (email)" notification for authenticated users
+  - Backend endpoint `/api/support` stores requests in `support_requests` table
+  - Support accessible via Settings page "Contact Support" button
+  - Works for both authenticated and anonymous users
+  - Form validation: name required, valid email format, subject required, message minimum 10 characters
+  - On success: displays toast and clears subject/message while preserving user identity
+
 ### October 27, 2025 - Username-based Profile URLs and Share Profile Feature
 - **Added username-based profile navigation**: Users can now access profiles using either user ID or username in the URL
   - Backend endpoint `/api/users/:userIdOrUsername` tries to fetch by ID first, then falls back to username
