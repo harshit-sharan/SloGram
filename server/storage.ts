@@ -8,8 +8,10 @@ export interface IStorage {
   // Users
   getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
   searchUsers(query: string): Promise<User[]>;
   createUser(user: InsertUser): Promise<User>;
+  createLocalUser(user: { email: string; password: string; username: string; displayName: string; firstName?: string | null; lastName?: string | null }): Promise<User>;
   upsertUser(user: UpsertUser): Promise<User>;
   
   // Moments
@@ -72,6 +74,11 @@ export class DbStorage implements IStorage {
     return user;
   }
 
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user;
+  }
+
   async searchUsers(query: string): Promise<User[]> {
     const searchPattern = `%${query}%`;
     return db.select().from(users).where(
@@ -84,6 +91,18 @@ export class DbStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const [user] = await db.insert(users).values(insertUser).returning();
+    return user;
+  }
+
+  async createLocalUser(userData: { email: string; password: string; username: string; displayName: string; firstName?: string | null; lastName?: string | null }): Promise<User> {
+    const [user] = await db.insert(users).values({
+      email: userData.email,
+      password: userData.password,
+      username: userData.username,
+      displayName: userData.displayName,
+      firstName: userData.firstName || null,
+      lastName: userData.lastName || null,
+    }).returning();
     return user;
   }
 

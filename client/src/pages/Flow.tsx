@@ -1,9 +1,13 @@
 import { Post, type PostData } from "@/components/Post";
 import { PlusSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useInfiniteQuery } from "@tanstack/react-query";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useInfiniteQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import {
   Dialog,
   DialogContent,
@@ -11,6 +15,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
 
 interface MomentWithAuthor {
   id: string;
@@ -43,6 +53,261 @@ function formatTimestamp(dateString: string): string {
   if (diffHours < 24) return `${diffHours} hours ago`;
   if (diffDays < 7) return `${diffDays} days ago`;
   return date.toLocaleDateString();
+}
+
+function AuthDialog() {
+  const { toast } = useToast();
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+  const [signupEmail, setSignupEmail] = useState("");
+  const [signupPassword, setSignupPassword] = useState("");
+  const [signupFirstName, setSignupFirstName] = useState("");
+  const [signupLastName, setSignupLastName] = useState("");
+
+  const loginMutation = useMutation({
+    mutationFn: async (credentials: { email: string; password: string }) => {
+      const response = await apiRequest("POST", "/api/local/login", credentials);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      window.location.reload();
+    },
+    onError: (error: Error) => {
+      const errorMsg = error.message;
+      const match = errorMsg.match(/^\d+:\s*(.+)$/);
+      let message = "Login failed";
+      if (match) {
+        try {
+          const errorData = JSON.parse(match[1]);
+          message = errorData.error || message;
+        } catch (e) {
+          message = match[1];
+        }
+      }
+      toast({
+        title: "Login failed",
+        description: message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const signupMutation = useMutation({
+    mutationFn: async (credentials: { email: string; password: string; firstName?: string; lastName?: string }) => {
+      const response = await apiRequest("POST", "/api/local/signup", credentials);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      window.location.reload();
+    },
+    onError: (error: Error) => {
+      const errorMsg = error.message;
+      const match = errorMsg.match(/^\d+:\s*(.+)$/);
+      let message = "Signup failed";
+      if (match) {
+        try {
+          const errorData = JSON.parse(match[1]);
+          message = errorData.error || message;
+        } catch (e) {
+          message = match[1];
+        }
+      }
+      toast({
+        title: "Signup failed",
+        description: message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    loginMutation.mutate({ email: loginEmail, password: loginPassword });
+  };
+
+  const handleSignup = (e: React.FormEvent) => {
+    e.preventDefault();
+    signupMutation.mutate({
+      email: signupEmail,
+      password: signupPassword,
+      firstName: signupFirstName || undefined,
+      lastName: signupLastName || undefined,
+    });
+  };
+
+  return (
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <Dialog open={true}>
+        <DialogContent
+          className="sm:max-w-lg"
+          data-testid="dialog-auth"
+          onInteractOutside={(e) => e.preventDefault()}
+          onEscapeKeyDown={(e) => e.preventDefault()}
+        >
+          <DialogHeader>
+            <DialogTitle className="font-serif text-2xl text-center">
+              Welcome to Slogram
+            </DialogTitle>
+            <DialogDescription className="text-center pt-2">
+              A mindful space for slow living and intentional sharing
+            </DialogDescription>
+          </DialogHeader>
+
+          <Tabs defaultValue="login" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="login" data-testid="tab-login">Log In</TabsTrigger>
+              <TabsTrigger value="signup" data-testid="tab-signup">Sign Up</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="login" className="space-y-4">
+              <form onSubmit={handleLogin} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="login-email">Email</Label>
+                  <Input
+                    id="login-email"
+                    type="email"
+                    placeholder="your@email.com"
+                    value={loginEmail}
+                    onChange={(e) => setLoginEmail(e.target.value)}
+                    required
+                    data-testid="input-login-email"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="login-password">Password</Label>
+                  <Input
+                    id="login-password"
+                    type="password"
+                    placeholder="••••••••"
+                    value={loginPassword}
+                    onChange={(e) => setLoginPassword(e.target.value)}
+                    required
+                    data-testid="input-login-password"
+                  />
+                </div>
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={loginMutation.isPending}
+                  data-testid="button-login-submit"
+                >
+                  {loginMutation.isPending ? "Logging in..." : "Log In"}
+                </Button>
+              </form>
+
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-background px-2 text-muted-foreground">
+                    Or continue with
+                  </span>
+                </div>
+              </div>
+
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => (window.location.href = "/api/login")}
+                data-testid="button-replit-login"
+              >
+                Log in with Replit
+              </Button>
+            </TabsContent>
+
+            <TabsContent value="signup" className="space-y-4">
+              <form onSubmit={handleSignup} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-firstname">First Name</Label>
+                    <Input
+                      id="signup-firstname"
+                      type="text"
+                      placeholder="Optional"
+                      value={signupFirstName}
+                      onChange={(e) => setSignupFirstName(e.target.value)}
+                      data-testid="input-signup-firstname"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-lastname">Last Name</Label>
+                    <Input
+                      id="signup-lastname"
+                      type="text"
+                      placeholder="Optional"
+                      value={signupLastName}
+                      onChange={(e) => setSignupLastName(e.target.value)}
+                      data-testid="input-signup-lastname"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="signup-email">Email</Label>
+                  <Input
+                    id="signup-email"
+                    type="email"
+                    placeholder="your@email.com"
+                    value={signupEmail}
+                    onChange={(e) => setSignupEmail(e.target.value)}
+                    required
+                    data-testid="input-signup-email"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="signup-password">Password</Label>
+                  <Input
+                    id="signup-password"
+                    type="password"
+                    placeholder="At least 6 characters"
+                    value={signupPassword}
+                    onChange={(e) => setSignupPassword(e.target.value)}
+                    required
+                    minLength={6}
+                    data-testid="input-signup-password"
+                  />
+                </div>
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={signupMutation.isPending}
+                  data-testid="button-signup-submit"
+                >
+                  {signupMutation.isPending ? "Creating account..." : "Sign Up"}
+                </Button>
+              </form>
+
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-background px-2 text-muted-foreground">
+                    Or continue with
+                  </span>
+                </div>
+              </div>
+
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => (window.location.href = "/api/login")}
+                data-testid="button-replit-signup"
+              >
+                Sign up with Replit
+              </Button>
+            </TabsContent>
+          </Tabs>
+
+          <p className="text-xs text-muted-foreground text-center pt-2">
+            By continuing, you agree to our terms of service and privacy policy.
+          </p>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
 }
 
 export default function Flow() {
@@ -87,41 +352,7 @@ export default function Flow() {
 
   // Show login dialog when not authenticated
   if (!user && !isAuthLoading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Dialog open={true}>
-          <DialogContent
-            className="sm:max-w-md"
-            data-testid="dialog-login-required"
-            onInteractOutside={(e) => e.preventDefault()}
-            onEscapeKeyDown={(e) => e.preventDefault()}
-          >
-            <DialogHeader>
-              <DialogTitle className="font-serif text-2xl text-center">
-                Welcome to Slogram
-              </DialogTitle>
-              <DialogDescription className="text-center pt-2">
-                A mindful space for slow living and intentional sharing. Please
-                log in to continue.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="flex flex-col gap-4 pt-4">
-              <Button
-                onClick={() => (window.location.href = "/api/login")}
-                className="w-full"
-                data-testid="button-login-dialog"
-              >
-                Log in with Replit
-              </Button>
-              <p className="text-xs text-muted-foreground text-center">
-                By logging in, you agree to our terms of service and privacy
-                policy.
-              </p>
-            </div>
-          </DialogContent>
-        </Dialog>
-      </div>
-    );
+    return <AuthDialog />;
   }
 
   if (isLoading || isAuthLoading) {

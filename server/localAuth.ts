@@ -10,6 +10,14 @@ import { insertUserSchema } from "@shared/schema";
 
 const scryptAsync = promisify(scrypt);
 
+// Sanitize user object to remove sensitive fields
+// CRITICAL: Always use this before sending user data to clients or storing in session
+export function sanitizeUser(user: any) {
+  if (!user) return null;
+  const { password, ...safeUser } = user;
+  return safeUser;
+}
+
 // Hash password using scrypt
 async function hashPassword(password: string): Promise<string> {
   const salt = randomBytes(16).toString("hex");
@@ -108,10 +116,13 @@ export function setupLocalAuth(app: Express) {
         lastName: lastName || null,
       });
 
-      // Log the user in
-      req.login(user, (err) => {
+      // Remove password hash before storing in session and sending to client
+      const sanitizedUser = sanitizeUser(user);
+
+      // Log the user in with sanitized user object
+      req.login(sanitizedUser, (err) => {
         if (err) return next(err);
-        res.status(201).json(user);
+        res.status(201).json(sanitizedUser);
       });
     } catch (error) {
       console.error("Signup error:", error);
@@ -129,11 +140,14 @@ export function setupLocalAuth(app: Express) {
         return res.status(401).json({ error: info?.message || "Invalid email or password" });
       }
       
-      req.login(user, (loginErr) => {
+      // Remove password hash before storing in session and sending to client
+      const sanitizedUser = sanitizeUser(user);
+      
+      req.login(sanitizedUser, (loginErr) => {
         if (loginErr) {
           return res.status(500).json({ error: "Login failed" });
         }
-        return res.status(200).json(user);
+        return res.status(200).json(sanitizedUser);
       });
     })(req, res, next);
   });

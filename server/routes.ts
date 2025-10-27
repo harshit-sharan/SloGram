@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated, getSession } from "./replitAuth";
+import { setupLocalAuth, sanitizeUser } from "./localAuth";
 import { insertMomentSchema, insertNoteSchema, updateUserProfileSchema, users } from "@shared/schema";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
@@ -12,15 +13,30 @@ import { ObjectPermission } from "./objectAcl";
 import { moderateContent, generateGentleFeedback, analyzeImageContent } from "./moderation";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Setup authentication
+  // Setup authentication - both Replit Auth and local email/password auth
   await setupAuth(app);
+  setupLocalAuth(app);
 
-  // Auth endpoint
-  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
+  // Auth endpoint - works with both Replit Auth and local auth
+  app.get('/api/auth/user', async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
-      res.json(user);
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      // Handle local auth (user object is stored directly in req.user)
+      if (req.user && req.user.id && !req.user.claims) {
+        return res.json(sanitizeUser(req.user));
+      }
+
+      // Handle Replit Auth (user data is in req.user.claims)
+      if (req.user && req.user.claims) {
+        const userId = req.user.claims.sub;
+        const user = await storage.getUser(userId);
+        return res.json(sanitizeUser(user));
+      }
+
+      return res.status(401).json({ message: "Unauthorized" });
     } catch (error) {
       console.error("Error fetching user:", error);
       res.status(500).json({ message: "Failed to fetch user" });
@@ -258,7 +274,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           return {
             ...post,
-            user,
+            user: sanitizeUser(user),
             _count: {
               savors: savorsCount,
               reflects: reflects.length,
@@ -332,7 +348,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           return {
             ...post,
-            user,
+            user: sanitizeUser(user),
             _count: {
               savors: savorsCount,
               reflects: reflects.length,
@@ -469,7 +485,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json({
         ...post,
-        user,
+        user: sanitizeUser(user),
         _count: {
           savors: savorsCount,
           reflects: reflects.length,
@@ -511,7 +527,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.json([]);
       }
       const users = await storage.searchUsers(query.trim());
-      res.json(users);
+      res.json(users.map(sanitizeUser));
     } catch (error) {
       res.status(500).json({ error: "Failed to search users" });
     }
@@ -523,7 +539,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!user) {
         return res.status(404).json({ error: "User not found" });
       }
-      res.json(user);
+      res.json(sanitizeUser(user));
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch user" });
     }
@@ -563,7 +579,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...updateData,
       });
       
-      res.json(updatedUser);
+      res.json(sanitizeUser(updatedUser));
     } catch (error) {
       console.error("Error updating user profile:", error);
       res.status(400).json({ error: "Failed to update profile" });
@@ -624,7 +640,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const currentUserId = req.user.claims.sub;
       const followers = await storage.getFollowers(req.params.userId, currentUserId);
-      res.json(followers);
+      res.json(followers.map(sanitizeUser));
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch followers" });
     }
@@ -634,7 +650,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const currentUserId = req.user.claims.sub;
       const following = await storage.getFollowing(req.params.userId, currentUserId);
-      res.json(following);
+      res.json(following.map(sanitizeUser));
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch following" });
     }
@@ -694,7 +710,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const currentUserId = req.user.claims.sub;
       const users = await storage.getUsersWhoSavoredMoment(req.params.momentId, currentUserId);
-      res.json(users);
+      res.json(users.map(sanitizeUser));
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch users who savored post" });
     }
@@ -780,7 +796,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/moments/:momentId/reflects", isAuthenticated, async (req, res) => {
     try {
       const reflects = await storage.getReflectsByMomentId(req.params.momentId);
-      res.json(reflects);
+      // Sanitize nested user objects
+      const sanitizedReflects = reflects.map(reflect => ({
+        ...reflect,
+        user: sanitizeUser(reflect.user),
+      }));
+      res.json(sanitizedReflects);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch reflections" });
     }
@@ -791,7 +812,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user.claims.sub;
       const notifications = await storage.getWhispersByUserId(userId);
-      res.json(notifications);
+      // Sanitize nested user (actor) objects
+      const sanitizedNotifications = notifications.map(notification => ({
+        ...notification,
+        actor: sanitizeUser(notification.actor),
+      }));
+      res.json(sanitizedNotifications);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch notifications" });
     }

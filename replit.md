@@ -98,14 +98,25 @@ Preferred communication style: Simple, everyday language.
 
 ### Authentication & Security
 
-**Authentication Method:**
-- Replit Auth using OpenID Connect protocol
+**Authentication Methods (Dual Auth System):**
+- **Replit Auth (OpenID Connect):** OAuth-based authentication supporting Google, GitHub, and other providers
+- **Local Email/Password Auth:** Custom authentication with secure password hashing using scrypt
+- Both methods share the same session store and work seamlessly together
 - Session-based authentication with httpOnly secure cookies
 - Sessions stored in PostgreSQL with 7-day TTL
-- All API routes protected with isAuthenticated middleware
+- All API routes protected with isAuthenticated middleware (supports both auth types)
 - WebSocket connections authenticated via session validation
 
-**User Claims from Replit:**
+**Local Auth Implementation:**
+- Password hashing with scrypt (64-byte hash, 16-byte random salt per user)
+- Timing-safe password comparison to prevent timing attacks
+- Password validation (minimum 6 characters)
+- Automatic generation of zen-themed usernames and display names for new users
+- User object sanitization - password hashes never sent to client or stored in session
+- Endpoints: `/api/local/signup`, `/api/local/login`
+- Uses passport-local strategy
+
+**Replit Auth User Claims:**
 - `sub`: User ID (unique identifier)
 - `email`: User's email address
 - `first_name`: User's first name
@@ -113,10 +124,12 @@ Preferred communication style: Simple, everyday language.
 - `profile_image_url`: User's profile image URL
 
 **Security Measures:**
-- Server-side user ID validation (req.user.claims.sub) on all routes
+- Server-side user ID validation on all routes (supports both req.user.claims.sub for Replit Auth and req.user.id for local auth)
 - WebSocket upgrade handler validates session before establishing connection
 - No client-provided user IDs trusted - all derived from authenticated session
 - IDOR vulnerabilities prevented via server-side authorization checks
+- Password hashes sanitized from all API responses and session storage
+- Unique email constraint prevents duplicate accounts
 - End-to-end note encryption using AES-256-GCM algorithm
   - All direct notes encrypted before storage in database
   - Encryption key stored securely in MESSAGE_ENCRYPTION_KEY environment variable
@@ -124,6 +137,19 @@ Preferred communication style: Simple, everyday language.
   - Notes automatically decrypted when retrieved for display
 
 ## Recent Changes
+
+### October 27, 2025 - Dual Authentication System
+- **Added email/password authentication alongside Replit Auth**: Users can now sign up and log in using either email/password or Replit Auth (Google, GitHub, etc.)
+  - Implemented secure password hashing using scrypt with random salt per user
+  - Created passport-local strategy for email/password authentication
+  - Added signup and login forms with tabs for both authentication methods
+  - Both auth methods share the same PostgreSQL session store
+  - Enhanced isAuthenticated middleware to support both auth types
+  - User objects sanitized to prevent password hash exposure to clients
+  - Automatic generation of zen-themed usernames and display names for local signups
+  - Updated `/api/auth/user` endpoint to handle both Replit Auth and local auth sessions
+  - Frontend auth dialog shows tabs for "Log In" and "Sign Up" with email/password forms
+  - Added "Or continue with" dividers for Replit Auth buttons
 
 ### October 22, 2025 - AI-Based Content Moderation
 - **Implemented AI-powered content moderation**: Added comprehensive moderation system based on Slogram's mindfulness guidelines
