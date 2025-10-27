@@ -278,9 +278,18 @@ export default function Profile() {
   });
 
   const handleShareProfile = async () => {
-    if (!user?.username) return;
+    if (!user?.username && !user?.id) {
+      toast({
+        title: "Unable to share profile",
+        description: "User profile information is not available",
+        variant: "destructive",
+      });
+      return;
+    }
     
-    const profileUrl = `${window.location.origin}/space/${user.username}`;
+    // Prefer username, fallback to user ID
+    const profileIdentifier = user.username || user.id;
+    const profileUrl = `${window.location.origin}/space/${profileIdentifier}`;
     
     try {
       await navigator.clipboard.writeText(profileUrl);
@@ -379,47 +388,49 @@ export default function Profile() {
               <h1 className="font-serif text-2xl" data-testid="text-username">
                 {user.username || user.email}
               </h1>
-              {isOwnProfile ? (
-                <div className="flex gap-2">
-                  <EditProfileDialog user={user} />
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    onClick={handleShareProfile}
-                    data-testid="button-share-profile"
-                  >
-                    <Share2 className="h-5 w-5" />
-                  </Button>
-                  <Button variant="ghost" size="icon" asChild data-testid="button-settings">
-                    <Link href="/settings">
-                      <Settings className="h-5 w-5" />
-                    </Link>
-                  </Button>
-                </div>
-              ) : (
-                <div className="flex gap-2">
-                  {!followLoading && (
-                    <Button
-                      variant={isFollowing ? "secondary" : "default"}
-                      size="sm"
-                      onClick={handleFollowClick}
-                      disabled={followMutation.isPending}
-                      data-testid="button-follow"
-                    >
-                      {followMutation.isPending ? "..." : isFollowing ? "Following" : "Follow"}
+              <div className="flex gap-2">
+                {isOwnProfile ? (
+                  <>
+                    <EditProfileDialog user={user} />
+                    <Button variant="ghost" size="icon" asChild data-testid="button-settings">
+                      <Link href="/settings">
+                        <Settings className="h-5 w-5" />
+                      </Link>
                     </Button>
-                  )}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleConversationClick}
-                    disabled={conversationMutation.isPending}
-                    data-testid="button-conversation"
-                  >
-                    <MessageCircle className="h-4 w-4" />
-                  </Button>
-                </div>
-              )}
+                  </>
+                ) : (
+                  <>
+                    {!followLoading && (
+                      <Button
+                        variant={isFollowing ? "secondary" : "default"}
+                        size="sm"
+                        onClick={handleFollowClick}
+                        disabled={followMutation.isPending}
+                        data-testid="button-follow"
+                      >
+                        {followMutation.isPending ? "..." : isFollowing ? "Following" : "Follow"}
+                      </Button>
+                    )}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleConversationClick}
+                      disabled={conversationMutation.isPending}
+                      data-testid="button-conversation"
+                    >
+                      <MessageCircle className="h-4 w-4" />
+                    </Button>
+                  </>
+                )}
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={handleShareProfile}
+                  data-testid="button-share-profile"
+                >
+                  <Share2 className="h-5 w-5" />
+                </Button>
+              </div>
             </div>
 
             <div className="flex gap-8 justify-center md:justify-start mb-4">
