@@ -13,7 +13,7 @@ interface WhisperData {
   userId: string;
   type: "savor" | "reflect" | "follow";
   actorId: string;
-  postId: string | null;
+  momentId: string | null;
   read: boolean;
   createdAt: string;
   actor: {
@@ -22,7 +22,7 @@ interface WhisperData {
     displayName: string | null;
     avatar: string | null;
   };
-  post?: {
+  moment?: {
     id: string;
     userId: string;
     type: "image" | "video";
@@ -123,7 +123,7 @@ export default function Whispers() {
             const isFollowWhisper = whisper.type === "follow";
             const linkHref = isFollowWhisper 
               ? `/space/${whisper.actorId}` 
-              : `/moment/${whisper.postId}`;
+              : `/moment/${whisper.momentId}`;
             
             return (
               <Link
@@ -168,17 +168,17 @@ export default function Whispers() {
                     ) : (
                       <UserPlus className="h-5 w-5 text-primary" />
                     )}
-                    {whisper.post && (
+                    {whisper.moment && (
                       <>
-                        {whisper.post.type === "image" ? (
+                        {whisper.moment.type === "image" ? (
                           <img
-                            src={whisper.post.mediaUrl}
+                            src={whisper.moment.mediaUrl}
                             alt="Moment"
                             className="h-12 w-12 object-cover rounded"
                           />
                         ) : (
                           <video
-                            src={whisper.post.mediaUrl}
+                            src={whisper.moment.mediaUrl}
                             className="h-12 w-12 object-cover rounded"
                             muted
                           />
