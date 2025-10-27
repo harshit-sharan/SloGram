@@ -161,13 +161,24 @@ export async function setupAuth(app: Express) {
   });
 
   app.get("/api/logout", (req, res) => {
+    const user = req.user as any;
+    
+    // Check if this is a local auth user (has id but not claims/expires_at)
+    const isLocalAuth = user && user.id && !user.claims && !user.expires_at;
+    
     req.logout(() => {
-      res.redirect(
-        client.buildEndSessionUrl(config, {
-          client_id: process.env.REPL_ID!,
-          post_logout_redirect_uri: `${req.protocol}://${req.hostname}`,
-        }).href
-      );
+      if (isLocalAuth) {
+        // For local auth, just redirect to homepage
+        res.redirect("/");
+      } else {
+        // For Replit Auth, use OIDC end session flow
+        res.redirect(
+          client.buildEndSessionUrl(config, {
+            client_id: process.env.REPL_ID!,
+            post_logout_redirect_uri: `${req.protocol}://${req.hostname}`,
+          }).href
+        );
+      }
     });
   });
 }
