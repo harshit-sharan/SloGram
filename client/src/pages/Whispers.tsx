@@ -1,4 +1,5 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useEffect, useRef } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Heart, MessageCircle, UserPlus } from "lucide-react";
@@ -73,6 +74,20 @@ export default function Whispers() {
       markAsReadMutation.mutate(whisperId);
     }
   };
+
+  // Track if we've already marked whispers as read to avoid repeated calls
+  const hasMarkedAsRead = useRef(false);
+
+  // Automatically mark all unread whispers as read when page is first viewed
+  useEffect(() => {
+    if (!hasMarkedAsRead.current && whispers.length > 0 && user) {
+      const unreadWhispers = whispers.filter(n => !n.read);
+      if (unreadWhispers.length > 0) {
+        hasMarkedAsRead.current = true;
+        markAllAsReadMutation.mutate();
+      }
+    }
+  }, [whispers, user]);
 
   const unreadCount = whispers.filter(n => !n.read).length;
 

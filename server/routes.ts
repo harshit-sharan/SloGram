@@ -848,7 +848,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/whispers/:whisperId/read", isAuthenticated, async (req, res) => {
     try {
-      await storage.markWhisperAsRead(req.params.notificationId);
+      await storage.markWhisperAsRead(req.params.whisperId);
       res.json({ success: true });
     } catch (error) {
       res.status(500).json({ error: "Failed to mark notification as read" });
