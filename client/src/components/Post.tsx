@@ -755,21 +755,28 @@ export function Post({ post }: { post: PostData }) {
                 className="flex gap-2"
                 data-testid={`reflect-${reflect.id}`}
               >
-                <Avatar className="h-6 w-6 flex-shrink-0">
-                  <AvatarImage src={reflect.user.avatar || undefined} />
-                  <AvatarFallback>
-                    {(
-                      reflect.user.displayName || reflect.user.username
-                    )?.charAt(0) || "U"}
-                  </AvatarFallback>
-                </Avatar>
+                <Link
+                  to={`/space/${reflect.user.id}`}
+                  data-testid={`link-reflect-avatar-${reflect.id}`}
+                >
+                  <Avatar className="h-6 w-6 flex-shrink-0 hover-elevate cursor-pointer">
+                    <AvatarImage src={reflect.user.avatar || undefined} />
+                    <AvatarFallback>
+                      {(
+                        reflect.user.displayName || reflect.user.username
+                      )?.charAt(0) || "U"}
+                    </AvatarFallback>
+                  </Avatar>
+                </Link>
                 <div className="flex-1 text-sm">
-                  <span
-                    className="font-serif font-semibold mr-2"
+                  <Link
+                    to={`/space/${reflect.user.id}`}
                     data-testid={`reflect-author-${reflect.id}`}
                   >
-                    {reflect.user.username}
-                  </span>
+                    <span className="font-serif font-semibold mr-2 hover-elevate rounded px-1 cursor-pointer">
+                      {reflect.user.username}
+                    </span>
+                  </Link>
                   <span
                     className="text-foreground"
                     data-testid={`reflect-text-${reflect.id}`}
