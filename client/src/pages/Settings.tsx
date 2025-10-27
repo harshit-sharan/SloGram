@@ -1,8 +1,9 @@
-import { LogOut } from "lucide-react";
+import { LogOut, HeadphonesIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
 import { logout } from "@/lib/authUtils";
+import { Link } from "wouter";
 
 export default function Settings() {
   const { user } = useAuth();
@@ -42,6 +43,21 @@ export default function Settings() {
                 Log Out
               </Button>
             </div>
+          </CardContent>
+        </Card>
+
+        <Card data-testid="card-help" className="mt-6">
+          <CardHeader>
+            <CardTitle>Help & Support</CardTitle>
+            <CardDescription>Get assistance with your account or report an issue</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Link href="/support">
+              <Button variant="outline" className="w-full sm:w-auto" data-testid="button-contact-support">
+                <HeadphonesIcon className="h-4 w-4 mr-2" />
+                Contact Support
+              </Button>
+            </Link>
           </CardContent>
         </Card>
       </div>

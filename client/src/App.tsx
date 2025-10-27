@@ -17,6 +17,7 @@ import MomentDetail from "@/pages/MomentDetail";
 import Whispers from "@/pages/Whispers";
 import Kept from "@/pages/Kept";
 import Settings from "@/pages/Settings";
+import Support from "@/pages/Support";
 import NotFound from "@/pages/not-found";
 
 // Hook to manage scroll position restoration
@@ -152,6 +153,7 @@ function Router() {
       <Route path="/whispers" component={Whispers} />
       <Route path="/kept" component={Kept} />
       <Route path="/settings" component={Settings} />
+      <Route path="/support" component={Support} />
       <Route component={NotFound} />
     </Switch>
   );
