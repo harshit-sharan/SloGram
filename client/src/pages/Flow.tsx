@@ -15,12 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface MomentWithAuthor {
   id: string;
@@ -66,7 +61,11 @@ function AuthDialog() {
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: { email: string; password: string }) => {
-      const response = await apiRequest("POST", "/api/local/login", credentials);
+      const response = await apiRequest(
+        "POST",
+        "/api/local/login",
+        credentials,
+      );
       return response.json();
     },
     onSuccess: () => {
@@ -94,8 +93,17 @@ function AuthDialog() {
   });
 
   const signupMutation = useMutation({
-    mutationFn: async (credentials: { email: string; password: string; firstName?: string; lastName?: string }) => {
-      const response = await apiRequest("POST", "/api/local/signup", credentials);
+    mutationFn: async (credentials: {
+      email: string;
+      password: string;
+      firstName?: string;
+      lastName?: string;
+    }) => {
+      const response = await apiRequest(
+        "POST",
+        "/api/local/signup",
+        credentials,
+      );
       return response.json();
     },
     onSuccess: () => {
@@ -157,8 +165,12 @@ function AuthDialog() {
 
           <Tabs defaultValue="login" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login" data-testid="tab-login">Log In</TabsTrigger>
-              <TabsTrigger value="signup" data-testid="tab-signup">Sign Up</TabsTrigger>
+              <TabsTrigger value="login" data-testid="tab-login">
+                Log In
+              </TabsTrigger>
+              <TabsTrigger value="signup" data-testid="tab-signup">
+                Sign Up
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="login" className="space-y-4">
@@ -208,14 +220,14 @@ function AuthDialog() {
                 </div>
               </div>
 
-              <Button
+              {/* <Button
                 variant="outline"
                 className="w-full"
                 onClick={() => (window.location.href = "/api/login")}
                 data-testid="button-replit-login"
               >
                 Log in with Replit
-              </Button>
+              </Button> */}
             </TabsContent>
 
             <TabsContent value="signup" className="space-y-4">
@@ -290,14 +302,14 @@ function AuthDialog() {
                 </div>
               </div>
 
-              <Button
+              {/* <Button
                 variant="outline"
                 className="w-full"
                 onClick={() => (window.location.href = "/api/login")}
                 data-testid="button-replit-signup"
               >
                 Sign up with Replit
-              </Button>
+              </Button> */}
             </TabsContent>
           </Tabs>
 
@@ -359,7 +371,9 @@ export default function Flow() {
     return (
       <div className="min-h-screen bg-background pb-20 md:pb-0">
         <div className="max-w-2xl mx-auto pt-6">
-          <p className="text-center text-muted-foreground">Loading moments...</p>
+          <p className="text-center text-muted-foreground">
+            Loading moments...
+          </p>
         </div>
       </div>
     );
@@ -409,7 +423,9 @@ export default function Flow() {
                 data-testid="load-more-trigger"
               >
                 {isFetchingNextPage ? (
-                  <p className="text-muted-foreground">Loading more moments...</p>
+                  <p className="text-muted-foreground">
+                    Loading more moments...
+                  </p>
                 ) : null}
               </div>
             )}
