@@ -95,7 +95,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(400).json({ error: "profileImageURL is required" });
     }
 
-    const userId = req.user?.claims?.sub;
+    const userId = getUserId(req);
     const uploadURL = req.body.profileImageURL;
 
     try {
@@ -184,7 +184,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(400).json({ error: "mediaURL is required" });
     }
 
-    const userId = req.user?.claims?.sub;
+    const userId = getUserId(req);
     const uploadURL = req.body.mediaURL;
 
     try {
@@ -1003,7 +1003,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         req.user = req.session.passport.user;
       }
       
-      if (!req.user || !req.user.claims) {
+      // Check if user is authenticated (works for both Replit Auth and local auth)
+      if (!req.user) {
         socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
         socket.destroy();
         return;
@@ -1016,7 +1017,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   wss.on('connection', (ws: WebSocket, request: any) => {
-    const userId = request.user.claims.sub;
+    // Extract user ID from both auth types
+    let userId: string;
+    try {
+      userId = getUserId(request);
+    } catch (error) {
+      console.error('WebSocket connection failed: Unable to get user ID', error);
+      ws.close();
+      return;
+    }
     
     if (!userId) {
       ws.close();
