@@ -982,6 +982,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Support request endpoint
+  app.post("/api/support", async (req: any, res) => {
+    try {
+      const { insertSupportRequestSchema, supportRequests } = await import("@shared/schema");
+      
+      // Validate request body
+      const validatedData = insertSupportRequestSchema.parse(req.body);
+      
+      // Get user ID if authenticated (optional for support)
+      let userId: string | null = null;
+      if (req.isAuthenticated()) {
+        try {
+          userId = getUserId(req);
+        } catch (error) {
+          // User ID not available, continue without it
+        }
+      }
+      
+      // Create support request
+      const [supportRequest] = await db.insert(supportRequests).values({
+        userId,
+        name: validatedData.name,
+        email: validatedData.email,
+        subject: validatedData.subject,
+        message: validatedData.message,
+      }).returning();
+      
+      res.status(201).json({ success: true, id: supportRequest.id });
+    } catch (error: any) {
+      console.error("Error creating support request:", error);
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ error: "Invalid request data", details: error.errors });
+      }
+      res.status(500).json({ error: "Failed to submit support request" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   // WebSocket server for real-time messaging
