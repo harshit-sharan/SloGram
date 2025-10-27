@@ -19,6 +19,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { insertSupportRequestSchema, type InsertSupportRequest } from "@shared/schema";
 import { useAuth } from "@/hooks/useAuth";
 import { HeadphonesIcon, Send } from "lucide-react";
+import { useEffect } from "react";
 
 export default function Support() {
   const { toast } = useToast();
@@ -27,12 +28,20 @@ export default function Support() {
   const form = useForm<InsertSupportRequest>({
     resolver: zodResolver(insertSupportRequestSchema),
     defaultValues: {
-      name: user?.displayName || user?.username || "",
-      email: user?.email || "",
+      name: "",
+      email: "",
       subject: "",
       message: "",
     },
   });
+
+  // Update form values when user data is loaded
+  useEffect(() => {
+    if (user) {
+      form.setValue("name", user.displayName || user.username || "");
+      form.setValue("email", user.email || "");
+    }
+  }, [user, form]);
 
   const supportMutation = useMutation({
     mutationFn: async (data: InsertSupportRequest) => {
@@ -44,12 +53,9 @@ export default function Support() {
         title: "Request submitted successfully",
         description: "We'll get back to you as soon as possible.",
       });
-      form.reset({
-        name: user?.displayName || user?.username || "",
-        email: user?.email || "",
-        subject: "",
-        message: "",
-      });
+      // Reset only subject and message, preserve name and email
+      form.setValue("subject", "");
+      form.setValue("message", "");
     },
     onError: (error: Error) => {
       toast({
@@ -85,47 +91,58 @@ export default function Support() {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {user && (
+              <div className="mb-6 p-4 bg-muted rounded-lg">
+                <p className="text-sm text-muted-foreground">
+                  Submitting as <span className="font-medium text-foreground">{user.displayName || user.username}</span> ({user.email})
+                </p>
+              </div>
+            )}
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Name</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="Your name"
-                          {...field}
-                          data-testid="input-name"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                {!user && (
+                  <>
+                    <FormField
+                      control={form.control}
+                      name="name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Name</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="Your name"
+                              {...field}
+                              data-testid="input-name"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="email"
-                          placeholder="your.email@example.com"
-                          {...field}
-                          data-testid="input-email"
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        We'll use this email to respond to your request
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                    <FormField
+                      control={form.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="email"
+                              placeholder="your.email@example.com"
+                              {...field}
+                              data-testid="input-email"
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            We'll use this email to respond to your request
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </>
+                )}
 
                 <FormField
                   control={form.control}
