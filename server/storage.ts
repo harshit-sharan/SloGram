@@ -1,6 +1,6 @@
-import { type User, type InsertUser, type UpsertUser, type Moment, type InsertMoment, type Note, type InsertNote, type Conversation, type Reflect, type Whisper, type Follow } from "@shared/schema";
+import { type User, type InsertUser, type UpsertUser, type Moment, type InsertMoment, type Note, type InsertNote, type Conversation, type Reflect, type Whisper, type Follow, type InsertReport, type Report } from "@shared/schema";
 import { db } from "./db";
-import { users, moments, notes, conversations, reflects, savors, keeps, whispers, follows } from "@shared/schema";
+import { users, moments, notes, conversations, reflects, savors, keeps, whispers, follows, reports } from "@shared/schema";
 import { eq, and, or, desc, ilike, inArray, sql } from "drizzle-orm";
 import { encryptMessage, decryptMessage } from "./encryption";
 
@@ -61,6 +61,12 @@ export interface IStorage {
   getFollowedUserIds(userId: string): Promise<string[]>;
   getFollowers(userId: string, currentUserId?: string): Promise<Array<User & { isFollowing: boolean }>>;
   getFollowing(userId: string, currentUserId?: string): Promise<Array<User & { isFollowing: boolean }>>;
+  
+  // Reports
+  createReport(report: InsertReport): Promise<Report>;
+  getReportedMomentIds(reporterId: string): Promise<string[]>;
+  getReportedUserIds(reporterId: string): Promise<string[]>;
+  hasReported(reporterId: string, targetType: "moment" | "user", targetId: string): Promise<boolean>;
 }
 
 export class DbStorage implements IStorage {
@@ -603,6 +609,47 @@ export class DbStorage implements IStorage {
       )
       .where(eq(follows.followerId, userId));
     return result as Array<User & { isFollowing: boolean }>;
+  }
+
+  async createReport(report: InsertReport): Promise<Report> {
+    const [newReport] = await db.insert(reports).values({
+      reporterId: report.reporterId,
+      targetType: report.targetType as "moment" | "user",
+      targetId: report.targetId,
+      reason: report.reason as "harassment" | "hate" | "explicit" | "spam" | "self_harm" | "other",
+      notes: report.notes || null,
+    }).returning();
+    return newReport;
+  }
+
+  async getReportedMomentIds(reporterId: string): Promise<string[]> {
+    const result = await db
+      .select({ targetId: reports.targetId })
+      .from(reports)
+      .where(and(eq(reports.reporterId, reporterId), eq(reports.targetType, "moment")));
+    return result.map((r) => r.targetId);
+  }
+
+  async getReportedUserIds(reporterId: string): Promise<string[]> {
+    const result = await db
+      .select({ targetId: reports.targetId })
+      .from(reports)
+      .where(and(eq(reports.reporterId, reporterId), eq(reports.targetType, "user")));
+    return result.map((r) => r.targetId);
+  }
+
+  async hasReported(reporterId: string, targetType: "moment" | "user", targetId: string): Promise<boolean> {
+    const [existing] = await db
+      .select()
+      .from(reports)
+      .where(
+        and(
+          eq(reports.reporterId, reporterId),
+          eq(reports.targetType, targetType),
+          eq(reports.targetId, targetId)
+        )
+      );
+    return !!existing;
   }
 }
 

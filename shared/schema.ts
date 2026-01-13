@@ -114,6 +114,16 @@ export const supportRequests = pgTable("support_requests", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+export const reports = pgTable("reports", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  reporterId: varchar("reporter_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  targetType: text("target_type").notNull().$type<"moment" | "user">(),
+  targetId: varchar("target_id").notNull(),
+  reason: text("reason").notNull().$type<"harassment" | "hate" | "explicit" | "spam" | "self_harm" | "other">(),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
@@ -151,6 +161,11 @@ export const insertSupportRequestSchema = createInsertSchema(supportRequests).om
   message: z.string().min(10, "Message must be at least 10 characters"),
 });
 
+export const insertReportSchema = createInsertSchema(reports).omit({
+  id: true,
+  createdAt: true,
+});
+
 export const updateUserProfileSchema = createInsertSchema(users).pick({
   displayName: true,
   story: true,
@@ -185,3 +200,5 @@ export type InsertFollow = z.infer<typeof insertFollowSchema>;
 export type Follow = typeof follows.$inferSelect;
 export type InsertSupportRequest = z.infer<typeof insertSupportRequestSchema>;
 export type SupportRequest = typeof supportRequests.$inferSelect;
+export type InsertReport = z.infer<typeof insertReportSchema>;
+export type Report = typeof reports.$inferSelect;
