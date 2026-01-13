@@ -25,6 +25,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { ReportDialog } from "@/components/ReportDialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -520,7 +521,7 @@ export function Post({ post }: { post: PostData }) {
                 : "Follow"}
           </Button>
         )}
-        {isOwnPost && (
+        {isOwnPost ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
@@ -542,6 +543,21 @@ export function Post({ post }: { post: PostData }) {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+        ) : (
+          <ReportDialog 
+            targetType="moment" 
+            targetId={post.id}
+            targetName="this moment"
+            trigger={
+              <Button
+                variant="ghost"
+                size="icon"
+                data-testid={`button-report-moment-${post.id}`}
+              >
+                <MoreVertical className="h-5 w-5" />
+              </Button>
+            }
+          />
         )}
       </div>
 

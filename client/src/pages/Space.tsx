@@ -1,4 +1,5 @@
-import { Settings, Grid3x3, MessageCircle, Camera, Share2 } from "lucide-react";
+import { Settings, Grid3x3, MessageCircle, Camera, Share2, Flag } from "lucide-react";
+import { ReportDialog } from "@/components/ReportDialog";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -427,6 +428,20 @@ export default function Profile() {
                     >
                       <MessageCircle className="h-4 w-4" />
                     </Button>
+                    <ReportDialog
+                      targetType="user"
+                      targetId={user.id}
+                      targetName={user.displayName || user.username || "this user"}
+                      trigger={
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          data-testid="button-report-user"
+                        >
+                          <Flag className="h-4 w-4" />
+                        </Button>
+                      }
+                    />
                   </>
                 )}
                 <Button 

@@ -61,6 +61,23 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### October 27, 2025 - Report System for Objectionable Content
+- **Added reporting system for content and users**: Users can report objectionable moments and abusive users
+  - New `reports` database table storing reporterId, targetType (moment/user), targetId, reason, notes, createdAt
+  - Report reasons: harassment, hate, explicit, spam, self_harm, other
+  - API endpoints: POST `/api/reports/moments/:momentId`, POST `/api/reports/users/:targetUserId`
+  - GET endpoints to fetch user's reported content/users for filtering
+  - Prevents duplicate reports and self-reporting
+- **Automatic content filtering**: Reported content is hidden from the reporting user's experience
+  - Flow page (`/api/moments-with-authors`) filters out reported moments and moments from reported users
+  - Explore/Wander page (`/api/explore-posts`) applies same filtering
+  - Filtering happens server-side for performance
+- **UI integration**: Report dialogs added throughout the app
+  - ReportDialog component with radio button reasons and optional notes
+  - Report button on moment cards (three-dot menu for other users' posts)
+  - Report user button on profile pages (flag icon for other users)
+  - Confirmation toast and automatic feed refresh after reporting
+
 ### October 27, 2025 - Terms of Service and Policy Acceptance
 - **Added Terms of Service page**: Comprehensive EULA with zero tolerance policy for objectionable content and abusive users
   - New `/terms` route with dedicated Terms page component
