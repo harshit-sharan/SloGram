@@ -67,6 +67,9 @@ export interface IStorage {
   getReportedMomentIds(reporterId: string): Promise<string[]>;
   getReportedUserIds(reporterId: string): Promise<string[]>;
   hasReported(reporterId: string, targetType: "moment" | "user", targetId: string): Promise<boolean>;
+  
+  // Account deletion
+  deleteUser(userId: string): Promise<void>;
 }
 
 export class DbStorage implements IStorage {
@@ -650,6 +653,10 @@ export class DbStorage implements IStorage {
         )
       );
     return !!existing;
+  }
+
+  async deleteUser(userId: string): Promise<void> {
+    await db.delete(users).where(eq(users.id, userId));
   }
 }
 

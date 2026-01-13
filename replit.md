@@ -61,6 +61,15 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### January 13, 2026 - Account Deletion Feature
+- **Added account deletion option**: Users can permanently delete their account and all associated data
+  - New `deleteUser` method in storage layer
+  - DELETE `/api/account` endpoint with session cleanup
+  - Settings page "Danger Zone" section with confirmation dialog
+  - Shows list of data that will be deleted (moments, messages, followers, saved content)
+  - Buttons disabled during deletion, proper error handling and feedback
+  - Cascading delete removes all user data: moments, savors, keeps, reflects, conversations, notes, whispers, follows, reports
+
 ### October 27, 2025 - Report System for Objectionable Content
 - **Added reporting system for content and users**: Users can report objectionable moments and abusive users
   - New `reports` database table storing reporterId, targetType (moment/user), targetId, reason, notes, createdAt

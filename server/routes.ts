@@ -1150,6 +1150,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Account deletion endpoint
+  app.delete("/api/account", isAuthenticated, async (req: any, res) => {
+    const userId = getUserId(req);
+    
+    try {
+      // Delete user and all related data (cascade handles related tables)
+      await storage.deleteUser(userId);
+      
+      // Clear session after successful deletion
+      req.logout((logoutErr: any) => {
+        if (logoutErr) {
+          console.error("Logout error after account deletion (non-critical):", logoutErr);
+        }
+        
+        req.session.destroy((sessionErr: any) => {
+          if (sessionErr) {
+            console.error("Session destroy error after account deletion (non-critical):", sessionErr);
+          }
+          // Clear the session cookie
+          res.clearCookie('connect.sid');
+          res.json({ success: true, message: "Account deleted successfully" });
+        });
+      });
+    } catch (error) {
+      console.error("Error deleting account:", error);
+      res.status(500).json({ error: "Failed to delete account" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   // WebSocket server for real-time messaging
