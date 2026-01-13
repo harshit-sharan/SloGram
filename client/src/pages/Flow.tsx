@@ -3,6 +3,7 @@ import { PlusSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useInfiniteQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { useEffect, useRef, useState } from "react";
@@ -16,6 +17,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Link } from "wouter";
 
 interface MomentWithAuthor {
   id: string;
@@ -58,6 +60,7 @@ function AuthDialog() {
   const [signupPassword, setSignupPassword] = useState("");
   const [signupFirstName, setSignupFirstName] = useState("");
   const [signupLastName, setSignupLastName] = useState("");
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: { email: string; password: string }) => {
@@ -98,6 +101,7 @@ function AuthDialog() {
       password: string;
       firstName?: string;
       lastName?: string;
+      acceptedTerms: boolean;
     }) => {
       const response = await apiRequest(
         "POST",
@@ -137,11 +141,20 @@ function AuthDialog() {
 
   const handleSignup = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!acceptedTerms) {
+      toast({
+        title: "Terms Required",
+        description: "Please accept the Terms of Service and Privacy Policy to continue.",
+        variant: "destructive",
+      });
+      return;
+    }
     signupMutation.mutate({
       email: signupEmail,
       password: signupPassword,
       firstName: signupFirstName || undefined,
       lastName: signupLastName || undefined,
+      acceptedTerms: true,
     });
   };
 
@@ -281,10 +294,31 @@ function AuthDialog() {
                     data-testid="input-signup-password"
                   />
                 </div>
+                <div className="flex items-start space-x-3 py-2">
+                  <Checkbox
+                    id="accept-terms"
+                    checked={acceptedTerms}
+                    onCheckedChange={(checked) => setAcceptedTerms(checked === true)}
+                    data-testid="checkbox-accept-terms"
+                  />
+                  <label
+                    htmlFor="accept-terms"
+                    className="text-sm text-muted-foreground leading-tight cursor-pointer"
+                  >
+                    I agree to the{" "}
+                    <Link href="/terms" className="text-primary underline hover:text-primary/80">
+                      Terms of Service
+                    </Link>{" "}
+                    and{" "}
+                    <Link href="/privacy" className="text-primary underline hover:text-primary/80">
+                      Privacy Policy
+                    </Link>
+                  </label>
+                </div>
                 <Button
                   type="submit"
                   className="w-full"
-                  disabled={signupMutation.isPending}
+                  disabled={signupMutation.isPending || !acceptedTerms}
                   data-testid="button-signup-submit"
                 >
                   {signupMutation.isPending ? "Creating account..." : "Sign Up"}
@@ -312,10 +346,6 @@ function AuthDialog() {
               </Button> */}
             </TabsContent>
           </Tabs>
-
-          <p className="text-xs text-muted-foreground text-center pt-2">
-            By continuing, you agree to our terms of service and privacy policy.
-          </p>
         </DialogContent>
       </Dialog>
     </div>

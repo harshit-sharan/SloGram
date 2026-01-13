@@ -29,6 +29,8 @@ export const users = pgTable("users", {
   avatar: text("avatar"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+  // Policy acceptance tracking
+  policiesAcceptedAt: timestamp("policies_accepted_at"),
 });
 
 export const moments = pgTable("moments", {

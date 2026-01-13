@@ -61,11 +61,24 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### October 27, 2025 - Terms of Service and Policy Acceptance
+- **Added Terms of Service page**: Comprehensive EULA with zero tolerance policy for objectionable content and abusive users
+  - New `/terms` route with dedicated Terms page component
+  - Emphasis on platform philosophy (peacefulness, mindfulness, harmony, slow living)
+  - Clear zero tolerance section with prohibited content list
+  - Content moderation, user responsibilities, and account termination policies
+  - Accessible from Settings and Support pages
+- **Added policy acceptance checkbox to signup**: Users must accept Terms and Privacy Policy during registration
+  - Single checkbox with links to both Terms of Service and Privacy Policy
+  - Signup button disabled until terms are accepted
+  - Backend validates `acceptedTerms` field and rejects signups without acceptance
+  - `policiesAcceptedAt` timestamp stored in database for compliance tracking
+
 ### October 27, 2025 - Authentication Redirect System
 - **Added client-side authentication redirect**: Non-authenticated users are now redirected to home when attempting to access protected pages
   - Redirect logic implemented in Router component's useEffect hook
   - Waits for auth loading to complete before checking and redirecting
-  - Public pages accessible to everyone: `/` (home) and `/support`
+  - Public pages accessible to everyone: `/` (home), `/support`, `/privacy`, `/terms`
   - Protected pages redirect to home: `/wander`, `/settings`, `/whispers`, `/conversations`, `/kept`, `/space/:userId`, `/moment/:id`
   - Uses wouter's `setLocation` for client-side navigation
   - Prevents flash of protected content by checking `isLoading` state

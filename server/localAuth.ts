@@ -80,7 +80,7 @@ export function setupLocalAuth(app: Express) {
   // Local signup endpoint
   app.post("/api/local/signup", async (req, res, next) => {
     try {
-      const { email, password, firstName, lastName } = req.body;
+      const { email, password, firstName, lastName, acceptedTerms } = req.body;
 
       // Validate input
       if (!email || !password) {
@@ -89,6 +89,11 @@ export function setupLocalAuth(app: Express) {
 
       if (password.length < 6) {
         return res.status(400).json({ error: "Password must be at least 6 characters long" });
+      }
+
+      // Validate terms acceptance
+      if (!acceptedTerms) {
+        return res.status(400).json({ error: "You must accept the Terms of Service and Privacy Policy" });
       }
 
       // Check if user already exists
@@ -106,7 +111,7 @@ export function setupLocalAuth(app: Express) {
         ? `${firstName} ${lastName}` 
         : generateRandomDisplayName();
 
-      // Create user
+      // Create user with policy acceptance timestamp
       const user = await storage.createLocalUser({
         email,
         password: hashedPassword,
@@ -114,6 +119,7 @@ export function setupLocalAuth(app: Express) {
         displayName,
         firstName: firstName || null,
         lastName: lastName || null,
+        policiesAcceptedAt: new Date(),
       });
 
       // Remove password hash before storing in session and sending to client
