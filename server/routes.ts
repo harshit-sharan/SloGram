@@ -266,15 +266,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get list of users that current user follows
       const followedUserIds = await storage.getFollowedUserIds(currentUserId);
       
+      // Get reported content and users to filter out
+      const reportedMomentIds = await storage.getReportedMomentIds(currentUserId);
+      const reportedUserIds = await storage.getReportedUserIds(currentUserId);
+      
       const posts = await storage.getMoments();
       
+      // Filter out reported moments and moments from reported users
+      const filteredPosts = posts.filter(post => 
+        !reportedMomentIds.includes(post.id) && !reportedUserIds.includes(post.userId)
+      );
+      
       // Filter posts to only show those from followed users
-      let followedUsersPosts = posts.filter(post => followedUserIds.includes(post.userId));
+      let followedUsersPosts = filteredPosts.filter(post => followedUserIds.includes(post.userId));
       
       // If feed is empty (not following anyone or no posts from followed users), 
       // show random posts from unfollowed users
       if (followedUsersPosts.length === 0) {
-        followedUsersPosts = posts.filter(
+        followedUsersPosts = filteredPosts.filter(
           post => !followedUserIds.includes(post.userId) && post.userId !== currentUserId
         );
       }
@@ -347,10 +356,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const followedUserIds = await storage.getFollowedUserIds(currentUserId);
       
+      // Get reported content and users to filter out
+      const reportedMomentIds = await storage.getReportedMomentIds(currentUserId);
+      const reportedUserIds = await storage.getReportedUserIds(currentUserId);
+      
       const posts = await storage.getMoments();
       
+      // Filter out reported moments, moments from reported users, and apply explore filters
       const explorePosts = posts.filter(
-        post => !followedUserIds.includes(post.userId) && post.userId !== currentUserId
+        post => !followedUserIds.includes(post.userId) && 
+                post.userId !== currentUserId &&
+                !reportedMomentIds.includes(post.id) && 
+                !reportedUserIds.includes(post.userId)
       );
       
       const postsWithAuthors = await Promise.all(
@@ -1016,6 +1033,120 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Invalid request data", details: error.errors });
       }
       res.status(500).json({ error: "Failed to submit support request" });
+    }
+  });
+
+  // Report endpoints for objectionable content and abusive users
+  app.post("/api/reports/moments/:momentId", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = getUserId(req);
+      const { momentId } = req.params;
+      const { reason, notes } = req.body;
+      
+      // Validate reason
+      const validReasons = ["harassment", "hate", "explicit", "spam", "self_harm", "other"];
+      if (!reason || !validReasons.includes(reason)) {
+        return res.status(400).json({ error: "Invalid report reason" });
+      }
+      
+      // Check if moment exists
+      const moment = await storage.getMoment(momentId);
+      if (!moment) {
+        return res.status(404).json({ error: "Moment not found" });
+      }
+      
+      // Check if user already reported this moment
+      const alreadyReported = await storage.hasReported(userId, "moment", momentId);
+      if (alreadyReported) {
+        return res.status(400).json({ error: "You have already reported this content" });
+      }
+      
+      // Prevent users from reporting their own content
+      if (moment.userId === userId) {
+        return res.status(400).json({ error: "You cannot report your own content" });
+      }
+      
+      // Create the report
+      const report = await storage.createReport({
+        reporterId: userId,
+        targetType: "moment",
+        targetId: momentId,
+        reason,
+        notes: notes || null,
+      });
+      
+      res.status(201).json({ success: true, reportId: report.id });
+    } catch (error) {
+      console.error("Error creating moment report:", error);
+      res.status(500).json({ error: "Failed to submit report" });
+    }
+  });
+
+  app.post("/api/reports/users/:targetUserId", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = getUserId(req);
+      const { targetUserId } = req.params;
+      const { reason, notes } = req.body;
+      
+      // Validate reason
+      const validReasons = ["harassment", "hate", "explicit", "spam", "self_harm", "other"];
+      if (!reason || !validReasons.includes(reason)) {
+        return res.status(400).json({ error: "Invalid report reason" });
+      }
+      
+      // Check if target user exists
+      const targetUser = await storage.getUser(targetUserId);
+      if (!targetUser) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      
+      // Prevent users from reporting themselves
+      if (targetUserId === userId) {
+        return res.status(400).json({ error: "You cannot report yourself" });
+      }
+      
+      // Check if user already reported this user
+      const alreadyReported = await storage.hasReported(userId, "user", targetUserId);
+      if (alreadyReported) {
+        return res.status(400).json({ error: "You have already reported this user" });
+      }
+      
+      // Create the report
+      const report = await storage.createReport({
+        reporterId: userId,
+        targetType: "user",
+        targetId: targetUserId,
+        reason,
+        notes: notes || null,
+      });
+      
+      res.status(201).json({ success: true, reportId: report.id });
+    } catch (error) {
+      console.error("Error creating user report:", error);
+      res.status(500).json({ error: "Failed to submit report" });
+    }
+  });
+
+  // Endpoints to get reported content/users (for filtering)
+  app.get("/api/reports/moments", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = getUserId(req);
+      const reportedMomentIds = await storage.getReportedMomentIds(userId);
+      res.json({ reportedMomentIds });
+    } catch (error) {
+      console.error("Error fetching reported moments:", error);
+      res.status(500).json({ error: "Failed to fetch reported moments" });
+    }
+  });
+
+  app.get("/api/reports/users", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = getUserId(req);
+      const reportedUserIds = await storage.getReportedUserIds(userId);
+      res.json({ reportedUserIds });
+    } catch (error) {
+      console.error("Error fetching reported users:", error);
+      res.status(500).json({ error: "Failed to fetch reported users" });
     }
   });
 
