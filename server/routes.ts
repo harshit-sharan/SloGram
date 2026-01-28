@@ -11,6 +11,7 @@ import { containsProfanity, getProfanityError } from "./profanity-filter";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import { ObjectPermission } from "./objectAcl";
 import { moderateContent, generateGentleFeedback, analyzeImageContent } from "./moderation";
+import { getRecommendedPosts, clearUserProfileCache } from "./recommender";
 
 // Helper function to extract user ID from both Replit Auth and local auth
 function getUserId(req: any): string {
@@ -305,39 +306,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         })
       );
       
-      // Weighted randomization favoring recent posts
-      const postsWithWeights = postsWithAuthors.map(post => {
-        const ageInHours = (now - new Date(post.createdAt).getTime()) / (1000 * 60 * 60);
-        // Exponential decay: newer posts get higher weights
-        // Posts less than 1 hour old get weight ~1.0, 24 hours old get ~0.37, 48 hours get ~0.14
-        const weight = Math.exp(-ageInHours / 24);
-        return { post, weight };
-      });
-      
-      // Weighted shuffle algorithm
-      const shuffled = [];
-      const items = [...postsWithWeights];
-      
-      while (items.length > 0) {
-        const totalWeight = items.reduce((sum, item) => sum + item.weight, 0);
-        let random = Math.random() * totalWeight;
-        
-        let selectedIndex = 0;
-        for (let i = 0; i < items.length; i++) {
-          random -= items[i].weight;
-          if (random <= 0) {
-            selectedIndex = i;
-            break;
-          }
-        }
-        
-        shuffled.push(items[selectedIndex].post);
-        items.splice(selectedIndex, 1);
-      }
+      // Use AI-powered recommender to sort posts by relevance to user interests
+      const recommendedPosts = await getRecommendedPosts(currentUserId, postsWithAuthors);
       
       // Apply pagination
-      const paginatedMoments = shuffled.slice(offset, offset + limit);
-      const hasMore = offset + limit < shuffled.length;
+      const paginatedMoments = recommendedPosts.slice(offset, offset + limit);
+      const hasMore = offset + limit < recommendedPosts.length;
       
       res.json({ moments: paginatedMoments, hasMore });
     } catch (error) {
@@ -387,34 +361,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         })
       );
       
-      const postsWithWeights = postsWithAuthors.map(post => {
-        const ageInHours = (now - new Date(post.createdAt).getTime()) / (1000 * 60 * 60);
-        const weight = Math.exp(-ageInHours / 24);
-        return { post, weight };
-      });
+      // Use AI-powered recommender to sort explore posts by relevance
+      const recommendedPosts = await getRecommendedPosts(currentUserId, postsWithAuthors);
       
-      const shuffled = [];
-      const items = [...postsWithWeights];
-      
-      while (items.length > 0) {
-        const totalWeight = items.reduce((sum, item) => sum + item.weight, 0);
-        let random = Math.random() * totalWeight;
-        
-        let selectedIndex = 0;
-        for (let i = 0; i < items.length; i++) {
-          random -= items[i].weight;
-          if (random <= 0) {
-            selectedIndex = i;
-            break;
-          }
-        }
-        
-        shuffled.push(items[selectedIndex].post);
-        items.splice(selectedIndex, 1);
-      }
-      
-      const paginatedMoments = shuffled.slice(offset, offset + limit);
-      const hasMore = offset + limit < shuffled.length;
+      const paginatedMoments = recommendedPosts.slice(offset, offset + limit);
+      const hasMore = offset + limit < recommendedPosts.length;
       
       res.json({ moments: paginatedMoments, hasMore });
     } catch (error) {
@@ -613,6 +564,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         id: currentUserId,
         ...updateData,
       });
+      
+      // Clear recommendation cache when profile is updated
+      clearUserProfileCache(currentUserId);
       
       res.json(sanitizeUser(updatedUser));
     } catch (error) {

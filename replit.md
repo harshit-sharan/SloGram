@@ -61,6 +61,17 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### January 28, 2026 - AI-Powered Content Recommender
+- **Added personalized feed recommendations**: Posts are now sorted by AI-determined relevance to user interests
+  - New `server/recommender.ts` module with GPT-powered content matching
+  - Builds user interest profiles from bio/story and recent post captions
+  - Scores posts based on thematic alignment and mood compatibility
+  - In-memory caching with TTL (1 hour for profiles, 30 minutes for scores)
+  - Combines relevance score (60%) with recency score (40%) for final ranking
+  - Integrated into both Flow feed and Explore/Wander pages
+  - Uses Replit AI Integrations for OpenAI access (no API key required)
+  - Graceful fallback to chronological order on errors
+
 ### January 13, 2026 - Account Deletion Feature
 - **Added account deletion option**: Users can permanently delete their account and all associated data
   - New `deleteUser` method in storage layer
