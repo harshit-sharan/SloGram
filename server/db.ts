@@ -54,7 +54,17 @@ export async function initializeExtensions() {
       )
     `);
     console.log("Vector and recommender tables ensured");
+  } catch (error) {
+    console.warn("Could not initialize pgvector:", error);
+  }
+}
 
+export async function createVectorIndexes() {
+  if (process.env.NODE_ENV !== "production") {
+    console.log("Skipping HNSW index creation in development");
+    return;
+  }
+  try {
     await pool.query(`
       CREATE INDEX IF NOT EXISTS idx_moment_embeddings_vector
       ON moment_embeddings USING hnsw (embedding vector_cosine_ops)
@@ -65,6 +75,6 @@ export async function initializeExtensions() {
     `);
     console.log("HNSW vector indexes ensured");
   } catch (error) {
-    console.warn("Could not initialize pgvector:", error);
+    console.warn("Could not create HNSW indexes:", error);
   }
 }
