@@ -20,6 +20,42 @@ export async function initializeExtensions() {
     console.log("pgvector extension enabled");
 
     await pool.query(`
+      CREATE TABLE IF NOT EXISTS moment_embeddings (
+        moment_id VARCHAR NOT NULL PRIMARY KEY REFERENCES moments(id) ON DELETE CASCADE,
+        embedding vector(1536),
+        caption_hash VARCHAR(32),
+        created_at TIMESTAMP DEFAULT NOW()
+      )
+    `);
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS user_embeddings (
+        user_id VARCHAR NOT NULL PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+        embedding vector(1536),
+        profile_hash VARCHAR(32),
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      )
+    `);
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS moment_summaries (
+        moment_id VARCHAR NOT NULL PRIMARY KEY REFERENCES moments(id) ON DELETE CASCADE,
+        summary TEXT,
+        caption_hash VARCHAR(64),
+        created_at TIMESTAMP DEFAULT NOW()
+      )
+    `);
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS user_interest_profiles (
+        user_id VARCHAR NOT NULL PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+        interests TEXT,
+        profile_hash VARCHAR(64),
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      )
+    `);
+    console.log("Vector and recommender tables ensured");
+
+    await pool.query(`
       CREATE INDEX IF NOT EXISTS idx_moment_embeddings_vector
       ON moment_embeddings USING hnsw (embedding vector_cosine_ops)
     `);
