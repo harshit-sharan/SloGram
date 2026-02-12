@@ -1,6 +1,7 @@
 import OpenAI from "openai";
 import { storage } from "./storage";
 import type { User, Moment } from "@shared/schema";
+import { findSimilarMoments, hasUserEmbedding } from "./embeddings";
 
 const openai = new OpenAI({
   apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
@@ -210,6 +211,44 @@ Return JSON with scores for each post ID:`
   return [...cachedScores, ...newScores];
 }
 
+async function getVectorRecommendedPosts<T extends Moment & { user?: Partial<User> }>(
+  userId: string,
+  posts: T[]
+): Promise<T[] | null> {
+  try {
+    const hasEmb = await hasUserEmbedding(userId);
+    if (!hasEmb) return null;
+
+    const postIds = posts.map(p => p.id);
+    const similarities = await findSimilarMoments(userId, posts.length, []);
+
+    if (similarities.length === 0) return null;
+
+    const simMap = new Map(similarities.map(s => [s.momentId, s.similarity]));
+
+    const postIdsSet = new Set(postIds);
+    const relevantSims = similarities.filter(s => postIdsSet.has(s.momentId));
+    if (relevantSims.length < posts.length * 0.3) return null;
+
+    const now = Date.now();
+    const scoredPosts = posts.map(post => {
+      const similarity = simMap.get(post.id) || 0.5;
+      const relevanceScore = Math.max(0, Math.min(1, (similarity + 1) / 2));
+      const ageInHours = (now - new Date(post.createdAt).getTime()) / (1000 * 60 * 60);
+      const recencyScore = Math.exp(-ageInHours / 48);
+      const combinedScore = (relevanceScore * 0.6) + (recencyScore * 0.4);
+
+      return { post, score: combinedScore };
+    });
+
+    scoredPosts.sort((a, b) => b.score - a.score);
+    return scoredPosts.map(sp => sp.post);
+  } catch (error) {
+    console.error("Vector recommendation error, falling back:", error);
+    return null;
+  }
+}
+
 export async function getRecommendedPosts<T extends Moment & { user?: Partial<User> }>(
   userId: string,
   posts: T[]
@@ -219,6 +258,11 @@ export async function getRecommendedPosts<T extends Moment & { user?: Partial<Us
   }
   
   try {
+    const vectorResult = await getVectorRecommendedPosts(userId, posts);
+    if (vectorResult) {
+      return vectorResult;
+    }
+
     const user = await storage.getUser(userId);
     if (!user) {
       return posts;

@@ -12,6 +12,7 @@ import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import { ObjectPermission } from "./objectAcl";
 import { moderateContent, generateGentleFeedback, analyzeImageContent } from "./moderation";
 import { getRecommendedPosts, clearUserProfileCache } from "./recommender";
+import { upsertMomentEmbedding, upsertUserEmbedding, getEmbeddingStats } from "./embeddings";
 
 // Helper function to extract user ID from both Replit Auth and local auth
 function getUserId(req: any): string {
@@ -443,6 +444,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const post = await storage.createMoment(postData);
+
+      if (post.caption) {
+        upsertMomentEmbedding(post.id, post.caption).catch(err =>
+          console.error("Error generating moment embedding:", err)
+        );
+      }
+
       res.json(post);
     } catch (error) {
       console.error("Error creating moment:", error);
@@ -565,8 +573,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...updateData,
       });
       
-      // Clear recommendation cache when profile is updated
       clearUserProfileCache(currentUserId);
+
+      const userMoments = await storage.getMomentsByUserId(currentUserId);
+      const captions = userMoments.filter(m => m.caption).map(m => m.caption!);
+      upsertUserEmbedding(currentUserId, updateData.story || updatedUser.story || "", captions).catch(err =>
+        console.error("Error generating user embedding:", err)
+      );
       
       res.json(sanitizeUser(updatedUser));
     } catch (error) {
@@ -1263,6 +1276,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
         clients.delete(userId);
       }
     });
+  });
+
+  app.post("/api/admin/backfill-embeddings", isAuthenticated, async (req: any, res) => {
+    try {
+      const moments = await storage.getMoments();
+      const allUsers = await db.select().from(users);
+
+      let momentCount = 0;
+      let userCount = 0;
+
+      for (const moment of moments) {
+        if (moment.caption) {
+          const success = await upsertMomentEmbedding(moment.id, moment.caption);
+          if (success) momentCount++;
+        }
+      }
+
+      for (const user of allUsers) {
+        const userMoments = await storage.getMomentsByUserId(user.id);
+        const captions = userMoments.filter(m => m.caption).map(m => m.caption!);
+        const bio = user.story || "";
+        if (bio || captions.length > 0) {
+          const success = await upsertUserEmbedding(user.id, bio, captions);
+          if (success) userCount++;
+        }
+      }
+
+      res.json({ 
+        message: "Backfill complete",
+        momentsProcessed: momentCount,
+        usersProcessed: userCount,
+      });
+    } catch (error) {
+      console.error("Error backfilling embeddings:", error);
+      res.status(500).json({ error: "Backfill failed" });
+    }
+  });
+
+  app.get("/api/admin/embedding-stats", isAuthenticated, async (req, res) => {
+    try {
+      const stats = await getEmbeddingStats();
+      res.json(stats);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to get stats" });
+    }
   });
 
   return httpServer;
