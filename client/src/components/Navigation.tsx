@@ -197,12 +197,12 @@ export function Navigation() {
             </div>
           ) : (
             <Button
-              variant="ghost"
-              size="icon"
+              variant="outline"
               onClick={() => setAuthDialogOpen(true)}
               data-testid="button-login"
             >
-              <LogIn />
+              <LogIn className="h-4 w-4 mr-2" />
+              Login / Sign Up
             </Button>
           )}
         </div>
