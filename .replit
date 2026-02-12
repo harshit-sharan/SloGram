@@ -40,3 +40,8 @@ waitForPort = 5000
 
 [agent]
 integrations = ["javascript_database:1.0.0", "javascript_log_in_with_replit:1.0.0", "javascript_websocket:1.0.0", "javascript_object_storage:1.0.0", "javascript_openai_ai_integrations:1.0.0"]
+
+[userenv]
+
+[userenv.shared]
+ADMIN_TOKEN = "9a5fa5d869cabf30063bfc80735095fa7d3320d7ba8976b58ffe994491b6e1ff"

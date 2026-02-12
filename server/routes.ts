@@ -1280,6 +1280,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/admin/backfill-embeddings", isAuthenticated, async (req: any, res) => {
     try {
+      const adminToken = req.headers["x-admin-token"];
+      if (!adminToken || adminToken !== process.env.ADMIN_TOKEN) {
+        return res.status(403).json({ error: "Forbidden" });
+      }
+
       const moments = await storage.getMoments();
       const allUsers = await db.select().from(users);
 
@@ -1314,8 +1319,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/admin/embedding-stats", isAuthenticated, async (req, res) => {
+  app.get("/api/admin/embedding-stats", isAuthenticated, async (req: any, res) => {
     try {
+      const adminToken = req.headers["x-admin-token"];
+      if (!adminToken || adminToken !== process.env.ADMIN_TOKEN) {
+        return res.status(403).json({ error: "Forbidden" });
+      }
       const stats = await getEmbeddingStats();
       res.json(stats);
     } catch (error) {

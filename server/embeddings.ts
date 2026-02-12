@@ -98,14 +98,14 @@ export async function findSimilarMoments(
 
   let query;
   if (excludeMomentIds.length > 0) {
-    const excludeList = excludeMomentIds.map(id => `'${id.replace(/'/g, "''")}'`).join(",");
+    const excludeArray = excludeMomentIds;
     query = sql`
       SELECT me.moment_id,
              1 - (me.embedding <=> ue.embedding) AS similarity
       FROM moment_embeddings me
       CROSS JOIN user_embeddings ue
       WHERE ue.user_id = ${userId}
-        AND me.moment_id NOT IN (${sql.raw(excludeList)})
+        AND me.moment_id != ALL(${excludeArray})
       ORDER BY me.embedding <=> ue.embedding
       LIMIT ${limit}
     `;

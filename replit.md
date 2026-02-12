@@ -61,6 +61,17 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### February 12, 2026 - Vector Database Recommendations (pgvector)
+- **Added vector-based recommendation system**: Faster, more scalable alternative to GPT-based scoring
+  - pgvector extension enabled with HNSW indexes for fast cosine similarity search
+  - `moment_embeddings` and `user_embeddings` tables store OpenAI text-embedding-3-small vectors (1536 dimensions)
+  - `server/embeddings.ts` module handles embedding generation and similarity queries
+  - Embeddings auto-generated on post creation and profile updates (non-blocking)
+  - Recommender tries vector similarity first, falls back to GPT scoring if embeddings unavailable
+  - Admin backfill endpoint (`POST /api/admin/backfill-embeddings`) for existing content, secured with ADMIN_TOKEN header
+  - Requires separate `OPENAI_API_KEY` secret (Replit AI integration doesn't support embeddings API)
+  - Content hash-based deduplication prevents unnecessary re-embedding
+
 ### January 28, 2026 - AI-Powered Content Recommender
 - **Added personalized feed recommendations**: Posts are now sorted by AI-determined relevance to user interests
   - New `server/recommender.ts` module with GPT-powered content matching
