@@ -61,6 +61,16 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### February 12, 2026 - Persisted GPT Summaries for Recommendations
+- **Pre-computed summaries stored in database**: GPT summaries and user interest profiles are now generated at write time, not read time
+  - `moment_summaries` table stores GPT-generated post theme summaries with caption_hash deduplication
+  - `user_interest_profiles` table stores GPT-generated user interest profiles with profile_hash deduplication
+  - Summaries generated non-blocking on post creation; user interests regenerated on post creation and profile updates
+  - Recommendation reads only do matching/ranking on the fly using stored summaries and interests
+  - Both tables have CASCADE deletes (auto-cleanup when moments or users are deleted)
+  - Admin backfill endpoint generates summaries alongside embeddings for existing content
+  - In-memory cache reduced to only short-lived post score cache (30min TTL for ranking results)
+
 ### February 12, 2026 - Vector Database Recommendations (pgvector)
 - **Added vector-based recommendation system**: Faster, more scalable alternative to GPT-based scoring
   - pgvector extension enabled with HNSW indexes for fast cosine similarity search
@@ -77,7 +87,7 @@ Preferred communication style: Simple, everyday language.
   - New `server/recommender.ts` module with GPT-powered content matching
   - Builds user interest profiles from bio/story and recent post captions
   - Scores posts based on thematic alignment and mood compatibility
-  - In-memory caching with TTL (1 hour for profiles, 30 minutes for scores)
+  - Persisted in database with hash-based deduplication; only matching/ranking done on the fly
   - Combines relevance score (60%) with recency score (40%) for final ranking
   - Integrated into both Flow feed and Explore/Wander pages
   - Uses Replit AI Integrations for OpenAI access (no API key required)

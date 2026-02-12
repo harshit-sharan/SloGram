@@ -11,7 +11,7 @@ import { containsProfanity, getProfanityError } from "./profanity-filter";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import { ObjectPermission } from "./objectAcl";
 import { moderateContent, generateGentleFeedback, analyzeImageContent } from "./moderation";
-import { getRecommendedPosts, clearUserProfileCache } from "./recommender";
+import { getRecommendedPosts, clearPostScoreCache, generateAndStoreMomentSummary, generateAndStoreUserInterests } from "./recommender";
 import { upsertMomentEmbedding, upsertUserEmbedding, getEmbeddingStats } from "./embeddings";
 
 // Helper function to extract user ID from both Replit Auth and local auth
@@ -449,7 +449,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         upsertMomentEmbedding(post.id, post.caption).catch(err =>
           console.error("Error generating moment embedding:", err)
         );
+        generateAndStoreMomentSummary(post.id, post.caption).catch(err =>
+          console.error("Error generating moment summary:", err)
+        );
       }
+
+      generateAndStoreUserInterests(postData.userId).catch(err =>
+        console.error("Error updating user interests after post:", err)
+      );
 
       res.json(post);
     } catch (error) {
@@ -573,12 +580,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...updateData,
       });
       
-      clearUserProfileCache(currentUserId);
+      clearPostScoreCache(currentUserId);
 
       const userMoments = await storage.getMomentsByUserId(currentUserId);
       const captions = userMoments.filter(m => m.caption).map(m => m.caption!);
       upsertUserEmbedding(currentUserId, updateData.story || updatedUser.story || "", captions).catch(err =>
         console.error("Error generating user embedding:", err)
+      );
+
+      generateAndStoreUserInterests(currentUserId).catch(err =>
+        console.error("Error updating user interests after profile edit:", err)
       );
       
       res.json(sanitizeUser(updatedUser));
@@ -1288,13 +1299,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const moments = await storage.getMoments();
       const allUsers = await db.select().from(users);
 
-      let momentCount = 0;
-      let userCount = 0;
+      let momentEmbeddingCount = 0;
+      let userEmbeddingCount = 0;
+      let momentSummaryCount = 0;
+      let userInterestCount = 0;
 
       for (const moment of moments) {
         if (moment.caption) {
           const success = await upsertMomentEmbedding(moment.id, moment.caption);
-          if (success) momentCount++;
+          if (success) momentEmbeddingCount++;
+          await generateAndStoreMomentSummary(moment.id, moment.caption);
+          momentSummaryCount++;
         }
       }
 
@@ -1304,14 +1319,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const bio = user.story || "";
         if (bio || captions.length > 0) {
           const success = await upsertUserEmbedding(user.id, bio, captions);
-          if (success) userCount++;
+          if (success) userEmbeddingCount++;
         }
+        await generateAndStoreUserInterests(user.id);
+        userInterestCount++;
       }
 
       res.json({ 
         message: "Backfill complete",
-        momentsProcessed: momentCount,
-        usersProcessed: userCount,
+        embeddingsProcessed: { moments: momentEmbeddingCount, users: userEmbeddingCount },
+        summariesProcessed: { moments: momentSummaryCount, users: userInterestCount },
       });
     } catch (error) {
       console.error("Error backfilling embeddings:", error);
