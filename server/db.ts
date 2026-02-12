@@ -53,7 +53,15 @@ export async function initializeExtensions() {
         updated_at TIMESTAMP DEFAULT NOW()
       )
     `);
-    console.log("Vector and recommender tables ensured");
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS feedback (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id VARCHAR,
+        message TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW()
+      )
+    `);
+    console.log("Vector, recommender, and feedback tables ensured");
   } catch (error) {
     console.warn("Could not initialize pgvector:", error);
   }
