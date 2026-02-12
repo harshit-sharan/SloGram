@@ -41,6 +41,14 @@ export default function About() {
           A mindfulness-focused social platform for slow living
         </p>
 
+        <div className="rounded-md bg-primary/10 border border-primary/30 p-4 mb-8" data-testid="banner-disclaimer">
+          <p className="text-sm text-foreground/90">
+            This app is an <strong>educational project</strong>, vibe coded entirely with AI.
+            It uses AI-powered features throughout. Please use <strong>random or fake credentials</strong> when
+            signing up &mdash; do not use real personal information. Your feedback is very welcome!
+          </p>
+        </div>
+
         <div className="space-y-6">
           <Card data-testid="card-philosophy">
             <CardHeader>
