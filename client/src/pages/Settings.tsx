@@ -1,4 +1,4 @@
-import { LogOut, HeadphonesIcon, Shield, FileText, Trash2 } from "lucide-react";
+import { LogOut, HeadphonesIcon, Shield, FileText, Trash2, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
@@ -114,6 +114,12 @@ export default function Settings() {
               <Button variant="outline" className="w-full sm:w-auto" data-testid="button-terms-of-service">
                 <FileText className="h-4 w-4 mr-2" />
                 Terms of Service
+              </Button>
+            </Link>
+            <Link href="/about">
+              <Button variant="outline" className="w-full sm:w-auto" data-testid="button-about">
+                <Info className="h-4 w-4 mr-2" />
+                About Slogram
               </Button>
             </Link>
           </CardContent>

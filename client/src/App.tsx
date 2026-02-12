@@ -20,6 +20,7 @@ import Settings from "@/pages/Settings";
 import Support from "@/pages/Support";
 import Privacy from "@/pages/Privacy";
 import Terms from "@/pages/Terms";
+import About from "@/pages/About";
 import NotFound from "@/pages/not-found";
 import { FeedbackWidget } from "@/components/FeedbackWidget";
 
@@ -145,7 +146,7 @@ function Router() {
     
     // If user is not logged in and trying to access a protected route, redirect to home
     // Exception: support, privacy, and terms pages are accessible to everyone
-    const publicRoutes = ["/", "/support", "/privacy", "/terms"];
+    const publicRoutes = ["/", "/support", "/privacy", "/terms", "/about"];
     if (!user && !publicRoutes.includes(location)) {
       setLocation("/");
     }
@@ -164,6 +165,7 @@ function Router() {
       <Route path="/support" component={Support} />
       <Route path="/privacy" component={Privacy} />
       <Route path="/terms" component={Terms} />
+      <Route path="/about" component={About} />
       <Route component={NotFound} />
     </Switch>
   );
