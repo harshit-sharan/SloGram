@@ -7,6 +7,7 @@ import {
   MessageCircle,
   Bookmark,
   LogIn,
+  Settings,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -180,6 +181,17 @@ export function Navigation() {
                         "U"}
                     </AvatarFallback>
                   </Avatar>
+                </Link>
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="icon"
+                asChild
+                data-testid="button-settings"
+              >
+                <Link href="/settings" onClick={(e) => handleNavigation("/settings", e)}>
+                  <Settings className={location === "/settings" ? "fill-current" : ""} />
                 </Link>
               </Button>
             </div>

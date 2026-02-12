@@ -23,6 +23,7 @@ import Terms from "@/pages/Terms";
 import About from "@/pages/About";
 import NotFound from "@/pages/not-found";
 import { FeedbackWidget } from "@/components/FeedbackWidget";
+import { AboutButton } from "@/components/AboutButton";
 
 // Hook to manage scroll position restoration
 function useScrollRestoration() {
@@ -196,6 +197,7 @@ function App() {
             </div>
             <CreatePostModal open={createPostOpen} onOpenChange={setCreatePostOpen} />
             <FeedbackWidget />
+            <AboutButton />
             <Toaster />
           </NavigationProvider>
         </ThemeProvider>
