@@ -163,6 +163,17 @@ export function Navigation() {
                 variant="ghost"
                 size="icon"
                 asChild
+                data-testid="button-settings"
+              >
+                <Link href="/settings" onClick={(e) => handleNavigation("/settings", e)}>
+                  <Settings className={location === "/settings" ? "fill-current" : ""} />
+                </Link>
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="icon"
+                asChild
                 data-testid="button-space"
               >
                 <Link
@@ -181,17 +192,6 @@ export function Navigation() {
                         "U"}
                     </AvatarFallback>
                   </Avatar>
-                </Link>
-              </Button>
-
-              <Button
-                variant="ghost"
-                size="icon"
-                asChild
-                data-testid="button-settings"
-              >
-                <Link href="/settings" onClick={(e) => handleNavigation("/settings", e)}>
-                  <Settings className={location === "/settings" ? "fill-current" : ""} />
                 </Link>
               </Button>
             </div>
