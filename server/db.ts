@@ -13,3 +13,12 @@ if (!process.env.DATABASE_URL) {
 
 export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 export const db = drizzle({ client: pool, schema });
+
+export async function initializeExtensions() {
+  try {
+    await pool.query("CREATE EXTENSION IF NOT EXISTS vector");
+    console.log("pgvector extension enabled");
+  } catch (error) {
+    console.warn("Could not enable pgvector extension:", error);
+  }
+}
