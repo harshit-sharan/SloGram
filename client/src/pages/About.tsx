@@ -51,14 +51,12 @@ export default function About() {
           data-testid="banner-disclaimer"
         >
           <p className="text-sm text-foreground/90">
-            This app is an <strong>educational project</strong>, vibe coded
-            entirely with AI. It uses AI-powered features throughout. Please use{" "}
-            <strong>random or fake credentials</strong> when signing up &mdash;
-            do not use real personal information. Alternatively, you can log in
-            with the existing account: email <strong>abc@xyz.com</strong> and
-            password <strong>170992</strong>. Your feedback is very welcome!
-            Continue reading this page for the product, design, and technical
-            details.
+            This app is an <strong>educational project</strong>, built and
+            operated entirely by AI. It uses AI-powered features throughout.
+            Please use <strong>random or fake credentials</strong> when signing
+            up &mdash; do not use real personal information. Your feedback is
+            very welcome! Continue reading this page for the product, design,
+            and technical details.
           </p>
         </div>
 
