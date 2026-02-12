@@ -25,8 +25,11 @@ async function hashPassword(password: string): Promise<string> {
   return `${buf.toString("hex")}.${salt}`;
 }
 
-// Compare password with stored hash
+// Compare password with stored hash, also supports plaintext stored passwords
 async function comparePasswords(supplied: string, stored: string): Promise<boolean> {
+  if (!stored.includes(".")) {
+    return supplied === stored;
+  }
   const [hashed, salt] = stored.split(".");
   const hashedBuf = Buffer.from(hashed, "hex");
   const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
