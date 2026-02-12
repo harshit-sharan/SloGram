@@ -1289,6 +1289,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  app.post("/api/admin/backfill-summaries", isAuthenticated, async (req: any, res) => {
+    try {
+      const adminToken = req.headers["x-admin-token"];
+      if (!adminToken || adminToken !== process.env.ADMIN_TOKEN) {
+        return res.status(403).json({ error: "Forbidden" });
+      }
+
+      const moments = await storage.getMoments();
+      const allUsers = await db.select().from(users);
+
+      let momentSummaryCount = 0;
+      let userInterestCount = 0;
+
+      for (const moment of moments) {
+        if (moment.caption) {
+          await generateAndStoreMomentSummary(moment.id, moment.caption);
+          momentSummaryCount++;
+        }
+      }
+
+      for (const user of allUsers) {
+        await generateAndStoreUserInterests(user.id);
+        userInterestCount++;
+      }
+
+      res.json({
+        message: "Summary backfill complete",
+        summariesProcessed: { moments: momentSummaryCount, users: userInterestCount },
+      });
+    } catch (error) {
+      console.error("Error backfilling summaries:", error);
+      res.status(500).json({ error: "Summary backfill failed" });
+    }
+  });
+
   app.post("/api/admin/backfill-embeddings", isAuthenticated, async (req: any, res) => {
     try {
       const adminToken = req.headers["x-admin-token"];
