@@ -21,6 +21,7 @@ import Support from "@/pages/Support";
 import Privacy from "@/pages/Privacy";
 import Terms from "@/pages/Terms";
 import NotFound from "@/pages/not-found";
+import { FeedbackWidget } from "@/components/FeedbackWidget";
 
 // Hook to manage scroll position restoration
 function useScrollRestoration() {
@@ -192,6 +193,7 @@ function App() {
               <Router />
             </div>
             <CreatePostModal open={createPostOpen} onOpenChange={setCreatePostOpen} />
+            <FeedbackWidget />
             <Toaster />
           </NavigationProvider>
         </ThemeProvider>

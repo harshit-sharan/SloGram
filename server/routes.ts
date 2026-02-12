@@ -5,7 +5,7 @@ import { storage } from "./storage";
 import { setupAuth, isAuthenticated, getSession } from "./replitAuth";
 import { setupLocalAuth, sanitizeUser } from "./localAuth";
 import { insertMomentSchema, insertNoteSchema, updateUserProfileSchema, users } from "@shared/schema";
-import { db } from "./db";
+import { db, pool } from "./db";
 import { eq } from "drizzle-orm";
 import { containsProfanity, getProfanityError } from "./profanity-filter";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
@@ -1346,6 +1346,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(stats);
     } catch (error) {
       res.status(500).json({ error: "Failed to get stats" });
+    }
+  });
+
+  app.post("/api/feedback", async (req: any, res) => {
+    try {
+      const { message } = req.body;
+      if (!message || typeof message !== "string" || message.trim().length === 0) {
+        return res.status(400).json({ error: "Message is required" });
+      }
+
+      let userId: string | null = null;
+      try {
+        userId = getUserId(req);
+      } catch {}
+
+      await pool.query(
+        "INSERT INTO feedback (id, user_id, message, created_at) VALUES (gen_random_uuid(), $1, $2, NOW())",
+        [userId, message.trim()]
+      );
+
+      res.json({ message: "Feedback submitted successfully" });
+    } catch (error) {
+      console.error("Error submitting feedback:", error);
+      res.status(500).json({ error: "Failed to submit feedback" });
     }
   });
 
