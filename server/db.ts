@@ -18,7 +18,17 @@ export async function initializeExtensions() {
   try {
     await pool.query("CREATE EXTENSION IF NOT EXISTS vector");
     console.log("pgvector extension enabled");
+
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_moment_embeddings_vector
+      ON moment_embeddings USING hnsw (embedding vector_cosine_ops)
+    `);
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_user_embeddings_vector
+      ON user_embeddings USING hnsw (embedding vector_cosine_ops)
+    `);
+    console.log("HNSW vector indexes ensured");
   } catch (error) {
-    console.warn("Could not enable pgvector extension:", error);
+    console.warn("Could not initialize pgvector:", error);
   }
 }
