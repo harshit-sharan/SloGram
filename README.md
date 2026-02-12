@@ -6,7 +6,7 @@ A mindfulness-focused social platform for slow living
 
 ---
 
-This app is an **educational project**, built and operated entirely by AI. It uses AI-powered features throughout. Please use **random or fake credentials** when signing up -- do not use real personal information. Alternatively, you can log in with the existing account: email **abc@xyz.com** and password **170992**. Your feedback is very welcome!
+This app is an **educational project**, built and operated entirely by AI. It uses AI-powered features throughout. Please use **random or fake credentials** when signing up -- do not use real personal information. Alternatively, you can log in with an existing account: email **abc@xyz.com** and password 170992. Your feedback is very welcome!
 
 ---
 

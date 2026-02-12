@@ -54,7 +54,9 @@ export default function About() {
             This app is an <strong>educational project</strong>, built and
             operated entirely by AI. It uses AI-powered features throughout.
             Please use <strong>random or fake credentials</strong> when signing
-            up &mdash; do not use real personal information. Your feedback is
+            up &mdash; do not use real personal information. Alternatively, you
+            can log in with an existing account: email{" "}
+            <strong>abc@xyz.com</strong> and password 170992. Your feedback is
             very welcome! Continue reading this page for the product, design,
             and technical details.
           </p>
