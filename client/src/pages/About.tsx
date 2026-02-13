@@ -53,12 +53,11 @@ export default function About() {
           <p className="text-sm text-foreground/90">
             This app is an <strong>educational project</strong>, built and
             operated entirely by AI. It uses AI-powered features throughout.
-            Please use <strong>random or fake credentials</strong> when signing
-            up &mdash; do not use real personal information. Alternatively, you
-            can log in with an existing account: email{" "}
-            <strong>abc@xyz.com</strong> and password 170992. Your feedback is
-            very welcome! Continue reading this page for the product, design,
-            and technical details.
+            Please feel free to use <strong>random or fake credentials</strong>{" "}
+            when signing up &mdash; multi-factor authentication is not enabled,
+            however credentials are stored with enterprise grade security.
+            Please remember to leave a feedback in the app! Continue reading
+            this page for the product, design, and technical details.
           </p>
         </div>
 
